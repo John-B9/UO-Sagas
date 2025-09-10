@@ -2,8 +2,8 @@
 -- Base Lib
 -- Author: JohnB9
 --
--- Mentions: Halesluker (got functions from Sagas Bot)
---           Zeran (got functions from fishsteak cooking script)
+-- Mentions: Halesluker (stole some functions from Sagas Bot)
+--           
 --
 -- Description: Generic utility functions for all scripts
 ----------------------------------------------------------------------

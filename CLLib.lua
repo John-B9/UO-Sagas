@@ -3,21 +3,15 @@
 -- Author: JohnB9
 --
 -- Mentions: Rum Runner (this lib was started from his script,
---                       as I was leveling a crafter;
+--                       as i was leveling a crafter;
 --                       I then addapted it for a more general purpose,
 --                       so to also level other crafting skills)
 --
 -- Description: A generic loop to craft items of incresing dificulty
 --              so to level up the a crafting skill
 --
---              The main funtion is craftingLoop(config)
+-- Caveats: Whatever list of items you provide for crafting, it is best to have them in the 1st page of the gump, as the script won't change pages
 --
---              To see how to call it, see one of the skill specific
---              scripts (like CLSmithing)
---
--- Caveats: Whatever list of items you provide for crafting, it is
---          best to have them in the 1st page of the gump, as the
---          script won't change pages
 ----------------------------------------------------------------------
 
 local il = Import('IPLib')

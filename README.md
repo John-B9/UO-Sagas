@@ -14,7 +14,7 @@ Enjoy!
 
 As being new to lua and to the UO Sagas assitant API, I've used and took inspiration from scripts from many other scripters/players.
 
-In some cases, part of the code I show here could have been partialy or totaly copied (+ adaptions). When it is the case, I leave a comment in the top of the script with a mention. So thank you to all those there (like: Halesluker, Rum Runner, Zeran, ...) and feel free to do the same.
+In some cases, part of the code I show here could have been partialy copyed and adapted (sometimes, fully copied!). When it is the case, I leave a comment in the top of the script with a mention. So thank you to all those there (like: Halesluker, Rum Runner, Zeran, ...) and feel free to do the same.
 
 Then if you do use that is here for your own scripts and then publish an adaption, a mention would be nice!
 
@@ -55,6 +55,16 @@ What I did here was just that, with some additional touches
 These are the scripts you can run, which define a list with crafting items for every skill range, maybe some pre-work (like picking up a fishsteak from the ground and putting it in the inventory), and then call the crafting loop from CLLib.
 
 NOTE: The list of items for every skill range is not complete to 120 progression, some go only to 70 (I didn't continue after Adena for some), but you can extend with what you want. All you need is to add an entry, knowing the gump button IDs (you can get those via "Start Recording" in the assistant, clicking in the buttons of what you want to craft, and putting the values in "category", "craft" and "final"). When I get to those skill levels, I'll update what I have here.
+
+## IO (Items Organization) Lib
+
+Utility functions for organizing items
+
+### IODropTrash
+
+Don't craft and leave things on the ground... That is not good for the environment!
+
+Put them into a pouch, and drop the pouch instead!
 
 ## IP (Item Properties) Lib
 
