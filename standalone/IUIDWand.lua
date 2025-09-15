@@ -96,7 +96,7 @@ end
 -- MAIN --
 ----------
 
-local wandGraphicIDs = { 3570, 3571, 3572 }
+local wandGraphicIDs = { 3570, 3571, 3572, 3573 }
 wand = getItemWithLessIdentificationCharges_(wandGraphicIDs)
 if wand == nil then
     Messages.Overhead("Missing Wand", 69, Player.Serial)

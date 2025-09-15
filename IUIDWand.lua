@@ -1,14 +1,14 @@
-local il = Import('IPLib')
+local ipl = Import('IPLib')
 --local cbl = Import('combatBotLib')
 
-local wandGraphicIDs = { 3570, 3571, 3572 }
-wand = il.getItemWithLessIdentificationCharges(wandGraphicIDs)
+local wandGraphicIDs = { 3570, 3571, 3572, 3573 }
+wand = ipl.getItemWithLessIdentificationCharges(wandGraphicIDs)
 if wand == nil then
     Messages.Overhead("Missing Wand", 69, Player.Serial)
     return
 end
 
-charges = il.getIdentificationCharges(wand)
+charges = ipl.getIdentificationCharges(wand)
 if charges == 0 then
     Messages.Overhead("Wand out of charges", 69, Player.Serial)
     Messages.Overhead("Dropping wand", 69, Player.Serial)
