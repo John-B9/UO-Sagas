@@ -96,8 +96,8 @@ local function craftingLoop_(config)
     printInitialStartUpGreeting_(config)
     while true do
         local crafted = craftItem_(config)
-            if not crafted then
-                break
+        if not crafted then
+            break
         end
     end
 end

@@ -68,7 +68,7 @@ end
 -- Best Item --
 ---------------
 
-local function getItemWithBestPropertyValue_(itemID, propertyGetter, propertyFieldRegexStr, comparePredicate)
+local function getItemWithBestPropertyValue_singleID_(itemID, propertyGetter, propertyFieldRegexStr, comparePredicate)
     local bestItem = nil
     local bestItemProperties = nil
     local items = Items.FindInContainer(Player.Backpack.Serial, itemID)
@@ -81,10 +81,43 @@ local function getItemWithBestPropertyValue_(itemID, propertyGetter, propertyFie
     end
 
     if bestItem == nil then
-        Messages.Print("Found no item with ID = " .. itemID, 69, Player.Serial)
+        bl.printIfDebug(debugEnabled, "Found no item with ID = " .. itemID)
     end
 
     return bestItem
+end
+
+local function getItemWithBestPropertyValue_listOfIDs_(listItemIDs, propertyGetter, propertyFieldRegexStr, comparePredicate)
+    local bestItemsAndProperties = {}
+    for i, itemID in ipairs(listItemIDs) do
+        local bestItemProperty = nil
+        local bestItem = getItemWithBestPropertyValue_singleID_(itemID, propertyGetter, propertyFieldRegexStr, comparePredicate)
+        if bestItem ~= nil then
+            bestItemProperty = propertyGetter(bestItem, propertyFieldRegexStr)
+        end
+        bestItemsAndProperties[i] = { bestItem, bestItemProperty }
+    end
+    local bestBestItem = nil
+    local bestBestItemProperty = nil
+    for _, element in ipairs(bestItemsAndProperties) do
+        local item = element[1]
+        local itemProperty = element[2]
+        if item ~= nil then
+            if bestBestItem == nil or comparePredicate(itemProperty, bestBestItemProperty) then
+                bestBestItem = item
+                bestBestItemProperty = itemProperty
+            end
+        end
+    end
+    return bestBestItem
+end
+
+local function getItemWithBestPropertyValue_(itemIDOrListItemIDs, propertyGetter, propertyFieldRegexStr, comparePredicate)
+    if type(itemIDOrListItemIDs) == "number" then
+        return getItemWithBestPropertyValue_singleID_(itemIDOrListItemIDs, propertyGetter, propertyFieldRegexStr, comparePredicate)
+    else
+        return getItemWithBestPropertyValue_listOfIDs_(itemIDOrListItemIDs, propertyGetter, propertyFieldRegexStr, comparePredicate)
+    end
 end
 
 --------------------------------

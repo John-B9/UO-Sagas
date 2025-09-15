@@ -32,7 +32,7 @@ local function checkThreshouldDropDisposalContainer_(disposalContainer)
     local freeInventorySpace = getFreeBackpackItemsSlots_()
     if freeInventorySpace <= inventory_fill_drop_disposal_container_threshold then
         Messages.Print("No more room in inventory! (free space: " .. freeInventorySpace ..
-            ") Droping disposal container!", 55)
+        ") Droping disposal container!", 55)
         Player.PickUp(disposalContainer.Serial)
         Player.DropOnGround()
         Pause(700)
@@ -97,8 +97,7 @@ end
 
 local function dropTrashLoop_(disposalContainerGraphicID, trashGraphicIDs, includeItemsOnGround)
     while true do
-        local continue = dropTrashUntillDisposalContainerUntillFull_(disposalContainerGraphicID, trashGraphicIDs,
-        includeItemsOnGround)
+        local continue = dropTrashUntillDisposalContainerUntillFull_(disposalContainerGraphicID, trashGraphicIDs, includeItemsOnGround)
         if continue == false then
             return
         end

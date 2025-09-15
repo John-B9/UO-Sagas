@@ -83,3 +83,15 @@ Utility functions to handle item "Properties"
 - getItemWithMostContent (Container in backpack that is most full)
 - ...
 - getItemWithLessSinglePropertyValue/getItemWithLessDoublePropertyFirstValue/... (generic)
+
+## IU (Item Usage) Lib
+
+Utility functions to use items
+
+### IUIDWand
+
+Use the ID Wand in backpack with less charges, and drop it if it has zero charges.
+
+You can carry 2 ID wands so you never run out of charges.
+
+I usualy have another combat script running, I call it in the end of the script (this is commented), but you can also do that.

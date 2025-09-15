@@ -11,8 +11,9 @@ local cll = Import('CLLib')
 local TINKER_ITEMS = {
     { name = "Fork",        minSkill = 30.0, maxSkill = 49.9, category = 15, craft = 38, final = 37 },
     { name = "Bartap",      minSkill = 50.0, maxSkill = 69.9, category = 8, craft = 24, final = 23 },
-    { name = "Spyglass",    minSkill = 70.0, maxSkill = 100.0, category = 22, craft = 38, final = 37 }
-    --{ name = "Scales",      minSkill = 90.0, maxSkill = 100.0, category = 22, craft = 17, final = 16 }
+    --{ name = "Spyglass",    minSkill = 70.0, maxSkill = 120.0, category = 22, craft = 38, final = 37 },
+    { name = "Spyglass",    minSkill = 70.0, maxSkill = 89.9, category = 22, craft = 38, final = 37 },
+    { name = "Scales",      minSkill = 90.0, maxSkill = 120.0, category = 22, craft = 17, final = 16 }
 }
 
 -- User Settings
