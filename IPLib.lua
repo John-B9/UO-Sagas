@@ -16,7 +16,10 @@ local debugEnabled = false
 -----------------------------
 
 local function getItemSingleValueProperty_(item, singleValuePropertyRegexStr)
-    local regexMatchIter = string.gmatch(item.Properties, singleValuePropertyRegexStr)
+    bl.printIfDebug(debugEnabled, item.Properties)
+    local cleanProperties = string.gsub(item.Properties, "<.->", "")
+    bl.printIfDebug(debugEnabled, cleanProperties)
+    local regexMatchIter = string.gmatch(cleanProperties, singleValuePropertyRegexStr)
     local propertyVal = regexMatchIter()
     if propertyVal == nil then
         bl.printIfDebug(debugEnabled, "Single Value Property = (nil)")
@@ -30,7 +33,7 @@ end
 -- Single Value Properties (Instances) --
 -----------------------------------------
 
-local ueses_remaining_regex_str = "Uses Remaining: <.->(%d+)<.->"
+local ueses_remaining_regex_str = "Uses Remaining: (%d+)"
 local function getUsesRemaining_(item)
     return getItemSingleValueProperty_(item, ueses_remaining_regex_str)
 end
@@ -45,7 +48,11 @@ end
 -----------------------------
 
 local function getItemDoubleValueProperty_(item, doubleValuePropertyRegexStr)
-    local regexMatchIter = string.gmatch(item.Properties, doubleValuePropertyRegexStr)
+
+    bl.printIfDebug(debugEnabled, item.Properties)
+    local cleanProperties = string.gsub(item.Properties, "<.->", "")
+    bl.printIfDebug(debugEnabled, cleanProperties)
+    local regexMatchIter = string.gmatch(cleanProperties, doubleValuePropertyRegexStr)
     local lPropertyVal, rPropertyVal = regexMatchIter()
     if lPropertyVal == nil or rPropertyVal == nil then
         bl.printIfDebug(debugEnabled, "Double Value Property = (nil)")
@@ -62,6 +69,11 @@ end
 local contents_regex_str = "Contents: (%d+)/(%d+) Items"
 local function getContents_(item)
     return getItemDoubleValueProperty_(item, contents_regex_str)
+end
+
+local durability_regex_str = "Durability: (%d+)/(%d+)"
+local function getDurability_(item)
+    return getItemDoubleValueProperty_(item, durability_regex_str)
 end
 
 ---------------
@@ -203,6 +215,7 @@ local Obj = {
     getIdentificationCharges = getIdentificationCharges_,
     getItemDoubleValueProperty = getItemDoubleValueProperty_,
     getContents = getContents_,
+    getDurability = getDurability_,
     getItemWithLessSinglePropertyValue = getItemWithLessSinglePropertyValue_,
     equipItemWithLessSinglePropertyValue = equipItemWithLessSinglePropertyValue_,
     getItemWithLessUsesRemaining = getItemWithLessUsesRemaining_,
