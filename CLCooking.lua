@@ -10,7 +10,7 @@ local cll = Import('CLLib')
 
 -- Constants
 local cookingSkillStr = "Cooking"
-local fishSteakSkillThreshould = 70.0
+local fishSteakSkillThreshould = 120.0
 local RAW_FISH_GRAPHIC = 0x097A
 
 -- Cooking items by skill range
@@ -30,12 +30,13 @@ end
 
 -- User Settings
 local config = {
-	TOOL_ID = 0x097F,              -- Skillet
-	GUMP_ID = 2653346093,          -- Gump ID used by Cooking
-	MAKE_LAST_BUTTON_ID = 21,      -- "Make Last" button
+    TOOL_ID = 0x097F,              -- Skillet
+    GUMP_ID = 2653346093,          -- Gump ID used by Cooking
+    MAKE_LAST_BUTTON_ID = 21,      -- "Make Last" button
     SKILL_TO_LEVEL = cookingSkillStr,
     ITEMS = COOKING_ITEMS,
-    PREWORK_FUNCTION = preWork
+    PREWORK_FUNCTION = preWork,
+    POSTWORK_FUNCTION = nil
 }
 
 cll.craftingLoop(config)

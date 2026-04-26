@@ -18,12 +18,13 @@ local TAYLORING_ITEMS = {
 
 -- User Settings
 local config = {
-	TOOL_ID = 0x0F9D,              -- Sewing Kit
-	GUMP_ID = 2653346093,          -- Gump ID used by Tayloring
-	MAKE_LAST_BUTTON_ID = 21,      -- "Make Last" button
+    TOOL_ID = 0x0F9D,              -- Sewing Kit
+    GUMP_ID = 2653346093,          -- Gump ID used by Tayloring
+    MAKE_LAST_BUTTON_ID = 21,      -- "Make Last" button
     SKILL_TO_LEVEL = "Tailoring",
     ITEMS = TAYLORING_ITEMS,
-    PREWORK_FUNCTION = nil
+    PREWORK_FUNCTION = nil,
+    POSTWORK_FUNCTION = nil
 }
 
 cll.craftingLoop(config)

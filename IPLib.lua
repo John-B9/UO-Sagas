@@ -9,7 +9,7 @@
 
 local bl = Import('BaseLib')
 
-local debugEnabled = false
+local debugEnabled = true
 
 -----------------------------
 -- Single Value Properties --
@@ -26,6 +26,11 @@ local function getItemSingleValueProperty_(item, singleValuePropertyRegexStr)
         return nil
     end
     bl.printIfDebug(debugEnabled, "Single Value Property = (" .. propertyVal .. ")")
+    return propertyVal
+end
+
+local function getItemSingleValuePropertyNumber_(item, singleValuePropertyRegexStr)
+    local propertyVal = getItemSingleValueProperty_(item, singleValuePropertyRegexStr)
     return tonumber(propertyVal)
 end
 
@@ -33,14 +38,19 @@ end
 -- Single Value Properties (Instances) --
 -----------------------------------------
 
-local ueses_remaining_regex_str = "Uses Remaining: (%d+)"
+local uses_remaining_regex_str = "Uses Remaining: (%d+)"
 local function getUsesRemaining_(item)
-    return getItemSingleValueProperty_(item, ueses_remaining_regex_str)
+    return getItemSingleValuePropertyNumber_(item, uses_remaining_regex_str)
 end
 
 local identification_charges_regex_str = "Identification Charges: (%d+)"
 local function getIdentificationCharges_(item)
-    return getItemSingleValueProperty_(item, identification_charges_regex_str)
+    return getItemSingleValuePropertyNumber_(item, identification_charges_regex_str)
+end
+
+local material_regex_str = "Material: (%w+)"
+local function getMaterial_(item)
+    return getItemSingleValueProperty_(item, material_regex_str)
 end
 
 -----------------------------
@@ -48,7 +58,6 @@ end
 -----------------------------
 
 local function getItemDoubleValueProperty_(item, doubleValuePropertyRegexStr)
-
     bl.printIfDebug(debugEnabled, item.Properties)
     local cleanProperties = string.gsub(item.Properties, "<.->", "")
     bl.printIfDebug(debugEnabled, cleanProperties)
@@ -80,15 +89,18 @@ end
 -- Best Item --
 ---------------
 
-local function getItemWithBestPropertyValue_singleID_(itemID, propertyGetter, propertyFieldRegexStr, comparePredicate)
+local function getItemWithBestPropertyValue_singleID_(itemID, propertyGetter, propertyFieldRegexStr, comparePredicate, itemAcceptPredicate)
     local bestItem = nil
     local bestItemProperties = nil
     local items = Items.FindInContainer(Player.Backpack.Serial, itemID)
     for i, item in ipairs(items) do
-        local itemProperties = propertyGetter(item, propertyFieldRegexStr)
-        if bestItem == nil or comparePredicate(itemProperties, bestItemProperties) then
-            bestItem = item
-            bestItemProperties = itemProperties
+        bl.printIfDebug(debugEnabled, itemAcceptPredicate)
+        if itemAcceptPredicate == nil or itemAcceptPredicate(item) then
+            local itemProperties = propertyGetter(item, propertyFieldRegexStr)
+            if bestItem == nil or comparePredicate(itemProperties, bestItemProperties) then
+                bestItem = item
+                bestItemProperties = itemProperties
+            end
         end
     end
 
@@ -99,15 +111,17 @@ local function getItemWithBestPropertyValue_singleID_(itemID, propertyGetter, pr
     return bestItem
 end
 
-local function getItemWithBestPropertyValue_listOfIDs_(listItemIDs, propertyGetter, propertyFieldRegexStr, comparePredicate)
+local function getItemWithBestPropertyValue_listOfIDs_(listItemIDs, propertyGetter, propertyFieldRegexStr, comparePredicate, itemAcceptPredicate)
     local bestItemsAndProperties = {}
     for i, itemID in ipairs(listItemIDs) do
         local bestItemProperty = nil
-        local bestItem = getItemWithBestPropertyValue_singleID_(itemID, propertyGetter, propertyFieldRegexStr, comparePredicate)
+        local bestItem = getItemWithBestPropertyValue_singleID_(itemID, propertyGetter, propertyFieldRegexStr, comparePredicate, itemAcceptPredicate)
         if bestItem ~= nil then
             bestItemProperty = propertyGetter(bestItem, propertyFieldRegexStr)
+            bestItemsAndProperties[i] = { bestItem, bestItemProperty }
+        else
+            bestItemsAndProperties[i] = { nil, nil }
         end
-        bestItemsAndProperties[i] = { bestItem, bestItemProperty }
     end
     local bestBestItem = nil
     local bestBestItemProperty = nil
@@ -124,11 +138,11 @@ local function getItemWithBestPropertyValue_listOfIDs_(listItemIDs, propertyGett
     return bestBestItem
 end
 
-local function getItemWithBestPropertyValue_(itemIDOrListItemIDs, propertyGetter, propertyFieldRegexStr, comparePredicate)
+local function getItemWithBestPropertyValue_(itemIDOrListItemIDs, propertyGetter, propertyFieldRegexStr, comparePredicate, itemAcceptPredicate)
     if type(itemIDOrListItemIDs) == "number" then
-        return getItemWithBestPropertyValue_singleID_(itemIDOrListItemIDs, propertyGetter, propertyFieldRegexStr, comparePredicate)
+        return getItemWithBestPropertyValue_singleID_(itemIDOrListItemIDs, propertyGetter, propertyFieldRegexStr, comparePredicate, itemAcceptPredicate)
     else
-        return getItemWithBestPropertyValue_listOfIDs_(itemIDOrListItemIDs, propertyGetter, propertyFieldRegexStr, comparePredicate)
+        return getItemWithBestPropertyValue_listOfIDs_(itemIDOrListItemIDs, propertyGetter, propertyFieldRegexStr, comparePredicate, itemAcceptPredicate)
     end
 end
 
@@ -140,13 +154,13 @@ local function lessSinglePropertyValueComparePredicate_(lprop, rprop)
     return lprop <= rprop
 end
 
-local function getItemWithLessSinglePropertyValue_(itemID, fieldStr)
-    return getItemWithBestPropertyValue_(itemID, getItemSingleValueProperty_, fieldStr,
-        lessSinglePropertyValueComparePredicate_)
+local function getItemWithLessSinglePropertyValue_(itemID, fieldStr, itemAcceptPredicate)
+    return getItemWithBestPropertyValue_(itemID, getItemSingleValuePropertyNumber_, fieldStr,
+    lessSinglePropertyValueComparePredicate_, itemAcceptPredicate)
 end
 
-local function equipItemWithLessSinglePropertyValue_(itemID, fieldStr, itemName)
-    local itemToEquip = getItemWithLessSinglePropertyValue_(itemID, fieldStr)
+local function equipItemWithLessSinglePropertyValue_(itemID, fieldStr, itemName, itemAcceptPredicate)
+    local itemToEquip = getItemWithLessSinglePropertyValue_(itemID, fieldStr, itemAcceptPredicate)
     if itemToEquip == nil then
         Messages.Print("Missing " .. itemName .. "...", 69, Player.Serial)
         return nil
@@ -159,16 +173,16 @@ end
 -- Less Single Property Value - Instances --
 --------------------------------------------
 
-local function getItemWithLessUsesRemaining_(itemID)
-    return getItemWithLessSinglePropertyValue_(itemID, ueses_remaining_regex_str)
+local function getItemWithLessUsesRemaining_(itemID, itemAcceptPredicate)
+    return getItemWithLessSinglePropertyValue_(itemID, uses_remaining_regex_str, itemAcceptPredicate)
 end
 
-local function equipItemWithLessUsesRemaining_(itemID, itemName)
-    return equipItemWithLessSinglePropertyValue_(itemID, ueses_remaining_regex_str, itemName)
+local function equipItemWithLessUsesRemaining_(itemID, itemName, itemAcceptPredicate)
+    return equipItemWithLessSinglePropertyValue_(itemID, uses_remaining_regex_str, itemName, itemAcceptPredicate)
 end
 
-local function getItemWithLessIdentificationCharges_(itemID)
-    return getItemWithLessSinglePropertyValue_(itemID, identification_charges_regex_str)
+local function getItemWithLessIdentificationCharges_(itemID, itemAcceptPredicate)
+    return getItemWithLessSinglePropertyValue_(itemID, identification_charges_regex_str, itemAcceptPredicate)
 end
 
 --------------------------------
@@ -181,7 +195,7 @@ end
 
 local function getItemWithLessDoublePropertyFirstValue_(itemID, fieldStr)
     return getItemWithBestPropertyValue_(itemID, getItemDoubleValueProperty_, fieldStr,
-        lessPropertyFirstValueComparePredicate_)
+    lessPropertyFirstValueComparePredicate_, nil)
 end
 
 local function mostPropertyFirstValueComparePredicate_(lprops, rprops)
@@ -190,7 +204,17 @@ end
 
 local function getItemWithMostDoublePropertyFirstValue_(itemID, fieldStr)
     return getItemWithBestPropertyValue_(itemID, getItemDoubleValueProperty_, fieldStr,
-        mostPropertyFirstValueComparePredicate_)
+    mostPropertyFirstValueComparePredicate_, nil)
+end
+
+local function equipItemWithLessDoublePropertyFirstValue_(itemID, fieldStr, itemName)
+    local itemToEquip = getItemWithLessDoublePropertyFirstValue_(itemID, fieldStr)
+    if itemToEquip == nil then
+        Messages.Print("Missing " .. itemName .. "...", 69, Player.Serial)
+        return nil
+    end
+    Player.Equip(itemToEquip.Serial)
+    return itemToEquip
 end
 
 --------------------------------------------
@@ -205,12 +229,18 @@ local function getItemWithMostContent_(itemID)
     return getItemWithMostDoublePropertyFirstValue_(itemID, contents_regex_str)
 end
 
+local function equipItemWithLessDurability_(itemID, itemName)
+    return equipItemWithLessDoublePropertyFirstValue_(itemID, durability_regex_str, itemName)
+end
+
 ------------
 -- Export --
 ------------
 
 local Obj = {
     getItemSingleValueProperty = getItemSingleValueProperty_,
+    getItemSingleValuePropertyNumber = getItemSingleValuePropertyNumber_,
+    getMaterial = getMaterial_,
     getUsesRemaining = getUsesRemaining_,
     getIdentificationCharges = getIdentificationCharges_,
     getItemDoubleValueProperty = getItemDoubleValueProperty_,
@@ -224,8 +254,10 @@ local Obj = {
     getItemWithBestPropertyValue = getItemWithBestPropertyValue_,
     getItemWithLessDoublePropertyFirstValue = getItemWithLessDoublePropertyFirstValue_,
     getItemWithMostDoublePropertyFirstValue = getItemWithMostDoublePropertyFirstValue_,
+    equipItemWithLessDoublePropertyFirstValue = equipItemWithLessDoublePropertyFirstValue_,
     getItemWithLessContent = getItemWithLessContent_,
-    getItemWithMostContent = getItemWithMostContent_
+    getItemWithMostContent = getItemWithMostContent_,
+    equipItemWithLessDurability = equipItemWithLessDurability_
 }
 
 return Obj

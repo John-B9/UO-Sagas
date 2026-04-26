@@ -3,7 +3,7 @@
 -- Author: JohnB9
 --
 -- Mentions: Halesluker (stole some functions from Sagas Bot)
---           
+--
 --
 -- Description: Generic utility functions for all scripts
 ----------------------------------------------------------------------
@@ -48,16 +48,16 @@ local function findItemOnGroundPickAndDropInBackpack_(itemGraphicID, quantity)
         Messages.Print("Missing "..item.Name.." Raw Fish Steak in ground to cook!...")
         return false
     end
-    
+
     local itemName = item.Name
     Messages.Print("Picking up "..quantity.." "..itemName)
     Player.PickUp(item.Serial, quantity)
     Pause(600)
-    
+
     Messages.Print("Picking up "..quantity.." "..itemName.." into backpack...")
     Player.DropInBackpack()
     Pause(300)
-    
+
     return true
 end
 
@@ -68,7 +68,8 @@ end
 
 local function printIfDebug_(debug, stringToPrint)
     if debug then
-        Messages.Print(stringToPrint, 69, Player.Serial)
+        Console.debug(stringToPrint)
+        --Messages.Print(stringToPrint, 69, Player.Serial)
     end
 end
 

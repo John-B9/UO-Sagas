@@ -33,12 +33,13 @@ end
 
 -- User Settings
 local config = {
-	TOOL_ID = 0x1022,              -- Fletcher's Tools
-	GUMP_ID = 2653346093,          -- Gump ID used by Bowcraft and Fletching
-	MAKE_LAST_BUTTON_ID = 21,      -- "Make Last" button
+    TOOL_ID = 0x1022,              -- Fletcher's Tools
+    GUMP_ID = 2653346093,          -- Gump ID used by Bowcraft and Fletching
+    MAKE_LAST_BUTTON_ID = 21,      -- "Make Last" button
     SKILL_TO_LEVEL = bowcraftFletchingSkillStr,
     ITEMS = BOWCRAFT_FLETCHING_ITEMS,
-    PREWORK_FUNCTION = preWork
+    PREWORK_FUNCTION = preWork,
+    POSTWORK_FUNCTION = nil
 }
 
 cll.craftingLoop(config)

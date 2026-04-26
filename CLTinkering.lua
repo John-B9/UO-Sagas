@@ -18,12 +18,13 @@ local TINKER_ITEMS = {
 
 -- User Settings
 local config = {
-	TOOL_ID = 0x1EB8,              -- Tinkers Tools
-	GUMP_ID = 2653346093,          -- Gump ID used by Tinkering
-	MAKE_LAST_BUTTON_ID = 21,      -- "Make Last" button
+    TOOL_ID = 0x1EB8,              -- Tinkers Tools
+    GUMP_ID = 2653346093,          -- Gump ID used by Tinkering
+    MAKE_LAST_BUTTON_ID = 21,      -- "Make Last" button
     SKILL_TO_LEVEL = "Tinkering",
     ITEMS = TINKER_ITEMS,
-    PREWORK_FUNCTION = nil
+    PREWORK_FUNCTION = nil,
+    POSTWORK_FUNCTION = nil
 }
 
 cll.craftingLoop(config)

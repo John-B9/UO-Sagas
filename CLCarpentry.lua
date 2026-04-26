@@ -21,12 +21,13 @@ local CARPENTRY_ITEMS = {
 
 -- User Settings
 local config = {
-	TOOL_ID = 0x1034,              -- Saw
-	GUMP_ID = 2653346093,          -- Gump ID used by Carpentry
-	MAKE_LAST_BUTTON_ID = 21,      -- "Make Last" button
+    TOOL_ID = 0x1034,              -- Saw
+    GUMP_ID = 2653346093,          -- Gump ID used by Carpentry
+    MAKE_LAST_BUTTON_ID = 21,      -- "Make Last" button
     SKILL_TO_LEVEL = "Carpentry",
     ITEMS = CARPENTRY_ITEMS,
-    PREWORK_FUNCTION = nil
+    PREWORK_FUNCTION = nil,
+    POSTWORK_FUNCTION = nil
 }
 
 cll.craftingLoop(config)
