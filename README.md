@@ -1,97 +1,74 @@
 # UO-Sagas
 
-Scripts for UO Sagas by JohnB9.
+**Scripts** for **UO Sagas** by **JohnB9**.
 
-These are some of the scripts I've developed and use in the UO Sagas in-game assistant.
+This is the code base of the scripts I've developed and use in the UO Sagas in-game assistant.
 
-When I have something that is clean enough and wothy of sharing, I will add it here.
+When I have something that is clean enough and wothy of sharing, I will add it here (Enjoy!).
 
-As I want this to be modular, most of the scripts are not stand-alone, they include/depend-on other scripts. But as long as you get the full set, it will work (see Installing).
+## Features (summary)
 
-Enjoy!
+ - **CA (Combat Assistant)**: A fully automatic combat assistant (auto bandage, potions, buffs, debuffs, escape, rearm, find players, scavenge, user triggered commands and more...):
+   - [CAMainLoop](https://github.com/John-B9/UO-Sagas/blob/main/CAMainLoop.lua) (needs a config)
+   - [CARunDexer](https://github.com/John-B9/UO-Sagas/blob/main/CARunDexer.lua) (run with [CAConfigDexer](https://github.com/John-B9/UO-Sagas/blob/main/CAConfigDexer.lua), change what you want there)
+   - [CAUserTriggeredCommands](https://github.com/John-B9/UO-Sagas/blob/main/CAUserTriggeredCommands.lua) (specify commands and actions; interact with the combat assistant via "Say")
+ - **CL (Crafting Leveling)**: Repeat crafting to level up all crafting skill [[CLTinkering](https://github.com/John-B9/UO-Sagas/blob/main/CLTinkering.lua), [CLSmithing](https://github.com/John-B9/UO-Sagas/blob/main/CLSmithing.lua), ...]
+ - **IO (Item Organization)**: Generic functions (drop item in trash, and more...) [[IODropTrash](https://github.com/John-B9/UO-Sagas/blob/main/IODropTrash.lua), ...]
+ - **IP (Item Properties)**: API to access item properties, like durability and charges
+ - **IU (Item Usage)**: QOL scripts for item usage + QOL scripts focused on dexer gatherers, swaping between a gather/combat mode (_integrated with Combat Bot_):
+   - [IUIDWandRun](https://github.com/John-B9/UO-Sagas/blob/main/IUIDWandRun.lua), [IUSkinnUse](https://github.com/John-B9/UO-Sagas/blob/main/IUSkinnUse.lua), [IUScissorsUse](https://github.com/John-B9/UO-Sagas/blob/main/IUScissorsUse.lua):
+     - You choose the target, combat bot is resumed
+     - _CB triggered commands_: **"(DEXER) ID Wand"**, **"(DEXER) Skinn"**, **"(DEXER) Scissors"**
+   - [IULumberjackSwapIron](https://github.com/John-B9/UO-Sagas/blob/main/IULumberjackSwapIron.lua):
+     - Swap between hatchet/axe, run combat bot if axe equiped
+     - _CB triggered commands_: **"(DEXER) Lumberjack Swap Iron"**, **"(DEXER) Lumberjack Swap Copper"**
+   - [IUMinerSwapIron](https://github.com/John-B9/UO-Sagas/blob/main/IUMinerSwapIron.lua):
+     - Swap between pickaxe/waraxe, run combat bot if waraxe equiped
+     - _CB triggered commands_: **"(DEXER) Miner Swap Iron"**, **"(DEXER) Miner Swap Copper"**
 
-# Conduct
+See more feature details in [documentation](https://github.com/John-B9/UO-Sagas/blob/main/documentation/README.md).
 
-As being new to lua and to the UO Sagas assitant API, I've used and took inspiration from scripts from many other scripters/players.
+**NOTE:** These scripts are not stand-alone (see **Installing** and **Architecture** below), but some have a [standalone version here](https://github.com/John-B9/UO-Sagas/tree/main/standalone).
 
-In some cases, part of the code I show here could have been partialy copyed and adapted (sometimes, fully copied!). When it is the case, I leave a comment in the top of the script with a mention. So thank you to all those there (like: Halesluker, Rum Runner, Zeran, ...) and feel free to do the same.
+## Installing
 
-Then if you do use that is here for your own scripts and then publish an adaption, a mention would be nice!
-
-# Installing
-
-1) Get every .lua file here:
+1) **Get every .lua file:**
 
    Download the zip via top right "<> Code" green button
 
-   OR
+   **OR**
    
    Just git clone (if you know what that is)
 
-2) Copy every .lua file to the UO Sagas script directory, which should:
+2) **Close all clients**
+
+3) **Copy every .lua file to the UO Sagas script directory, which should:**
 
    "Your_Instalation_Path"\ClassicUO\Data\Profiles\Scripts
 
-3) Close all clients, launch again
+4) **Launch client again**
 
-4) All scripts will be available in the assistant and ready to use
+5) **All scripts will be available in the assistant and ready to use**
 
-# Scripts Descriptions
+## Architecture
 
-## Base Lib
+As I want this code-base to be modular:
 
-Functions with common util functions, and used by all scripts here
+ - Most of the scripts are not stand-alone:
+   - They include/depend-on other scripts
+   - But as long as you get the full set, it will work (see Installing)
+ - SAGAS assistant does not support directories, so scripts are organised together by a filename pre-fix
+ - Each script is strucured to have:
+   - A global config (and setters for other scripts to change the config)
+   - A static config (for constants)
+   - A state (for mutable local variables)
+   - Function names end with "\_" (but exported versions drop the "\_")
+   - All files follow this structure, which is consolidated in the [TEMPLATE](https://github.com/John-B9/UO-Sagas/blob/main/TEMPLATE.lua) file
 
-## CL (Crafting Leveling) Lib
+## Developer Conduct
 
-This all started with wanting to make a craftsman, and using the script from Rum Runner for tinkering.
+I've used and took inspiration from scripts from many other scripters/players.
 
-As I wanted to level more crafting (blacksmithing, tayloring, ...) it was clear this could be generalized and re-used.
+When I do, I leave a mention in the file header.
 
-What I did here was just that, with some additional touches
-
-### CLBowcraftFletching, CLCarpentry, CLCooking, CLSmithing, CLTayloring
-
-These are the scripts you can run, which define a list with crafting items for every skill range, maybe some pre-work (like picking up a fishsteak from the ground and putting it in the inventory), and then call the crafting loop from CLLib.
-
-NOTE: The list of items for every skill range is not complete to 120 progression, some go only to 70 (I didn't continue after Adena for some), but you can extend with what you want. All you need is to add an entry, knowing the gump button IDs (you can get those via "Start Recording" in the assistant, clicking in the buttons of what you want to craft, and putting the values in "category", "craft" and "final"). When I get to those skill levels, I'll update what I have here.
-
-## IO (Items Organization) Lib
-
-Utility functions for organizing items
-
-### IODropTrash
-
-Don't craft and leave things on the ground... That is not good for the environment!
-
-Put them into a pouch, and drop the pouch instead!
-
-## IP (Item Properties) Lib
-
-Utility functions to handle item "Properties"
-
-### Parse values from the "Properties" of an item:
-- getUsesRemaining
-- getIdentificationCharges
-- getContents
-- ...
-- getItemSingleValueProperty/getItemDoubleValueProperty (generic)
-
-### Get the item with the "best properties":
-- getItemWithLessUsesRemaining (Hatchet/Mortar&Pestel/...)
-- getItemWithLessIdentificationCharges
-- getItemWithMostContent (Container in backpack that is most full)
-- ...
-- getItemWithLessSinglePropertyValue/getItemWithLessDoublePropertyFirstValue/... (generic)
-
-## IU (Item Usage) Lib
-
-Utility functions to use items
-
-### IUIDWand
-
-Use the ID Wand in backpack with less charges, and drop it if it has zero charges.
-
-You can carry 2 ID wands so you never run out of charges.
-
-I usualy have another combat script running, I call it in the end of the script (this is commented), but you can also do that.
+**Special thanks to**: **Halesluker**, **Rum Runner**, **Zeran**, **OmgArturo**

@@ -1,13 +1,17 @@
 ----------------------------------------------------------------------
--- CL (Crafting Leveling) Carpentry
--- Author: JohnB9
---
--- Description: To level up Carpentry
+--- CL (Crafting Leveling) Carpentry
+--- Author: JohnB9
+---
+--- Description: To level up Carpentry
 ----------------------------------------------------------------------
 
 local cll = Import('CLLib')
 
--- Crafting items by skill range
+-----------------
+--- Variables ---
+-----------------
+
+--- Crafting items by skill range
 local CARPENTRY_ITEMS = {
     { name = "Barrel Staves", minSkill = 0.0, maxSkill = 10.9, category = 8, craft = 3, final = 2 },
     { name = "Barrel Lid",    minSkill = 11.0, maxSkill = 20.9, category = 8, craft = 10, final = 9 },
@@ -19,7 +23,7 @@ local CARPENTRY_ITEMS = {
     { name = "Gnarled Staff", minSkill = 78.9, maxSkill = 99.9, category = 29, craft = 17, final = 16 }
 }
 
--- User Settings
+--- User Settings
 local config = {
     TOOL_ID = 0x1034,              -- Saw
     GUMP_ID = 2653346093,          -- Gump ID used by Carpentry
@@ -29,5 +33,9 @@ local config = {
     PREWORK_FUNCTION = nil,
     POSTWORK_FUNCTION = nil
 }
+
+-----------
+--- Run ---
+-----------
 
 cll.craftingLoop(config)

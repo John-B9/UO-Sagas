@@ -1,4 +1,26 @@
+----------------------------------------------------------------------
+--- IU (Item Usage) Weapons
+--- Author: JohnB9
+---
+--- Description: Import this if you want to call its functions from
+---              another script
+--- 
+---              Utility methods for weapons:
+---               - Disarm player if weapon in hand durability is low
+----------------------------------------------------------------------
+
 local il = Import('IPLib')
+
+-----------------
+--- Variables ---
+-----------------
+
+local limit_durability = 0
+local disarm_wait_time = 1000
+
+---------------
+-- Functions --
+---------------
 
 local function disarmPlayerIfWeaponDurabilityBellowThreshould_(durabilityThreshould, disarmWaitTime)
     local disarmedPlayer = false
@@ -22,16 +44,13 @@ local function disarmPlayerIfWeaponDurabilityBellowThreshould_(durabilityThresho
     return disarmedPlayer
 end
 
-local limit_durability = 0
-local disarm_wait_time = 1000
-
 local function disarmPlayerIfWeaponDurabilityTooLow_()
     return disarmPlayerIfWeaponDurabilityBellowThreshould_(limit_durability, disarm_wait_time)
 end
 
-------------
--- Export --
-------------
+--------------
+--- Export ---
+--------------
 
 local Obj = {
     disarmPlayerIfWeaponDurabilityBellowThreshould = disarmPlayerIfWeaponDurabilityBellowThreshould_,

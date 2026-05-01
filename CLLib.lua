@@ -1,23 +1,35 @@
 ----------------------------------------------------------------------
--- CL (Crafting Leveling) Lib
--- Author: JohnB9
---
--- Mentions: Rum Runner (this lib was started from his script,
---                       as i was leveling a crafter;
---                       I then addapted it for a more general purpose,
---                       so to also level other crafting skills)
---
--- Description: A generic loop to craft items of incresing dificulty
---              so to level up the a crafting skill
---
--- Caveats: Whatever list of items you provide for crafting, it is best to have them in the 1st page of the gump, as the script won't change pages
---
+--- CL (Crafting Leveling) Lib
+--- Author: JohnB9
+---
+--- Mentions: Rum Runner (script base)
+---           
+---           I then addapted it for a more general purpose, so to
+---           also level other crafting skills
+---
+--- Version: 1.0.0  - Abstraction for general purpose
+---                 - Added PreWork and PostWork
+--- 
+--- Description: A generic loop to craft items of incresing dificulty
+---              so to level up the a crafting skill
+--- 
+---              Accepts PreWork and PostWork calbacks to execute
+---              before and after of every crafting of items
+---
+--- Caveats: Whatever list of items you provide for crafting, it is
+---          best to have them in the correct page of the gump for
+---          that item, as sript won't change pages on the right gump
+---
 ----------------------------------------------------------------------
 
 local il = Import('IPLib')
 local bl = Import('BaseLib')
 
--- Define Color Scheme
+-----------------
+--- Variables ---
+-----------------
+
+--- Define Color Scheme
 local Colors = {
     ALERT = 33,
     WARNING = 48,
@@ -27,6 +39,10 @@ local Colors = {
     INFO = 84,
     STATUS = 93
 }
+
+-----------------
+--- Functions ---
+-----------------
 
 local function getItemToCraft_(config)
     local skill = bl.getSkillValue(config.SKILL_TO_LEVEL)
@@ -40,14 +56,14 @@ local function getItemToCraft_(config)
     return itemToCraft
 end
 
--- Start Message
+--- Start Message
 local function printInitialStartUpGreeting_(config)
     Messages.Print("___________________________________", Colors.INFO)
     Messages.Print("Train Crating Assistant Script v0.2.0 ("..config.SKILL_TO_LEVEL..")", Colors.INFO)
     Messages.Print("___________________________________", Colors.INFO)
 end
 
--- Main crafting function
+--- Main crafting function
 local lastItem = nil
 local function craftItem_(config)
     local tool = il.getItemWithLessUsesRemaining(config.TOOL_ID, nil)
@@ -62,7 +78,7 @@ local function craftItem_(config)
         return false
     end
 
-    -- call pre-work function
+    --- call pre-work function
     if config.PREWORK_FUNCTION ~= nil then
         local success = config.PREWORK_FUNCTION()
             if success == false then
@@ -93,7 +109,7 @@ local function craftItem_(config)
         Pause(3000)
 
 
-        -- call post-work function
+        --- call post-work function
         if config.POSTWORK_FUNCTION ~= nil then
             local success = config.POSTWORK_FUNCTION(config)
                 if success == false then
@@ -105,7 +121,7 @@ local function craftItem_(config)
             return true
         end
 
-        -- Crafting Loop
+        --- Crafting Loop
         local function craftingLoop_(config)
             printInitialStartUpGreeting_(config)
             while true do
@@ -116,9 +132,9 @@ local function craftItem_(config)
             end
         end
 
-        ------------
-        -- Export --
-        ------------
+        --------------
+        --- Export ---
+        --------------
 
         local Obj = {
             getItemToCraft = getItemToCraft_,

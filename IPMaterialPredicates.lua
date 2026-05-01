@@ -1,5 +1,16 @@
+----------------------------------------------------------------------
+--- IP (Item Properties) Material Predicates
+--- Author: JohnB9
+---
+--- Description: Predicates for deciding material types of items
+----------------------------------------------------------------------
+
 local bl = Import('BaseLib')
 local ipl = Import('IPLib')
+
+-----------------
+--- Variables ---
+-----------------
 
 local function itemIsOfIron_(item)
     local itemMaterial = ipl.getMaterial(item)
@@ -55,9 +66,9 @@ local function itemIsOfValorite_(item)
     return false
 end
 
-------------
--- Export --
-------------
+--------------
+--- Export ---
+--------------
 
 local Obj = {
     itemIsOfIron = itemIsOfIron_,

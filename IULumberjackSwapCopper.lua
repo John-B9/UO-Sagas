@@ -1,29 +1,29 @@
 ----------------------------------------------------------------------
---- IU (Item Usage) Miner Swap Iron
+--- IU (Item Usage) Lumberjack Swap Copper
 --- Author: JohnB9
 ---
---- Description: Import this if you want to call 'minerSwap from
----              another script for a iron pickaxe
+--- Description: Import this if you want to call 'lumberjackSwap from
+---              another script for a copper hatchet
 --- 
----              Swaps between a iron pickaxe and a warhammer
+---              Swaps between a copper pickaxe and a warhammer
 ---              (considers items in hand or in inventory only)
 ---              
 ---              Chooses lowest durability items first:
 ---               - keeps your inventory clean
----               - forces to choose the same pickaxe every time
----                 you swap, untill it fully wears out from minning
----               - you would distribute the usages over all pickaxes
+---               - forces to choose the same hatchet every time
+---                 you swap, untill it fully wears out from lumberjacking
+---               - you would distribute the usages over all hatchets
 ---                 in your inventory otherwise
 --- 
 ---              Sends Combat Bot Dexer run as callback for after swap
 ----------------------------------------------------------------------
 
 local ipmp = Import('IPMaterialPredicates')
-local iums = Import('IUMinerSwap')
+local iuls = Import('IUlumberjackSwap')
 local cacd = Import('CAConfigDexer')
 
 -----------
 --- Run ---
 -----------
 
-iums.minerSwap(ipmp.itemIsOfIron, cacd.run)
+iuls.lumberjackSwap(ipmp.itemIsOfCopper, cacd.run)

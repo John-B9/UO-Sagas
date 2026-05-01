@@ -1,14 +1,18 @@
 ----------------------------------------------------------------------
--- CL (Crafting Leveling) Smithing
--- Author: JohnB9
---
--- Description: To level up Smithing
+--- CL (Crafting Leveling) Smithing
+--- Author: JohnB9
+---
+--- Description: To level up Smithing
 ----------------------------------------------------------------------
 
 local bl = Import('BaseLib')
 local cll = Import('CLLib')
 
--- Blacksmithing items by skill range
+-----------------
+--- Variables ---
+-----------------
+
+--- Blacksmithing items by skill range
 local SMITH_ITEMS = {
     { name = "Dagger",   		   minSkill = 00.0, maxSkill = 49.9, category = 36, craft = 17,  final = 16 },
     { name = "Ringmail Gloves",    minSkill = 50.0, maxSkill = 61.9, category = 1, craft = 3,  final = 2 },
@@ -19,7 +23,7 @@ local SMITH_ITEMS = {
     { name = "Plate Tunic",        minSkill = 97.0, maxSkill = 120.0, category = 15, craft = 31, final = 30, graphic_id =  5141 },
 }
 
--- Post-Work Function: smelt the crafted item back into ingots
+--- Post-Work Function: smelt the crafted item back into ingots
 local function postWork(config_)
     local smithItem = cll.getItemToCraft(config_)
     if not smithItem then
@@ -34,10 +38,10 @@ local function postWork(config_)
     end
 
     for i, item in ipairs(itemToSmelt) do
-        -- press Smelt Gump Button
+        --- press Smelt Gump Button
         Gumps.PressButton(2653346093, 14)
         Target.WaitForTarget(1000)
-        -- select crafted item
+        --- select crafted item
         Target.TargetSerial(item.Serial)
         Gumps.WaitForGump(2653346093, 1000)
         break
@@ -47,15 +51,19 @@ local function postWork(config_)
     return true
 end
 
--- User Settings
+--- User Settings
 local config = {
-    TOOL_ID = 0x13E3,              -- Smith's Hammer
-    GUMP_ID = 2653346093,          -- Gump ID used by Blacksmithing
-    MAKE_LAST_BUTTON_ID = 21,      -- "Make Last" button
+    TOOL_ID = 0x13E3,              --- Smith's Hammer
+    GUMP_ID = 2653346093,          --- Gump ID used by Blacksmithing
+    MAKE_LAST_BUTTON_ID = 21,      --- "Make Last" button
     SKILL_TO_LEVEL = "Blacksmithy",
     ITEMS = SMITH_ITEMS,
     PREWORK_FUNCTION = nil,
     POSTWORK_FUNCTION = postWork
 }
+
+-----------
+--- Run ---
+-----------
 
 cll.craftingLoop(config)

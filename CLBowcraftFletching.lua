@@ -1,19 +1,23 @@
 ----------------------------------------------------------------------
--- CL (Crafting Leveling) Bowcraft Fletching
--- Author: JohnB9
---
--- Description: To level up Bowcraft/Fletching
+--  CL (Crafting Leveling) Bowcraft Fletching
+--  Author: JohnB9
+-- 
+--  Description: To level up Bowcraft/Fletching
 ----------------------------------------------------------------------
 
 local bl = Import('BaseLib')
 local cll = Import('CLLib')
 
--- Constants
+-----------------
+--- Variables ---
+-----------------
+
+--- Constants
 local bowcraftFletchingSkillStr = "Bowcraft/Fletching"
 local shaftSkillThreshould = 35.0
 local BOARDS_GRAPHIC = 0x1BD7
 
--- Crafting items by skill range
+--- Crafting items by skill range
 local BOWCRAFT_FLETCHING_ITEMS = {
     { name = "Shaft",          minSkill = 0.0, maxSkill = shaftSkillThreshould - 0.1, category = 1, craft = 10, final = 9 },
     { name = "Bow",            minSkill = shaftSkillThreshould, maxSkill = 64.9, category = 15, craft = 3, final = 2 },
@@ -21,7 +25,7 @@ local BOWCRAFT_FLETCHING_ITEMS = {
     { name = "Heavy Crossbow", minSkill = 85.0, maxSkill = 100.0, category = 15, craft = 17, final = 16 }
 }
 
--- Pre-Work Function: pick one Board from the ground into Player Backpack
+--- Pre-Work Function: pick one Board from the ground into Player Backpack
 local function preWork()
     local bowcraftFletchingSkillLevel = bl.getSkillValue(bowcraftFletchingSkillStr)
     if bowcraftFletchingSkillLevel >= shaftSkillThreshould then
@@ -31,7 +35,7 @@ local function preWork()
     return bl.findItemOnGroundPickAndDropInBackpack(BOARDS_GRAPHIC, 1)
 end
 
--- User Settings
+--- User Settings
 local config = {
     TOOL_ID = 0x1022,              -- Fletcher's Tools
     GUMP_ID = 2653346093,          -- Gump ID used by Bowcraft and Fletching
@@ -41,5 +45,9 @@ local config = {
     PREWORK_FUNCTION = preWork,
     POSTWORK_FUNCTION = nil
 }
+
+-----------
+--- Run ---
+-----------
 
 cll.craftingLoop(config)

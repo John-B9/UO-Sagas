@@ -1,16 +1,16 @@
 ----------------------------------------------------------------------
--- Base Lib
--- Author: JohnB9
---
--- Mentions: Halesluker (stole some functions from Sagas Bot)
---
---
--- Description: Generic utility functions for all scripts
+--- Base Lib
+--- Author: JohnB9
+---
+--- Mentions: Halesluker (stole some functions from Sagas Bot)
+---
+---
+--- Description: Generic utility functions for all scripts
 ----------------------------------------------------------------------
 
----------------
--- Functions --
----------------
+-----------------
+--- Functions ---
+-----------------
 
 local function findInInventory_(itemTypeID)
 
@@ -19,7 +19,7 @@ local function findInInventory_(itemTypeID)
         return nil
     end
 
-    -- Filter out items that are not on player
+    --- Filter out items that are not on player
     for i = #items, 1, -1 do
         if items[i].RootContainer ~= Player.Serial then
             table.remove(items, i)
@@ -27,6 +27,26 @@ local function findInInventory_(itemTypeID)
     end
 
     return items
+end
+
+local function findInInventoryGetFirst_(itemTypeID)
+
+    local items = findInInventory_(itemTypeID)
+    if not items or #items == 0 then
+        Console.debug("No item found in inventory ("..itemTypeID..").")
+        return nil
+    end
+    Console.debug("Found " .. #items .. " items ("..itemTypeID..") in inventory.")
+
+    local firstItem = nil
+    for _, item in ipairs(items) do
+        if item and item.Serial then
+            firstItem = item
+            break
+        end
+    end
+
+    return firstItem
 end
 
 local function findItemOnGround_(itemGraphicID)
@@ -45,7 +65,7 @@ end
 local function findItemOnGroundPickAndDropInBackpack_(itemGraphicID, quantity)
     local item = findItemOnGround_(itemGraphicID)
     if item == nil then
-        Messages.Print("Missing "..item.Name.." Raw Fish Steak in ground to cook!...")
+        Messages.Print("Found no item...")
         return false
     end
 
@@ -69,20 +89,26 @@ end
 local function printIfDebug_(debug, stringToPrint)
     if debug then
         Console.debug(stringToPrint)
-        --Messages.Print(stringToPrint, 69, Player.Serial)
+        ---Messages.Print(stringToPrint, 69, Player.Serial)
     end
 end
 
-------------
--- Export --
-------------
+local function getHpPercentage_()
+    return (Player.Hits / Player.HitsMax) * 100
+end
+
+--------------
+--- Export ---
+--------------
 
 local Obj = {
     findInInventory = findInInventory_,
+    findInInventoryGetFirst = findInInventoryGetFirst_,
     getSkillValue = getSkillValue_,
     printIfDebug = printIfDebug_,
     findItemOnGround = findItemOnGround_,
-    findItemOnGroundPickAndDropInBackpack = findItemOnGroundPickAndDropInBackpack_
+    findItemOnGroundPickAndDropInBackpack = findItemOnGroundPickAndDropInBackpack_,
+    getHpPercentage = getHpPercentage_
 }
 
 return Obj
