@@ -55,17 +55,10 @@ local iuidw = Import('IUIDWand')
 -----------------
 
 UserTriggeredCommandsConfig = {
-    Enable = false, --- 
-    CommandStringPrefix = "" --- 
-    --Password = "" --- For security: so others can't interract with your combat bot!
-                  --- Set and never share it
-}
-
-local UserTriggeredCommandsStaticConfig = {
-    ---CommandDoneString = "Command Finished"
-}
-
-local UserTriggeredCommandsState = {
+    Enable = false,
+    CommandStringPrefix = ""    --- The Log Prefix that commands are expecting as comming from you
+    --Password = ""             --- For security: so others can't interract with your combat bot!
+                                --- Set and never share it
 }
 
 -----------------

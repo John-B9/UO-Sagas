@@ -2,9 +2,9 @@
 --- Combat Assistant (CA) Scavenge
 --- Author: JohnB9
 ---
---- Mentions: Halesluker  - Base script
+--- Mentions: OmgArturo  - Base script
 ---
---- Version: 1.0.0  - Module separation of Base script
+--- Version: 1.0.0  - Base Implementation
 ---
 --- Description: Scavenge functions
 ----------------------------------------------------------------------
@@ -55,6 +55,163 @@ end
 --- Functions ---
 -----------------
 
+local CORPSE_GRAPHIC = 0x2006
+local ACTION_DELAY = 800
+local corpseFilter = {
+    graphics = {CORPSE_GRAPHIC},
+    onground = true,
+    rangemin = 0,
+    rangemax = 2
+}
+local processedCorpses = {}
+local graphicIdLootableSet = {}
+local graphicIdToPriority = {}
+local fatAlertReadyMs = 0
+
+function tableContains_(tbl, val)
+    for _, value in ipairs(tbl) do
+        if value == val then
+            return true
+        end
+    end
+    return false
+end
+
+function HasProcessedCorpse_(serial)
+    return processedCorpses[serial] == true
+end
+
+function MarkCorpseProcessed_(serial)
+    processedCorpses[serial] = true
+end
+
+function extractWeight_(item)
+    -- Pattern explanation:
+    -- .*- matches any character (including newlines due to how Lua handles this in patterns) zero or more times, as few as possible.
+    -- (?:...) - this is a general regex concept, but not directly supported in standard Lua patterns.
+    -- The approach below uses Lua's native patterns and capture groups.
+
+    -- Attempt to match "Weight: " followed by 1-3 digits.
+    -- 'Weight:%s*(%d%d?%d?)'
+    -- %s* matches zero or more whitespace characters.
+    -- (%d%d?%d?) captures 1, 2, or 3 digits.
+    local weight_str = string.match(item.Properties, "Weight:%s*(%d%d?%d?) Stone")
+
+    if weight_str then
+        return tonumber(weight_str) -- Convert the captured string to a number
+    else
+        -- If the "Weight: " pattern isn't found, you might want to return nil or a default value
+        -- depending on your specific needs when it's missing entirely.
+        -- In this case, it returns nil, so you can handle it.
+        return nil
+    end
+end
+
+function WordCheckMultiple_(str1, keywordString)
+    local lowerStr = string.lower(str1)
+    for word in string.gmatch(keywordString, "%S+") do
+        local lowerWord = string.lower(word)
+        if not string.find(lowerStr, lowerWord, 1, true) then
+            return false
+        end
+    end
+    return true
+end
+
+function GetSortedItemList_()
+    local seriableIdLootPriorityList = {}
+    local itemList = Items.FindByFilter({onground=false})
+    for index, item in ipairs(itemList) do
+        if item.RootContainer == Player.Serial then
+            goto continue
+        end
+
+        if item.RootContainer == Player.Backpack.Serial then
+            goto continue
+        end
+
+        --        if item.RootContainer == lootbag.Serial then
+        --            goto continue
+        --        end
+
+        local container = Items.FindBySerial(item.Container)
+
+        if container == nil or container.Name == nil or string.find(container.Name:lower(), "corpse") == nil or container.Distance > 2 then
+            goto continue
+        end
+
+        if item.Distance == nil or (item.Distance > 2 and item.Distance < 16) then
+            goto continue
+        end
+
+        if not graphicIdLootableSet[item.Graphic] then
+            goto continue
+        end
+
+        if item.IsLootable == false then
+            goto continue
+        end
+
+        if item.Name == nil then
+            goto continue
+        end
+
+        if item.Properties == nil then
+            goto continue
+        end
+
+        local isLockedDown = WordCheckMultiple_(item.Properties, "Locked Down")
+        if isLockedDown == true then
+            goto continue
+        end
+
+        local weight = extractWeight_(item)
+        if weight ~= nil and weight + Player.Weight > Player.MaxWeight then
+            --if not Cooldown("FatAlert") then
+            if os.time() * 1000 > fatAlertReadyMs then
+                --Messages.Overhead("too fat, big heavy .. no pick up " .. item.Name .. " (" .. tostring(weight) .. " stones)", 47, Player.Serial)
+                Messages.OverheadMobile(Player.Serial, "too fat, big heavy .. no pick up " .. item.Name .. " (" .. tostring(weight) .. " stones)", 47)
+                --Cooldown("FatAlert", 5000)
+                fatAlertReadyMs = (os.time() * 1000) + 5000
+            end
+            goto continue
+        end
+
+        --Messages.Print("Found item " .. item.Name .. " in root container " .. item.RootContainer)
+
+        table.insert(seriableIdLootPriorityList, item)
+        ::continue::
+    end
+
+    table.sort(seriableIdLootPriorityList, function(a, b)
+        local priorityA = graphicIdToPriority[a.Graphic] or math.huge
+        local priorityB = graphicIdToPriority[b.Graphic] or math.huge
+        if priorityA == priorityB then
+            return (a.Name or "") < (b.Name or "")
+        end
+        return priorityA < priorityB
+    end)
+
+    return seriableIdLootPriorityList
+end
+
+function AutoLoot_()
+
+    for i, graphic in ipairs(ScavengeConfig.Items) do
+        graphicIdLootableSet[graphic] = true
+        graphicIdToPriority[graphic] = i
+    end
+
+    local sortedItemList = GetSortedItemList_()
+    if #sortedItemList > 0 then
+        for _, item in ipairs(sortedItemList) do
+            Player.PickUp(sortedItemList[1].Serial, sortedItemList[1].Amount)
+            Player.DropInBackpack()
+            Pause(ACTION_DELAY)
+        end
+    end
+end
+
 local function scavenge_()
 
     if not ScavengeConfig.Enable then
@@ -67,31 +224,18 @@ local function scavenge_()
         cal.debug("Scavenging is not ready yet, skipping this tick.")
         return
     end
-
-    cal.debug("Trying to scavenge...")
-
     ScavengeState.lastTickTime = currentTickTime
 
-    local filter = { onground = true, rangemax = 2, graphics = ScavengeConfig.items }
-    local list = Items.FindByFilter(filter)
+    cal.debug("Scavenging...")
+    local corpses = Items.FindByFilter(corpseFilter)
+    for _, corpse in ipairs(corpses) do
+        ---if not HasProcessedCorpse_(corpse.Serial) then
+            --- Auto Loot
+            AutoLoot_()
 
-    for _, item in ipairs(list) do
-        if not Player.PickUp(item.Serial, 1000) then
-            cal.debug("Scavenging failed to pick up item: " .. (item.Name or "No Item Name"))
-            goto continue
-        end
-
-        Pause(250)
-
-        if not Player.DropInBackpack() then
-            cal.debug("Scavenging failed to drop item in backpack: " .. (item.Name or "No Item Name"))
-            goto continue
-        end
-
-        cal.debug("Scavenged item: " .. (item.Name or "No Item Name"))
-        Pause(250)
-
-        ::continue::
+            --- Mark corpse processed so it never repeats
+        ---    MarkCorpseProcessed_(corpse.Serial)
+        ---end
     end
 end
 

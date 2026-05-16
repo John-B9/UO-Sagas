@@ -12,6 +12,30 @@
 --- Functions ---
 -----------------
 
+local function deepCopy_(orig)
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in next, orig, nil do
+            copy[deepCopy_(orig_key)] = deepCopy_(orig_value)
+        end
+        setmetatable(copy, deepCopy_(getmetatable(orig)))
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
+end
+
+local function stringContainsAnySubString_(str, subStr)
+    for i = 1, #subStr do
+        if subStr[i] == str then
+            return true
+        end
+    end
+    return false
+end
+
 local function findInInventory_(itemTypeID)
 
     local items = Items.FindByFilter({ graphics = itemTypeID, onground = false })
@@ -102,6 +126,8 @@ end
 --------------
 
 local Obj = {
+    deepCopy = deepCopy_,
+    stringContainsAnySubString = stringContainsAnySubString_,
     findInInventory = findInInventory_,
     findInInventoryGetFirst = findInInventoryGetFirst_,
     getSkillValue = getSkillValue_,

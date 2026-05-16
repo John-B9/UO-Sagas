@@ -11,6 +11,7 @@ When I have something that is clean enough and wothy of sharing, I will add it h
  - **CA (Combat Assistant)**: A fully automatic combat assistant (auto bandage, potions, buffs, debuffs, escape, rearm, find players, scavenge, user triggered commands and more...):
    - [CAMainLoop](https://github.com/John-B9/UO-Sagas/blob/main/CAMainLoop.lua) (needs a config)
    - [CARunDexer](https://github.com/John-B9/UO-Sagas/blob/main/CARunDexer.lua) (run with [CAConfigDexer](https://github.com/John-B9/UO-Sagas/blob/main/CAConfigDexer.lua), change what you want there)
+   - [CARunDexerUIGump](https://github.com/John-B9/UO-Sagas/blob/main/CARunDexerUIGump.lua) (UI Gump: start/stop, enable/disable buffs and commands)
    - [CAUserTriggeredCommands](https://github.com/John-B9/UO-Sagas/blob/main/CAUserTriggeredCommands.lua) (specify commands and actions; interact with the combat assistant via "Say")
  - **CL (Crafting Leveling)**: Repeat crafting to level up all crafting skill [[CLTinkering](https://github.com/John-B9/UO-Sagas/blob/main/CLTinkering.lua), [CLSmithing](https://github.com/John-B9/UO-Sagas/blob/main/CLSmithing.lua), ...]
  - **IO (Item Organization)**: Generic functions (drop item in trash, and more...) [[IODropTrash](https://github.com/John-B9/UO-Sagas/blob/main/IODropTrash.lua), ...]

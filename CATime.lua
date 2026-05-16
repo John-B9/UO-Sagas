@@ -14,11 +14,11 @@
 -----------------
 
 TimeConfig = {
-    ActionWaitTime = 1000, -- in milliseconds, how long to wait for actions like using items, targeting etc.
+    ActionWaitTime = 1000 -- in milliseconds, how long to wait for actions like using items, targeting etc.
 }
 
 TimeState = {
-    currentTickTime = math.floor(os.time() * 1000),
+    currentTickTime = math.floor(os.time() * 1000)
 }
 
 --------------

@@ -33,6 +33,10 @@ local NightsightPotionsState = {
 --- Setters ---
 ---------------
 
+local function getEnable_()
+    return NightsightPotionsConfig.Enable
+end
+
 local function setEnable_(val)
     NightsightPotionsConfig.Enable = val
 end
@@ -67,7 +71,7 @@ local function nightsight_(forced)
     if potionDrinkState == DrinkAtemptResult.DRINK_ATTEMPTED_BUT_FAILED then
         cal.error("Must already have the nightsight buff...")
         cal.error("We have no way to check when to reapply unless by drinking continuously (which makes no sense)")
-        cal.error("We'll disable the auto nightsight buff... Just relaunch the combat bot once the current night sight expires")
+        cal.error("We'll disable the auto nightsight buff... Just relaunch the Combat Assistant once the current night sight expires")
         cal.debug("Already under nightsight effect, disabling auto-buff")
         setEnable_(false)
     end
@@ -79,6 +83,7 @@ end
 --------------
 
 local Obj = {
+    getEnable = getEnable_,
     setEnable = setEnable_,
     setConfig = setConfig_,
     nightsight = nightsight_

@@ -22,21 +22,14 @@ local cadbuf = Import('CADebuffs')
 local cadp = Import('CADetectPlayers')
 local cas = Import('CAScavenge')
 local cautc = Import('CAUserTriggeredCommands')
+local caa = Import('CAAttack')
 
 -----------------
 --- Variables ---
 -----------------
 
-local MainLoopConfig = {
-    EnableCancel = false
-}
-
 local MainLoopState = {
     lastJournalTickTime = 0
-}
-
-local CancelConfig = {
-    Command = "I Yeld!", -- The command to say, make it unique to you
 }
 
 ---------------------------
@@ -53,10 +46,10 @@ local function configureModules_(config)
     cadbuf.setConfig(config.modules.Debuffs)
     cadp.setConfig(config.modules.DetectPlayers)
     cas.setConfig(config.modules.Scavenging)
+    caa.setConfig(config.modules.Attack)
 end
 
 local function configure_(config)
-    MainLoopConfig.EnableCancel = config.EnableCancel
     cat.setActionWaitTime(config.time.ActionWaitTime)
     cal.setConfig(config.debug)
     configureModules_(config)
@@ -66,11 +59,6 @@ end
 -----------------
 --- Functions ---
 -----------------
-
-local function cancel_()
-
-    return Journal.Contains(CancelConfig.Command)
-end
 
 local function journalDependantActions_()
     caad.disarmPlayerIfWeaponDurabilityIsLow()
@@ -89,9 +77,10 @@ local function journalIndependantActions_()
     caad.disarmed()
     cas.scavenge()
     cae.moongate()
+    caa.attack()
 end
 
-local function mainLoop_(config)
+local function mainLoopInit_(config)
 
     --- Configure and Greet
     configure_(config)
@@ -100,39 +89,38 @@ local function mainLoop_(config)
 
     --- Start with a clean journal
     Journal.Clear()
+end
 
+local function mainLoopIterate_(config)
+
+    local newTickTime = cat.updateCurrentTickTime()
+    cal.debug("Main tick loop start")
+
+    if Player.IsDead then
+        cal.debug("Player is dead, skipping main loop.")
+        goto main_loop_iteration_end
+    end
+
+    cal.debug("Before journal tick.")
+    if cat.exceedsDuration(MainLoopState.lastJournalTickTime, newTickTime, config.time.JournalTick) then
+        cal.debug("Journal tick time exceeded, processing journal...")
+        journalDependantActions_()                                          --- Journal dependent functions
+        MainLoopState.lastJournalTickTime = newTickTime
+    end
+
+    journalIndependantActions_()        --- Journal independent functions
+    cautc.processUserCommands()         --- Handle user commands (right before Journal Clear)
+    cal.debug("Main tick loop end")
+
+    :: main_loop_iteration_end ::
+    Journal.Clear()                     --- Clear Journal
+    Pause(config.time.MainLoopTick)     --- Wait before next iteration
+end
+
+local function mainLoop_(config)
+    mainLoopInit_(config)                   --- Init main loop
     while true do
-    
-        local newTickTime = cat.updateCurrentTickTime()
-        cal.debug("Main tick loop start")
-
-        if Player.IsDead then
-            cal.debug("Player is dead, skipping main loop.")
-            goto mainloopend
-        end
-
-        --- Journal dependent functions
-        cal.debug("Before journal tick.")
-        if cat.exceedsDuration(MainLoopState.lastJournalTickTime, newTickTime, config.time.JournalTick) then
-
-            cal.debug("Journal tick time exceeded, processing journal...")
-
-            --- Journal dependent functions
-            journalDependantActions_()
-
-            MainLoopState.lastJournalTickTime = newTickTime
-        end
-
-        --- Journal independent functions
-        journalIndependantActions_()
-
-        --- Handle user commands (right before Journal Clear)
-        cautc.processUserCommands()
-
-        cal.debug("Main tick loop end")
-        :: mainloopend ::
-        Journal.Clear()
-        Pause(config.time.MainLoopTick)
+        mainLoopIterate_(config)            --- Iterate main loop
     end
 end
 
@@ -141,6 +129,9 @@ end
 --------------
 
 local Obj = {
+    configure = configure_,
+    mainLoopInit = mainLoopInit_,
+    mainLoopIterate = mainLoopIterate_,
     mainLoop = mainLoop_
 }
 

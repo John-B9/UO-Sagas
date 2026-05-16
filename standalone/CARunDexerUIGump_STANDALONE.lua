@@ -1,11 +1,12 @@
 ----------------------------------------------------------------------
---- Combat Assistant (CA) Run Dexer
+--- Combat Assistant (CA) Run Dexer User Interface Gump
 --- Author: JohnB9
 ---
---- Version: 1.0.0  - Run Combat Bot with Dexer Config
+--- Version: 1.0.0  - Run Combat Bot User Interface with Dexer Config
+---                   base configuration
 ---
---- Description: Running this script will run Combat Bot with a Dexer
----              main loop configuration
+--- Description: Running this script will run Combat Bot User Interface
+---              starting with a Dexer main loop configuration
 ----------------------------------------------------------------------
 
 -----------
@@ -1497,6 +1498,10 @@ CAPotionsNightsight_NightsightPotionsState = {
     lastDrinkTime = nil
 }
 
+function CAPotionsNightsight_getEnable()
+    return NightsightPotionsConfig.Enable
+end
+
 function CAPotionsNightsight_setEnable(val)
     NightsightPotionsConfig.Enable = val
 end
@@ -2632,13 +2637,6 @@ function CAMainLoop_mainLoopIterate(config)
     Pause(config.time.MainLoopTick)
 end
 
-function CAMainLoop_mainLoop(config)
-    CAMainLoop_mainLoopInit(config)
-    while true do
-        CAMainLoop_mainLoopIterate(config)
-    end
-end
-
 CARunUIGump_RunUIGumpState = {
     IterateCAMainLoop = false,
     OverrideWithNoBuffs = false,
@@ -2647,10 +2645,17 @@ CARunUIGump_RunUIGumpState = {
     OverrideWithNoScavenger = true,
 }
 
+CARunUIGump_window = nil
+CARunUIGump_titleLabel = nil
+CARunUIGump_runButton = nil
 CARunUIGump_runStatusLabel = nil
+CARunUIGump_activateBuffsButton = nil
 CARunUIGump_buffsStatusLabel = nil
+CARunUIGump_activateCommandsButton = nil
 CARunUIGump_commandsStatusLabel = nil
+CARunUIGump_activateAttacksButton = nil
 CARunUIGump_attackStatusLabel = nil
+CARunUIGump_activateScavengerButton = nil
 CARunUIGump_scavengerStatusLabel = nil
 
 function onRunCombatAssistantButtonPressed_(isChecked)
@@ -2710,6 +2715,124 @@ function onScavengerButtonPressed_(isChecked)
     else
         CARunUIGump_scavengerStatusLabel:SetText('Disabled')
         CARunUIGump_scavengerStatusLabel:SetColor(1, 0, 0, 1)
+    end
+end
+
+function CARunUIGump_processUIGumpInteractions()
+
+    if CARunUIGump_runButton:WasClicked() then
+        onRunCombatAssistantButtonPressed_(not CARunUIGump_RunUIGumpState.IterateCAMainLoop)
+    end
+
+    if CARunUIGump_activateBuffsButton:WasClicked() then
+        onOverrideWithNoBuffsButtonPressed_(CARunUIGump_RunUIGumpState.OverrideWithNoBuffs)
+    end
+
+    if CARunUIGump_activateCommandsButton:WasClicked() then
+        onOverrideWithNoCommandsButtonPressed_(CARunUIGump_RunUIGumpState.OverrideWithNoCommands)
+    end
+
+    if CARunUIGump_activateAttacksButton:WasClicked() then
+        onAttackButtonPressed_(CARunUIGump_RunUIGumpState.OverrideWithNoAttacks)
+    end
+
+    if CARunUIGump_activateScavengerButton:WasClicked() then
+        onScavengerButtonPressed_(CARunUIGump_RunUIGumpState.OverrideWithNoScavenger)
+    end
+end
+
+function CARunUIGump_updateCombatAssistantConfig(CAConfig)
+
+    CAConfig.modules.Buffs.Enable = not CARunUIGump_RunUIGumpState.OverrideWithNoBuffs
+    CAConfig.userCommands.Enable = not CARunUIGump_RunUIGumpState.OverrideWithNoCommands
+    CAConfig.modules.Attack.Enable = not CARunUIGump_RunUIGumpState.OverrideWithNoAttacks
+    CAConfig.modules.Scavenging.Enable = not CARunUIGump_RunUIGumpState.OverrideWithNoScavenger
+
+    CAConfig.modules.Buffs.Nightsight.Enable = CAPotionsNightsight_getEnable()
+
+    CAMainLoop_configure(CAConfig)
+
+    CALog_debug(''
+        ..'Updating Combat Assistant Config:'
+        ..'\n - Buffs Enabled: '..tostring(CAConfig.modules.Buffs.Enable)
+        ..'\n - User Commands Enabled: '..tostring(CAConfig.userCommands.Enable)
+        ..'\n - Attack Enabled: '..tostring(CAConfig.modules.Attack.Enable)
+        ..'\n - Scavenging Enabled: '..tostring(CAConfig.modules.Scavenging.Enable)
+    )
+end
+
+function CARunUIGump_initMainGump()
+
+    CALog_debug('Initializing main gump...')
+    CARunUIGump_window = UI.CreateWindow('controlPanel', 'SAGAS Combat Assistant')
+    if not CARunUIGump_window then
+        CALog_debug('Failed to create main gump!')
+        return
+    end
+
+    CALog_debug('Initializing Main Window...')
+    CARunUIGump_window:SetPosition(200, 200)
+    CARunUIGump_window:SetSize(220, 320)
+
+    CARunUIGump_titleLabel = CARunUIGump_window:AddLabel(10, 40, 'SAGAS Combat Assistant')
+    CARunUIGump_titleLabel:SetColor(0.2, 0.8, 1, 1)
+
+    CALog_debug('Initializing Run Checkbox...')
+    CARunUIGump_runButton = CARunUIGump_window:AddButton(10, 70, 'Run', 80, 30)
+    CARunUIGump_runStatusLabel = CARunUIGump_window:AddLabel(140, 78, 'Stopped')
+    CARunUIGump_runStatusLabel:SetColor(1, 0, 0, 1)
+
+    CALog_debug('Initializing Buffs Checkbox...')
+    CARunUIGump_activateBuffsButton = CARunUIGump_window:AddButton(10, 120, 'Buffs', 100, 30)
+    CARunUIGump_buffsStatusLabel = CARunUIGump_window:AddLabel(140, 128, 'Enabled')
+    CARunUIGump_buffsStatusLabel:SetColor(0, 1, 0, 1)
+
+    CALog_debug('Initializing Commands Checkbox...')
+    CARunUIGump_activateCommandsButton = CARunUIGump_window:AddButton(10, 170, 'Commands', 100, 30)
+    CARunUIGump_commandsStatusLabel = CARunUIGump_window:AddLabel(140, 178, 'Enabled')
+    CARunUIGump_commandsStatusLabel:SetColor(0, 1, 0, 1)
+
+    CALog_debug('Initializing Attack Checkbox...')
+    CARunUIGump_activateAttacksButton = CARunUIGump_window:AddButton(10, 220, 'Attack', 100, 30)
+    CARunUIGump_attackStatusLabel = CARunUIGump_window:AddLabel(140, 228, 'Disabled')
+    CARunUIGump_attackStatusLabel:SetColor(1, 0, 0, 1)
+
+    CALog_debug('Initializing Scavenger Checkbox...')
+    CARunUIGump_activateScavengerButton = CARunUIGump_window:AddButton(10, 270, 'Scavenge', 100, 30)
+    CARunUIGump_scavengerStatusLabel = CARunUIGump_window:AddLabel(140, 278, 'Disabled')
+    CARunUIGump_scavengerStatusLabel:SetColor(1, 0, 0, 1)
+
+    CALog_debug("Window created and ready!")
+end
+
+function CARunUIGump_runGump(CAConfig)
+
+    CALog_debug('Starting Combat Assistant Iteration!')
+    UI.DestroyAllWindows()
+    CARunUIGump_initMainGump()
+    CAMainLoop_mainLoopInit(CAConfig)
+    while true do
+
+        CARunUIGump_processUIGumpInteractions()
+        CARunUIGump_updateCombatAssistantConfig(CAConfig)
+
+        if CARunUIGump_RunUIGumpState.IterateCAMainLoop then
+
+            CALog_debug('Starting Combat Assistant Iteration!')
+            CARunUIGump_runStatusLabel:SetText('Running...')
+            CARunUIGump_runStatusLabel:SetColor(1, 0.5, 0, 1)
+
+            CAMainLoop_mainLoopIterate(CAConfig)
+
+            CALog_debug('Combat Assistant Iteration Done!')
+            CARunUIGump_runStatusLabel:SetText('Running...')
+            CARunUIGump_runStatusLabel:SetColor(0, 1, 0, 1)
+
+        else
+            CALog_debug('Combat Assistant Disabled!')
+        end
+
+        Pause(50)
     end
 end
 
@@ -2807,11 +2930,11 @@ DexerMainLoopConfig = {
     }
 }
 
-function CAConfigDexer_run()
-    CAMainLoop_mainLoop(DexerMainLoopConfig)
+function CAConfigDexer_runUiGump()
+    CARunUIGump_runGump(DexerMainLoopConfig)
 end
 
 -- End of: CAConfigDexer
 -- ========================================
 
-CAConfigDexer_run()
+CAConfigDexer_runUiGump()
