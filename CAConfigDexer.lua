@@ -97,7 +97,10 @@ local DexerMainLoopConfig = {
             Items = {           --- List of items to scavenge
                 0x0F3F,
                 0x1BFB
-            }
+            },
+            DisallowGold = false,       --- Disallow scavenging gold (should it already be on the list above)
+            DisallowBones = false,      --- Disallow scavenging bones (should it already be on the list above)
+            DisallowGrimoire = false    --- Disallow scavenging grimoires (should it already be on the list above)
         },
         Attack = {
             Enable = false,             --- Attacks nearby enemies automatically

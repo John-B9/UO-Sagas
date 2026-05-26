@@ -1970,7 +1970,10 @@ ScavengeConfig = {
     Items = {
         0x0F3F,
         0x1BFB
-    }
+    },
+    DisallowGold = false,
+    DisallowBones = false,
+    DisallowGrimoire = false
 }
 
 CAScavenge_ScavengeState = {
@@ -1989,24 +1992,50 @@ function CAScavenge_setItems(val)
     ScavengeConfig.Items = val
 end
 
+CAScavenge_graphicIdLootableSet = {}
+CAScavenge_graphicIdToPriority = {}
+
 function CAScavenge_setConfig(config)
     CAScavenge_setEnable(config.Enable)
     CAScavenge_setFrequency(config.Frequency)
     CAScavenge_setItems(config.Items)
+    ScavengeConfig.DisallowGold = config.DisallowGold
+    ScavengeConfig.DisallowBones = config.DisallowBones
+    ScavengeConfig.DisallowGrimoire = config.DisallowGrimoire
+
+    CAScavenge_graphicIdLootableSet = {}
+    CAScavenge_graphicIdToPriority = {}
+    for i, graphic in ipairs(ScavengeConfig.Items) do
+
+        if graphic == 0x0EED and ScavengeConfig.DisallowGold then
+            goto continue
+        end
+
+        if graphic == 0x0F7E and ScavengeConfig.DisallowBones then
+            goto continue
+        end
+
+        if graphic == 0x2D9D and ScavengeConfig.DisallowGrimoire then
+            goto continue
+        end
+
+        CAScavenge_graphicIdLootableSet[graphic] = true
+        CAScavenge_graphicIdToPriority[graphic] = i
+
+        ::continue::
+    end
+
 end
 
-CAScavenge_CORPSE_GRAPHIC = 0x2006
-CAScavenge_ACTION_DELAY = 800
-CAScavenge_corpseFilter = {
-    graphics = {CAScavenge_CORPSE_GRAPHIC},
+CORPSE_GRAPHIC = 0x2006
+ACTION_DELAY = 800
+corpseFilter = {
+    graphics = {CORPSE_GRAPHIC},
     onground = true,
     rangemin = 0,
     rangemax = 2
 }
-CAScavenge_processedCorpses = {}
-CAScavenge_graphicIdLootableSet = {}
-CAScavenge_graphicIdToPriority = {}
-CAScavenge_fatAlertReadyMs = 0
+fatAlertReadyMs = 0
 
 function tableContains_(tbl, val)
     for _, value in ipairs(tbl) do
@@ -2017,12 +2046,14 @@ function tableContains_(tbl, val)
     return false
 end
 
+processedCorpses = {}
+
 function HasProcessedCorpse_(serial)
-    return CAScavenge_processedCorpses[serial] == true
+    return processedCorpses[serial] == true
 end
 
 function MarkCorpseProcessed_(serial)
-    CAScavenge_processedCorpses[serial] = true
+    processedCorpses[serial] = true
 end
 
 function extractWeight_(item)
@@ -2094,11 +2125,11 @@ function GetSortedItemList_()
         weight = extractWeight_(item)
         if weight ~= nil and weight + Player.Weight > Player.MaxWeight then
 
-            if os.time() * 1000 > CAScavenge_fatAlertReadyMs then
+            if os.time() * 1000 > fatAlertReadyMs then
 
                 Messages.OverheadMobile(Player.Serial, "too fat, big heavy .. no pick up " .. item.Name .. " (" .. tostring(weight) .. " stones)", 47)
 
-                CAScavenge_fatAlertReadyMs = (os.time() * 1000) + 5000
+                fatAlertReadyMs = (os.time() * 1000) + 5000
             end
             goto continue
         end
@@ -2120,18 +2151,12 @@ function GetSortedItemList_()
 end
 
 function AutoLoot_()
-
-    for i, graphic in ipairs(ScavengeConfig.Items) do
-        CAScavenge_graphicIdLootableSet[graphic] = true
-        CAScavenge_graphicIdToPriority[graphic] = i
-    end
-
-    sortedItemList = GetSortedItemList_()
+    local sortedItemList = GetSortedItemList_()
     if #sortedItemList > 0 then
         for _, item in ipairs(sortedItemList) do
             Player.PickUp(sortedItemList[1].Serial, sortedItemList[1].Amount)
             Player.DropInBackpack()
-            Pause(CAScavenge_ACTION_DELAY)
+            Pause(ACTION_DELAY)
         end
     end
 end
@@ -2151,12 +2176,17 @@ function CAScavenge_scavenge()
     CAScavenge_ScavengeState.lastTickTime = currentTickTime
 
     CALog_debug("Scavenging...")
-    corpses = Items.FindByFilter(CAScavenge_corpseFilter)
+    processedCorpses = {}
+    corpses = Items.FindByFilter(corpseFilter)
     for _, corpse in ipairs(corpses) do
+        if not HasProcessedCorpse_(corpse.Serial) then
 
             AutoLoot_()
 
+            MarkCorpseProcessed_(corpse.Serial)
+        end
     end
+
 end
 
 function IPMaterialPredicates_itemIsOfIron(item)
@@ -2643,9 +2673,13 @@ CARunUIGump_RunUIGumpState = {
     OverrideWithNoCommands = false,
     OverrideWithNoAttacks = true,
     OverrideWithNoScavenger = true,
+    ScavengerConfigOpen = true,
+    ScavengerAllowGold = true,
+    ScavengerAllowBones = true,
+    ScavengerAllowGrimoire = true
 }
 
-CARunUIGump_window = nil
+CARunUIGump_mainWindow = nil
 CARunUIGump_titleLabel = nil
 CARunUIGump_runButton = nil
 CARunUIGump_runStatusLabel = nil
@@ -2657,11 +2691,17 @@ CARunUIGump_activateAttacksButton = nil
 CARunUIGump_attackStatusLabel = nil
 CARunUIGump_activateScavengerButton = nil
 CARunUIGump_scavengerStatusLabel = nil
+CARunUIGump_scavengerConfigButton = nil
+
+CARunUIGump_scavengerConfigWindow = nil
+CARunUIGump_activateScavengerGoldButton = nil
+CARunUIGump_activateScavengerBonesButton = nil
+CARunUIGump_activateScavengerGrimoireButton = nil
 
 function onRunCombatAssistantButtonPressed_(isChecked)
     CALog_debug('Run checkbox changed: '..tostring(isChecked))
     CARunUIGump_RunUIGumpState.IterateCAMainLoop = isChecked
-     if isChecked then
+    if isChecked then
         CARunUIGump_runStatusLabel:SetText('Running')
         CARunUIGump_runStatusLabel:SetColor(0, 1, 0, 1)
     else
@@ -2718,6 +2758,48 @@ function onScavengerButtonPressed_(isChecked)
     end
 end
 
+function onScavengerConfigButtonPressed_(isChecked)
+    CALog_debug('Scavenger config checkbox changed: '..tostring(isChecked))
+    CARunUIGump_RunUIGumpState.ScavengerConfigOpen = isChecked
+    if isChecked then
+        CARunUIGump_scavengerConfigButton:SetText('+')
+        CARunUIGump_scavengerConfigWindow:Hide()
+    else
+        CARunUIGump_scavengerConfigButton:SetText('-')
+        CARunUIGump_scavengerConfigWindow:Show()
+    end
+end
+
+function onScavengerGoldButtonPressed_(isChecked)
+    CALog_debug('Scavenger allow gold checkbox changed: '..tostring(isChecked))
+    CARunUIGump_RunUIGumpState.ScavengerAllowGold = isChecked
+    if isChecked then
+        CARunUIGump_activateScavengerGoldButton:SetText('Gold (Y)')
+    else
+        CARunUIGump_activateScavengerGoldButton:SetText('Gold (N)')
+    end
+end
+
+function onScavengerBonesButtonPressed_(isChecked)
+    CALog_debug('Scavenger allow bones checkbox changed: '..tostring(isChecked))
+    CARunUIGump_RunUIGumpState.ScavengerAllowBones = isChecked
+    if isChecked then
+        CARunUIGump_activateScavengerBonesButton:SetText('Bones (Y)')
+    else
+        CARunUIGump_activateScavengerBonesButton:SetText('Bones (N)')
+    end
+end
+
+function onScavengerGrimoireButtonPressed_(isChecked)
+    CALog_debug('Scavenger allow grimoire checkbox changed: '..tostring(isChecked))
+    CARunUIGump_RunUIGumpState.ScavengerAllowGrimoire = isChecked
+    if isChecked then
+        CARunUIGump_activateScavengerGrimoireButton:SetText('Grimoires (Y)')
+    else
+        CARunUIGump_activateScavengerGrimoireButton:SetText('Grimoires (N)')
+    end
+end
+
 function CARunUIGump_processUIGumpInteractions()
 
     if CARunUIGump_runButton:WasClicked() then
@@ -2739,6 +2821,22 @@ function CARunUIGump_processUIGumpInteractions()
     if CARunUIGump_activateScavengerButton:WasClicked() then
         onScavengerButtonPressed_(CARunUIGump_RunUIGumpState.OverrideWithNoScavenger)
     end
+
+    if CARunUIGump_scavengerConfigButton:WasClicked() then
+        onScavengerConfigButtonPressed_(not CARunUIGump_RunUIGumpState.ScavengerConfigOpen)
+    end
+
+    if CARunUIGump_activateScavengerGoldButton:WasClicked() then
+        onScavengerGoldButtonPressed_(not CARunUIGump_RunUIGumpState.ScavengerAllowGold)
+    end
+
+    if CARunUIGump_activateScavengerBonesButton:WasClicked() then
+        onScavengerBonesButtonPressed_(not CARunUIGump_RunUIGumpState.ScavengerAllowBones)
+    end
+
+    if CARunUIGump_activateScavengerGrimoireButton:WasClicked() then
+        onScavengerGrimoireButtonPressed_(not CARunUIGump_RunUIGumpState.ScavengerAllowGrimoire)
+    end
 end
 
 function CARunUIGump_updateCombatAssistantConfig(CAConfig)
@@ -2747,60 +2845,82 @@ function CARunUIGump_updateCombatAssistantConfig(CAConfig)
     CAConfig.userCommands.Enable = not CARunUIGump_RunUIGumpState.OverrideWithNoCommands
     CAConfig.modules.Attack.Enable = not CARunUIGump_RunUIGumpState.OverrideWithNoAttacks
     CAConfig.modules.Scavenging.Enable = not CARunUIGump_RunUIGumpState.OverrideWithNoScavenger
+    CAConfig.modules.Scavenging.DisallowGold = not CARunUIGump_RunUIGumpState.ScavengerAllowGold
+    CAConfig.modules.Scavenging.DisallowBones = not CARunUIGump_RunUIGumpState.ScavengerAllowBones
+    CAConfig.modules.Scavenging.DisallowGrimoire = not CARunUIGump_RunUIGumpState.ScavengerAllowGrimoire
 
     CAConfig.modules.Buffs.Nightsight.Enable = CAPotionsNightsight_getEnable()
 
     CAMainLoop_configure(CAConfig)
 
     CALog_debug(''
-        ..'Updating Combat Assistant Config:'
-        ..'\n - Buffs Enabled: '..tostring(CAConfig.modules.Buffs.Enable)
-        ..'\n - User Commands Enabled: '..tostring(CAConfig.userCommands.Enable)
-        ..'\n - Attack Enabled: '..tostring(CAConfig.modules.Attack.Enable)
-        ..'\n - Scavenging Enabled: '..tostring(CAConfig.modules.Scavenging.Enable)
+    ..'Updating Combat Assistant Config:'
+    ..'\n - Buffs Enabled: '..tostring(CAConfig.modules.Buffs.Enable)
+    ..'\n - User Commands Enabled: '..tostring(CAConfig.userCommands.Enable)
+    ..'\n - Attack Enabled: '..tostring(CAConfig.modules.Attack.Enable)
+    ..'\n - Scavenging Enabled: '..tostring(CAConfig.modules.Scavenging.Enable)
     )
 end
 
 function CARunUIGump_initMainGump()
 
     CALog_debug('Initializing main gump...')
-    CARunUIGump_window = UI.CreateWindow('controlPanel', 'SAGAS Combat Assistant')
-    if not CARunUIGump_window then
+    CARunUIGump_mainWindow = UI.CreateWindow('CARunUIGump_mainWindow', 'SAGAS Combat Assistant')
+    if not CARunUIGump_mainWindow then
         CALog_debug('Failed to create main gump!')
         return
     end
 
     CALog_debug('Initializing Main Window...')
-    CARunUIGump_window:SetPosition(200, 200)
-    CARunUIGump_window:SetSize(220, 320)
+    CARunUIGump_mainWindow:SetPosition(200, 200)
+    CARunUIGump_mainWindow:SetSize(270, 320)
 
-    CARunUIGump_titleLabel = CARunUIGump_window:AddLabel(10, 40, 'SAGAS Combat Assistant')
+    CARunUIGump_titleLabel = CARunUIGump_mainWindow:AddLabel(10, 40, 'SAGAS Combat Assistant')
     CARunUIGump_titleLabel:SetColor(0.2, 0.8, 1, 1)
 
     CALog_debug('Initializing Run Checkbox...')
-    CARunUIGump_runButton = CARunUIGump_window:AddButton(10, 70, 'Run', 80, 30)
-    CARunUIGump_runStatusLabel = CARunUIGump_window:AddLabel(140, 78, 'Stopped')
+    CARunUIGump_runButton = CARunUIGump_mainWindow:AddButton(10, 70, 'Run', 80, 30)
+    CARunUIGump_runStatusLabel = CARunUIGump_mainWindow:AddLabel(140, 78, 'Stopped')
     CARunUIGump_runStatusLabel:SetColor(1, 0, 0, 1)
 
     CALog_debug('Initializing Buffs Checkbox...')
-    CARunUIGump_activateBuffsButton = CARunUIGump_window:AddButton(10, 120, 'Buffs', 100, 30)
-    CARunUIGump_buffsStatusLabel = CARunUIGump_window:AddLabel(140, 128, 'Enabled')
+    CARunUIGump_activateBuffsButton = CARunUIGump_mainWindow:AddButton(10, 120, 'Buffs', 100, 30)
+    CARunUIGump_buffsStatusLabel = CARunUIGump_mainWindow:AddLabel(140, 128, 'Enabled')
     CARunUIGump_buffsStatusLabel:SetColor(0, 1, 0, 1)
 
     CALog_debug('Initializing Commands Checkbox...')
-    CARunUIGump_activateCommandsButton = CARunUIGump_window:AddButton(10, 170, 'Commands', 100, 30)
-    CARunUIGump_commandsStatusLabel = CARunUIGump_window:AddLabel(140, 178, 'Enabled')
+    CARunUIGump_activateCommandsButton = CARunUIGump_mainWindow:AddButton(10, 170, 'Commands', 100, 30)
+    CARunUIGump_commandsStatusLabel = CARunUIGump_mainWindow:AddLabel(140, 178, 'Enabled')
     CARunUIGump_commandsStatusLabel:SetColor(0, 1, 0, 1)
 
     CALog_debug('Initializing Attack Checkbox...')
-    CARunUIGump_activateAttacksButton = CARunUIGump_window:AddButton(10, 220, 'Attack', 100, 30)
-    CARunUIGump_attackStatusLabel = CARunUIGump_window:AddLabel(140, 228, 'Disabled')
+    CARunUIGump_activateAttacksButton = CARunUIGump_mainWindow:AddButton(10, 220, 'Attack', 100, 30)
+    CARunUIGump_attackStatusLabel = CARunUIGump_mainWindow:AddLabel(140, 228, 'Disabled')
     CARunUIGump_attackStatusLabel:SetColor(1, 0, 0, 1)
 
     CALog_debug('Initializing Scavenger Checkbox...')
-    CARunUIGump_activateScavengerButton = CARunUIGump_window:AddButton(10, 270, 'Scavenge', 100, 30)
-    CARunUIGump_scavengerStatusLabel = CARunUIGump_window:AddLabel(140, 278, 'Disabled')
+    CARunUIGump_activateScavengerButton = CARunUIGump_mainWindow:AddButton(10, 270, 'Scavenge', 100, 30)
+    CARunUIGump_scavengerStatusLabel = CARunUIGump_mainWindow:AddLabel(140, 278, 'Disabled')
     CARunUIGump_scavengerStatusLabel:SetColor(1, 0, 0, 1)
+
+    CALog_debug('Initializing Scavenger Config Button...')
+    CARunUIGump_scavengerConfigButton = CARunUIGump_mainWindow:AddButton(220, 270, '+', 30, 30)
+
+    CALog_debug('Initializing Scavenger Config window...')
+    CARunUIGump_scavengerConfigWindow = UI.CreateWindow('CARunUIGump_scavengerConfigWindow', 'Scavenger')
+    if not CARunUIGump_scavengerConfigWindow then
+        CALog_debug('Failed to create scavenger config window!')
+        return
+    end
+    CALog_debug('Initializing Scavenger Config Window...')
+    CARunUIGump_scavengerConfigWindow:SetPosition(200, 200)
+    CARunUIGump_scavengerConfigWindow:SetSize(90, 190)
+    CARunUIGump_scavengerConfigWindow:Hide()
+
+    CALog_debug('Initializing Scavenger Config Window buttons...')
+    CARunUIGump_activateScavengerGoldButton = CARunUIGump_scavengerConfigWindow:AddButton(10, 40, 'Gold (Y)', 100, 30)
+    CARunUIGump_activateScavengerBonesButton = CARunUIGump_scavengerConfigWindow:AddButton(10, 90, 'Bones (Y)', 100, 30)
+    CARunUIGump_activateScavengerGrimoireButton = CARunUIGump_scavengerConfigWindow:AddButton(10, 140, 'Grimoires (Y)', 110, 30)
 
     CALog_debug("Window created and ready!")
 end
@@ -2836,7 +2956,7 @@ function CARunUIGump_runGump(CAConfig)
     end
 end
 
-DexerMainLoopConfig = {
+local DexerMainLoopConfig = {
     time = {
         ActionWaitTime = 1000,  --- in milliseconds, how long to wait for actions like using items, targeting etc.
                                 --- Adjust ActionWaitTime if you experience issues, set it longer, ex. 1500 on high ping
@@ -2915,7 +3035,10 @@ DexerMainLoopConfig = {
             Items = {           --- List of items to scavenge
                 0x0F3F,
                 0x1BFB
-            }
+            },
+            DisallowGold = false,       --- Disallow scavenging gold (should it already be on the list above)
+            DisallowBones = false,      --- Disallow scavenging bones (should it already be on the list above)
+            DisallowGrimoire = false    --- Disallow scavenging grimoires (should it already be on the list above)
         },
         Attack = {
             Enable = false,             --- Attacks nearby enemies automatically

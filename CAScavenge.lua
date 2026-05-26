@@ -22,7 +22,10 @@ ScavengeConfig = {
     Items = {
         0x0F3F,
         0x1BFB
-    }
+    },
+    DisallowGold = false,
+    DisallowBones = false,
+    DisallowGrimoire = false
 }
 
 local ScavengeState = {
@@ -45,10 +48,39 @@ local function setItems_(val)
     ScavengeConfig.Items = val
 end
 
+local graphicIdLootableSet = {}
+local graphicIdToPriority = {}
+
 local function setConfig_(config)
     setEnable_(config.Enable)
     setFrequency_(config.Frequency)
     setItems_(config.Items)
+    ScavengeConfig.DisallowGold = config.DisallowGold
+    ScavengeConfig.DisallowBones = config.DisallowBones
+    ScavengeConfig.DisallowGrimoire = config.DisallowGrimoire
+
+    graphicIdLootableSet = {}
+    graphicIdToPriority = {}
+    for i, graphic in ipairs(ScavengeConfig.Items) do
+        
+        if graphic == 0x0EED and ScavengeConfig.DisallowGold then
+            goto continue
+        end
+        
+        if graphic == 0x0F7E and ScavengeConfig.DisallowBones then
+            goto continue
+        end
+        
+        if graphic == 0x2D9D and ScavengeConfig.DisallowGrimoire then
+            goto continue
+        end
+
+        graphicIdLootableSet[graphic] = true
+        graphicIdToPriority[graphic] = i
+
+        ::continue::
+    end
+
 end
 
 -----------------
@@ -63,9 +95,6 @@ local corpseFilter = {
     rangemin = 0,
     rangemax = 2
 }
-local processedCorpses = {}
-local graphicIdLootableSet = {}
-local graphicIdToPriority = {}
 local fatAlertReadyMs = 0
 
 function tableContains_(tbl, val)
@@ -76,6 +105,8 @@ function tableContains_(tbl, val)
     end
     return false
 end
+
+local processedCorpses = {}
 
 function HasProcessedCorpse_(serial)
     return processedCorpses[serial] == true
@@ -196,12 +227,6 @@ function GetSortedItemList_()
 end
 
 function AutoLoot_()
-
-    for i, graphic in ipairs(ScavengeConfig.Items) do
-        graphicIdLootableSet[graphic] = true
-        graphicIdToPriority[graphic] = i
-    end
-
     local sortedItemList = GetSortedItemList_()
     if #sortedItemList > 0 then
         for _, item in ipairs(sortedItemList) do
@@ -227,16 +252,18 @@ local function scavenge_()
     ScavengeState.lastTickTime = currentTickTime
 
     cal.debug("Scavenging...")
+    processedCorpses = {}
     local corpses = Items.FindByFilter(corpseFilter)
     for _, corpse in ipairs(corpses) do
-        ---if not HasProcessedCorpse_(corpse.Serial) then
+        if not HasProcessedCorpse_(corpse.Serial) then
             --- Auto Loot
             AutoLoot_()
-
+    
             --- Mark corpse processed so it never repeats
-        ---    MarkCorpseProcessed_(corpse.Serial)
-        ---end
+            MarkCorpseProcessed_(corpse.Serial)
+        end
     end
+    
 end
 
 --------------
