@@ -245,18 +245,55 @@ class LuaStandaloneGenerator:
     
     def remove_comments_from_imported(self, content: str) -> str:
         """
-        Remove all Lua comments from imported module content.
-        This preserves the generated section wrapper comments added around imported modules.
+        Remove Lua comments from imported module content only at top level.
+        Preserve comments inside function bodies and table/structure literals.
         """
-        # Remove long bracket comments first: --[[ ... ]] and --[=[ ... ]=]
-        # content = re.sub(r"--\[(=*)\[(?:.|\n)*?\]\1\]", "", content)
-
         cleaned_lines = []
+        function_depth = 0
+        table_depth = 0
+
+        def count_keyword(text: str, keyword: str) -> int:
+            return len(re.findall(rf"\b{keyword}\b", text))
+
+        def count_braces(text: str) -> Tuple[int, int]:
+            open_count = 0
+            close_count = 0
+            i = 0
+            in_single = False
+            in_double = False
+            escape = False
+            while i < len(text):
+                ch = text[i]
+                if escape:
+                    escape = False
+                    i += 1
+                    continue
+                if ch == '\\':
+                    escape = True
+                    i += 1
+                    continue
+                if not in_single and not in_double:
+                    if ch == '"':
+                        in_double = True
+                    elif ch == "'":
+                        in_single = True
+                    elif ch == '{':
+                        open_count += 1
+                    elif ch == '}':
+                        close_count += 1
+                elif in_single and ch == "'":
+                    in_single = False
+                elif in_double and ch == '"':
+                    in_double = False
+                i += 1
+            return open_count, close_count
+
         for line in content.split('\n'):
             i = 0
             in_single = False
             in_double = False
             escape = False
+            comment_start = len(line)
             while i < len(line):
                 ch = line[i]
                 if escape:
@@ -277,7 +314,7 @@ class LuaStandaloneGenerator:
                         i += 1
                         continue
                     if ch == '-' and i + 1 < len(line) and line[i + 1] == '-':
-                        line = line[:i]
+                        comment_start = i
                         break
                 elif in_single:
                     if ch == "'":
@@ -287,7 +324,28 @@ class LuaStandaloneGenerator:
                         in_double = False
                 i += 1
 
-            cleaned_lines.append(line.rstrip())
+            code_portion = line[:comment_start]
+            open_braces, close_braces = count_braces(code_portion)
+            current_table_depth = table_depth + (open_braces - close_braces)
+            current_function_depth = function_depth + count_keyword(code_portion, 'function') - count_keyword(code_portion, 'end')
+
+            inside_function = current_function_depth > 0
+            inside_table = current_table_depth > 0
+            if inside_function or inside_table:
+                cleaned_line = line.rstrip()
+            else:
+                cleaned_line = code_portion.rstrip()
+
+            cleaned_lines.append(cleaned_line)
+
+            table_depth += open_braces - close_braces
+            if table_depth < 0:
+                table_depth = 0
+
+            function_depth += count_keyword(code_portion, 'function')
+            function_depth -= count_keyword(code_portion, 'end')
+            if function_depth < 0:
+                function_depth = 0
 
         return '\n'.join(cleaned_lines)
 

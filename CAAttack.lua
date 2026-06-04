@@ -20,7 +20,8 @@ local cat = Import('CATime')
 AttackConfig = {
     Enable = false,
     Rangemax = 10,
-    MobilesExceptionList = nil,
+    MobilesExceptionsSerials = nil,
+    MobilesExceptionsNames = nil,
     CheckFrequency = 3000
 }
 
@@ -40,8 +41,12 @@ local function setRangemax_(val)
     AttackConfig.Rangemax = val
 end
 
-local function setMobilesExceptionList_(val)
-    AttackConfig.MobilesExceptionList = val
+local function setMobilesExceptionSerialsList_(val)
+    AttackConfig.MobilesExceptionsSerials = val
+end
+
+local function setMobilesExceptionNamesList_(val)
+    AttackConfig.MobilesExceptionsNames = val
 end
 
 local function setCheckFrequency_(val)
@@ -51,7 +56,8 @@ end
 local function setConfig_(config)
     setEnable_(config.Enable)
     setRangemax_(config.Rangemax)
-    setMobilesExceptionList_(config.MobilesExceptionList)
+    setMobilesExceptionSerialsList_(config.MobilesExceptionsSerials)
+    setMobilesExceptionNamesList_(config.MobilesExceptionsNames)
     setCheckFrequency_(config.CheckFrequency)
 end
 
@@ -83,7 +89,11 @@ local function targetAcceptPredicate_(mobile)
         return false
     end
 
-    if bl.stringContainsAnySubString(mobile.Name, AttackConfig.MobilesExceptionList) then
+    if bl.equalsAnyInTable(mobile.Serial, AttackConfig.MobilesExceptionsSerials) then
+        return false
+    end
+
+    if bl.equalsAnyInTable(mobile.Name, AttackConfig.MobilesExceptionsNames) then
         return false
     end
 
@@ -152,9 +162,9 @@ local function attack_()
     return attackNearestEnemy_()
 end
 
----------------
---- Exports ---
----------------
+--------------
+--- Export ---
+--------------
 
 local Obj = {
     setEnable = setEnable_,

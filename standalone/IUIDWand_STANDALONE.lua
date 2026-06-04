@@ -13,10 +13,25 @@
 -- Imported: IPLib
 -- ========================================
 
+function BaseLib_deepCopy(orig)
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in next, orig, nil do
+            copy[BaseLib_deepCopy(orig_key)] = BaseLib_deepCopy(orig_value)
+        end
+        setmetatable(copy, BaseLib_deepCopy(getmetatable(orig)))
+    else
+        copy = orig
+    end
+    return copy
+end
+
 function BaseLib_printIfDebug(debug, stringToPrint)
     if debug then
         Console.debug(stringToPrint)
-
+        ---Messages.Print(stringToPrint, 69, Player.Serial)
     end
 end
 

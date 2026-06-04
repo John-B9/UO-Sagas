@@ -92,21 +92,23 @@ local DexerMainLoopConfig = {
             Enable = false  --- Alerts you when a player from the hunt list is visible
         },
         Scavenging = {
-            Enable = false,     --- Scavenges items from the ground, only arrows, add more if needed
-            Frequency = 0,      --- milliseconds, zero means immediate
-            Items = {           --- List of items to scavenge
+            Enable = false,         --- Scavenges items from the ground, only arrows, add more if needed
+            Frequency = 0,          --- milliseconds, zero means immediate
+            LootItemsSerials = {    --- List of items to scavenge
                 0x0F3F,
                 0x1BFB
             },
+            LootItemsNames = {},        --- Use if serial not available
             DisallowGold = false,       --- Disallow scavenging gold (should it already be on the list above)
             DisallowBones = false,      --- Disallow scavenging bones (should it already be on the list above)
             DisallowGrimoire = false    --- Disallow scavenging grimoires (should it already be on the list above)
         },
         Attack = {
-            Enable = false,             --- Attacks nearby enemies automatically
-            Rangemax = 10,              --- Attack search range
-            MobilesExceptionList = {},  --- Mobiles to ignore, add friends so to not attack should they become grey
-            CheckFrequency = 3000       --- in milliseconds, how often to check for new targets, adjust if needed
+            Enable = false,                 --- Attacks nearby enemies automatically
+            Rangemax = 10,                  --- Attack search range
+            MobilesExceptionsSerials = {},  --- Mobiles Serials to ignore (add friends so to not attack should they become grey)
+            MobilesExceptionsNames = {},    --- Mobiles Names to ignore (use if don't have serial, use name: cows, ...)
+            CheckFrequency = 500            --- in milliseconds, how often to check for new targets, adjust if needed
         }
     },
     userCommands = {

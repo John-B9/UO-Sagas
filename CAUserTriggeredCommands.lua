@@ -147,9 +147,9 @@ local function processUserCommands_()
 
 end
 
----------------
---- Exports ---
----------------
+--------------
+--- Export ---
+--------------
 
 local Obj = {
     setEnable = setEnable_,

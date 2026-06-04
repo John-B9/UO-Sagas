@@ -9,6 +9,7 @@
 --- Description: Scavenge functions
 ----------------------------------------------------------------------
 
+local bl = Import('BaseLib')
 local cal = Import('CALog')
 local cat = Import('CATime')
 
@@ -19,10 +20,11 @@ local cat = Import('CATime')
 ScavengeConfig = {
     Enable = false,
     Frequency = 0, -- milliseconds, zero means immediate
-    Items = {
+    LootItemsSerials = {
         0x0F3F,
         0x1BFB
     },
+    LootItemsNames = {},
     DisallowGold = false,
     DisallowBones = false,
     DisallowGrimoire = false
@@ -44,8 +46,12 @@ local function setFrequency_(val)
     ScavengeConfig.Frequency = val
 end
 
-local function setItems_(val)
-    ScavengeConfig.Items = val
+local function setLootItemsSerials_(val)
+    ScavengeConfig.LootItemsSerials = val
+end
+
+local function setLootItemsNames_(val)
+    ScavengeConfig.LootItemsNames = val
 end
 
 local graphicIdLootableSet = {}
@@ -54,14 +60,15 @@ local graphicIdToPriority = {}
 local function setConfig_(config)
     setEnable_(config.Enable)
     setFrequency_(config.Frequency)
-    setItems_(config.Items)
+    setLootItemsSerials_(config.LootItemsSerials)
+    setLootItemsNames_(config.LootItemsNames)
     ScavengeConfig.DisallowGold = config.DisallowGold
     ScavengeConfig.DisallowBones = config.DisallowBones
     ScavengeConfig.DisallowGrimoire = config.DisallowGrimoire
 
     graphicIdLootableSet = {}
     graphicIdToPriority = {}
-    for i, graphic in ipairs(ScavengeConfig.Items) do
+    for i, graphic in ipairs(ScavengeConfig.LootItemsSerials) do
         
         if graphic == 0x0EED and ScavengeConfig.DisallowGold then
             goto continue
@@ -175,10 +182,6 @@ function GetSortedItemList_()
             goto continue
         end
 
-        if not graphicIdLootableSet[item.Graphic] then
-            goto continue
-        end
-
         if item.IsLootable == false then
             goto continue
         end
@@ -188,6 +191,10 @@ function GetSortedItemList_()
         end
 
         if item.Properties == nil then
+            goto continue
+        end
+
+        if not graphicIdLootableSet[item.Graphic] and not bl.equalsAnyInTable(item.Name, ScavengeConfig.LootItemsNames) then
             goto continue
         end
 
@@ -229,8 +236,8 @@ end
 function AutoLoot_()
     local sortedItemList = GetSortedItemList_()
     if #sortedItemList > 0 then
-        for _, item in ipairs(sortedItemList) do
-            Player.PickUp(sortedItemList[1].Serial, sortedItemList[1].Amount)
+        for i, item in ipairs(sortedItemList) do
+            Player.PickUp(sortedItemList[i].Serial, sortedItemList[i].Amount)
             Player.DropInBackpack()
             Pause(ACTION_DELAY)
         end
@@ -245,7 +252,7 @@ local function scavenge_()
     
     local currentTickTime = cat.getCurrentTickTime()
 
-    if not cat.exceedsDuration(ScavengeState.lastTickTime, currentTickTime, ScavengeConfig.Tick) then
+    if not cat.exceedsDuration(ScavengeState.lastTickTime, currentTickTime, ScavengeConfig.Frequency) then
         cal.debug("Scavenging is not ready yet, skipping this tick.")
         return
     end

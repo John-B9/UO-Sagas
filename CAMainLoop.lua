@@ -75,9 +75,9 @@ end
 
 local function journalIndependantActions_()
     caad.disarmed()
+    caa.attack()
     cas.scavenge()
     cae.moongate()
-    caa.attack()
 end
 
 local function mainLoopInit_(config)

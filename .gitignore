@@ -1,4 +1,5 @@
 ignore/
+.venv/
 standalone/generator/README.md
 *_STANDALONE.lua
 !standalone/*_STANDALONE.lua

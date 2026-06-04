@@ -1,8 +1,8 @@
 ----------------------------------------------------------------------
---- CL (Crafting Leveling) Tailoring
+--- CL (Crafting Leveling) Smithing
 --- Author: JohnB9
 ---
---- Description: To level up Tailoring
+--- Description: To level up Smithing
 ----------------------------------------------------------------------
 
 -- ========================================
@@ -252,57 +252,38 @@ function CLLib_craftItem(config)
 -- End of: CLLib
 -- ========================================
 
--- ========================================
--- Imported: IUScissors
--- ========================================
-
-function IUScissors_useScissors(callback)
-    local scissors = Items.FindByName('Scissors')
-    Player.UseObject(scissors.Serial)
-    Pause(1000)
-    if callback then
-        callback()
-    end
-end
-
--- End of: IUScissors
--- ========================================
-
 -----------------
 --- Variables ---
 -----------------
 
---- Tayloring items by skill range
-TAYLORING_ITEMS = {
-    { name = "Doublet",   		   minSkill = 0.0, maxSkill = 20.6, category = 8, craft = 3,  final = 2 },
-    { name = "Kilt",   		       minSkill = 20.7, maxSkill = 24.7, category = 15, craft = 17,  final = 21 },
-    { name = "Short Pants",        minSkill = 24.8, maxSkill = 44.9, category = 15, craft = 3,  final = 2 },
-    { name = "Full Apron",         minSkill = 45.0, maxSkill = 49.9, category = 22, craft = 17,  final = 16 },
-    { name = "Oil Cloth",          minSkill = 50.0, maxSkill = 74.9, category = 22, craft = 24,  final = 23, graphic_id = nil },        --- No point in cutting
-    { name = "Leather Sleeves",    minSkill = 75.0, maxSkill = 77.9, category = 43, craft = 24,  final = 23, graphic_id =  5069 },
-    { name = "Leather Tunic",      minSkill = 78.0, maxSkill = 78.9, category = 43, craft = 38,  final = 37, graphic_id =  5068 },
-    { name = "Studded Gorget",     minSkill = 79.0, maxSkill = 82.9, category = 50, craft = 3,  final = 2, graphic_id =  5078 },
-    { name = "Studded Gloves",     minSkill = 83.0, maxSkill = 104.9, category = 50, craft = 10,  final = 9, graphic_id =  5077 },
-    { name = "Studded Tunic",      minSkill = 105.0, maxSkill = 119.9, category = 50, craft = 31,  final = 30, graphic_id =  5083 }
+--- Blacksmithing items by skill range
+SMITH_ITEMS = {
+    { name = "Dagger",   		   minSkill = 00.0, maxSkill = 49.9, category = 36, craft = 17,  final = 16 },
+    { name = "Ringmail Gloves",    minSkill = 50.0, maxSkill = 61.9, category = 1, craft = 3,  final = 2 },
+    { name = "Platemail Gorget",   minSkill = 62.0, maxSkill = 79.9, category = 15, craft = 17,  final = 16, graphic_id =  5139 },
+    { name = "Platemail Gloves",   minSkill = 80.0, maxSkill = 89.9, category = 15, craft = 10, final = 9, graphic_id =  5140 },
+    { name = "Plate Arms",         minSkill = 90.0, maxSkill = 93.9, category = 15, craft = 3, final = 2, graphic_id =  5136 },
+    { name = "Plate Legs",         minSkill = 94.0, maxSkill = 96.9, category = 15, craft = 24, final = 23, graphic_id =  5137 },
+    { name = "Plate Tunic",        minSkill = 97.0, maxSkill = 120.0, category = 15, craft = 31, final = 30, graphic_id =  5141 },
 }
 
---- Post-Work Function: cut the crafted item back into leather
+--- Post-Work Function: smelt the crafted item back into ingots
 function postWork(config_)
-    local taylorItem = CLLib_getItemToCraft(config_)
-    if not taylorItem then
+    local smithItem = CLLib_getItemToCraft(config_)
+    if not smithItem then
         Console.debug("No configured craft item!")
         return true
     end
 
-    itemToCut = BaseLib_findInInventory(taylorItem.graphic_id)
-    if not itemToCut or #itemToCut == 0 then
-        Console.debug("No item to cut!")
+    itemToSmelt = BaseLib_findInInventory(smithItem.graphic_id)
+    if not itemToSmelt or #itemToSmelt == 0 then
+        Console.debug("No item to smelt!")
         return true
     end
 
-    for i, item in ipairs(itemToCut) do
-        --- use scissors
-        IUScissors_useScissors(nil)
+    for i, item in ipairs(itemToSmelt) do
+        --- press Smelt Gump Button
+        Gumps.PressButton(2653346093, 14)
         Target.WaitForTarget(1000)
         --- select crafted item
         Target.TargetSerial(item.Serial)
@@ -316,11 +297,11 @@ end
 
 --- User Settings
 config = {
-    TOOL_ID = 0x0F9D,              --- Sewing Kit
-    GUMP_ID = 2653346093,          --- Gump ID used by Tayloring
+    TOOL_ID = 0x13E3,              --- Smith's Hammer
+    GUMP_ID = 2653346093,          --- Gump ID used by Blacksmithing
     MAKE_LAST_BUTTON_ID = 21,      --- "Make Last" button
-    SKILL_TO_LEVEL = "Tailoring",
-    ITEMS = TAYLORING_ITEMS,
+    SKILL_TO_LEVEL = "Blacksmithy",
+    ITEMS = SMITH_ITEMS,
     PREWORK_FUNCTION = nil,
     POSTWORK_FUNCTION = postWork
 }

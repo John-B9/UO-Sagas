@@ -6,3 +6,5 @@ sh $SCRIPT_DIR/make_standalone.sh ../../CARunDexer.lua . true
 cp ../../CARunDexer_STANDALONE.lua ..
 sh $SCRIPT_DIR/make_standalone.sh ../../CARunDexerUIGump.lua . true
 cp ../../CARunDexerUIGump_STANDALONE.lua ..
+sh $SCRIPT_DIR/make_standalone.sh ../../CLTayloring.lua . true
+cp ../../CLTayloring_STANDALONE.lua ..

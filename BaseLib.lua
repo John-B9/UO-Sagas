@@ -27,9 +27,9 @@ local function deepCopy_(orig)
     return copy
 end
 
-local function stringContainsAnySubString_(str, subStr)
-    for i = 1, #subStr do
-        if subStr[i] == str then
+local function equalsAnyInTable_(value, tableToCompare)
+    for i = 1, #tableToCompare do
+        if tableToCompare[i] == value then
             return true
         end
     end
@@ -127,7 +127,7 @@ end
 
 local Obj = {
     deepCopy = deepCopy_,
-    stringContainsAnySubString = stringContainsAnySubString_,
+    equalsAnyInTable = equalsAnyInTable_,
     findInInventory = findInInventory_,
     findInInventoryGetFirst = findInInventoryGetFirst_,
     getSkillValue = getSkillValue_,

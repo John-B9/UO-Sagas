@@ -20,12 +20,12 @@
 LogConfig = {
     EnableDebugLog = false,
     DebugLogTick = 60,
-    EnableDebugTick = false,
+    EnableDebugTick = false, -- Overrides MainLoopTick in debug mode (script will run much slower)
     DebugTick = 500,
-    EnableOverheadMessages = false
+    EnableOverheadMessages = false -- Enables overhead messages, if false then messages will be printed in journal
 }
 
-CAConfigDexer_CAMainLoop_CALog_LogStaticConfig = {
+LogStaticConfig = {
     DatePattern = "%H:%M:%S",
     InfoTextColor    = 88,
     WarningTextColor = 34,
@@ -73,7 +73,7 @@ end
 
 function CALog_adjustColor(color)
     if not color or type(color) ~= "number" then
-        color = CAConfigDexer_CAMainLoop_CALog_LogStaticConfig.InfoTextColor
+        color = LogStaticConfig.InfoTextColor
     end
     return color
 end
@@ -95,19 +95,19 @@ function CALog_overhead(text, color, force)
 end
 
 function CALog_mainInfo(text)
-    CALog_overhead(text, CAConfigDexer_CAMainLoop_CALog_LogStaticConfig.InfoTextColor, true)
+    CALog_overhead(text, LogStaticConfig.InfoTextColor, true)
 end
 
 function CALog_info(text)
-    CALog_overhead(text, CAConfigDexer_CAMainLoop_CALog_LogStaticConfig.InfoTextColor, false)
+    CALog_overhead(text, LogStaticConfig.InfoTextColor, false)
 end
 
 function CALog_warning(text)
-    CALog_overhead(text, CAConfigDexer_CAMainLoop_CALog_LogStaticConfig.WarningTextColor, false)
+    CALog_overhead(text, LogStaticConfig.WarningTextColor, false)
 end
 
 function CALog_error(text)
-    CALog_overhead(text, CAConfigDexer_CAMainLoop_CALog_LogStaticConfig.ErrorTextColor, false)
+    CALog_overhead(text, LogStaticConfig.ErrorTextColor, false)
 end
 
 function CALog_debug(text)
@@ -117,7 +117,7 @@ function CALog_debug(text)
     end
 
     local ok, timestamp = pcall(function()
-        return os.date(CAConfigDexer_CAMainLoop_CALog_LogStaticConfig.DatePattern, os.time()) .. "." .. string.format("%03d", os.time() * 1000 % 1000)
+        return os.date(LogStaticConfig.DatePattern, os.time()) .. "." .. string.format("%03d", os.time() * 1000 % 1000)
     end)
 
     if not ok then
@@ -128,11 +128,11 @@ function CALog_debug(text)
         Pause(LogConfig.DebugTick - LogConfig.DebugLogTick)
     end
 
-    Console.log("[" .. timestamp .. "] " .. text, CAConfigDexer_CAMainLoop_CALog_LogStaticConfig.DebugTextColor)
+    Console.log("[" .. timestamp .. "] " .. text, LogStaticConfig.DebugTextColor)
 end
 
 TimeConfig = {
-    ActionWaitTime = 1000
+    ActionWaitTime = 1000 -- in milliseconds, how long to wait for actions like using items, targeting etc.
 }
 
 TimeState = {
@@ -202,9 +202,9 @@ function BaseLib_deepCopy(orig)
     return copy
 end
 
-function BaseLib_stringContainsAnySubString(str, subStr)
-    for i = 1, #subStr do
-        if subStr[i] == str then
+function BaseLib_equalsAnyInTable(value, tableToCompare)
+    for i = 1, #tableToCompare do
+        if tableToCompare[i] == value then
             return true
         end
     end
@@ -250,7 +250,7 @@ end
 function BaseLib_printIfDebug(debug, stringToPrint)
     if debug then
         Console.debug(stringToPrint)
-
+        ---Messages.Print(stringToPrint, 69, Player.Serial)
     end
 end
 
@@ -422,12 +422,12 @@ function IPLib_equipItemWithLessDurability(itemID, itemName)
 end
 
 ArmDisarmConfig = {
-    Enable  = false,
-    AlwaysRearm = false
+    Enable  = false, -- Rearms your weapon if you are disarmed
+    AlwaysRearm = false -- rearm without moving, warning will spam messages if you drag from hands
 }
 
 ArmDisarmStaticConfig = {
-    durabilityDisarmThreshould = 0,
+    durabilityDisarmThreshould = 0, -- will disarm player and avoid re-arm, if durability <= threshould
     layerOneHanded = 1,
     layerTwoHanded = 2,
     rearmBusrtRequestDelta = 500
@@ -576,6 +576,7 @@ end
 
 function CAArmDisarm_checkAndFixItemsErrorState()
 
+    --- Check only when not Player.IsHidden
     if Player.IsHidden then
         return
     end
@@ -758,8 +759,8 @@ CAEscape_EscapeState = {
 }
 
 CAEscape_EscapeCommandStaticConfig = {
-    Command = "I shall return!",
-    Callback = function()
+    Command = "I shall return!", -- The command to say, make it unique to you
+    Callback = function() -- Use the assistant and record your way of escaping and paste it below
         Player.UseObject('1110433901')
         Gumps.WaitForGump(1498407526, 1000)
         Gumps.PressButton(1498407526, 26)
@@ -912,20 +913,20 @@ end
 CAPotionsHealing_CAPotionsTime_PotionsTimeStaticConfig = {
     Nightsight = {
         Name = "Nightsight",
-        Duration = (300 + math.ceil(Skills.GetValue("Alchemy")*10)*3 + 1) * 1000,
-        CheckFrequency = 5000
+        Duration = (300 + math.ceil(Skills.GetValue("Alchemy")*10)*3 + 1) * 1000, --- 300s base time + 3s per 0.1 point in alchemy skill + 1s buffer
+        CheckFrequency = 5000 --- drink attempt frequency, when not sure if under buff effect
     },
     GreaterStrength = {
         Name = "Greater Stength",
-        Duration = (120 + math.floor(Skills.GetValue("Alchemy"))*6 + 1) * 1000,
-        Buff = 20 + math.floor(Skills.GetValue("Alchemy"))/10,
-        CheckFrequency = 5000
+        Duration = (120 + math.floor(Skills.GetValue("Alchemy"))*6 + 1) * 1000, --- 120s base time + 6s per 1 point in alchemy skill + 1s buffer
+        Buff = 20 + math.floor(Skills.GetValue("Alchemy"))/10, --- 20 base + 1 per 10 points in alchemy skill
+        CheckFrequency = 5000 --- drink attempt frequency, when not sure if under buff effect
     },
     GreaterAgility = {
         Name = "Greater Agility",
-        Duration = (120 + math.floor(Skills.GetValue("Alchemy"))*6 + 1) * 1000,
-        Buff = 20 + math.floor(Skills.GetValue("Alchemy"))/10,
-        CheckFrequency = 5000
+        Duration = (120 + math.floor(Skills.GetValue("Alchemy"))*6 + 1) * 1000, --- 120s base time + 6s per 1 point in alchemy skill + 1s buffer
+        Buff = 20 + math.floor(Skills.GetValue("Alchemy"))/10, --- 20 base + 1 per 10 points in alchemy skill
+        CheckFrequency = 5000 --- drink attempt frequency, when not sure if under buff effect
     },
     GreaterHeal = {
         Name = "Greater Heal",
@@ -936,7 +937,7 @@ CAPotionsHealing_CAPotionsTime_PotionsTimeStaticConfig = {
     }
 }
 
-CAPotionsHealing_CAPotionsTime_PotionsTimeState = {
+PotionsTimeState = {
     Nightsight = {
         lastCheckTickTime = nil
     },
@@ -977,7 +978,15 @@ function CAPotionsTime_shouldAtemptToDrink(potionStaticConfig, potionState, last
 end
 
 function CAPotionsTime_shouldAtemptToDrinkNightsight(lastDrinkTime)
-    return CAPotionsTime_shouldAtemptToDrink(CAPotionsHealing_CAPotionsTime_PotionsTimeStaticConfig.Nightsight, CAPotionsHealing_CAPotionsTime_PotionsTimeState.Nightsight, lastDrinkTime)
+    return CAPotionsTime_shouldAtemptToDrink(CAPotionsHealing_CAPotionsTime_PotionsTimeStaticConfig.Nightsight, PotionsTimeState.Nightsight, lastDrinkTime)
+end
+
+function CAPotionsTime_shouldAtemptToDrinkStrength(lastDrinkTime)
+    return CAPotionsTime_shouldAtemptToDrink(CAPotionsHealing_CAPotionsTime_PotionsTimeStaticConfig.GreaterStrength, PotionsTimeState.GreaterStrength, lastDrinkTime)
+end
+
+function CAPotionsTime_shouldAtemptToDrinkAgility(lastDrinkTime)
+    return CAPotionsTime_shouldAtemptToDrink(CAPotionsHealing_CAPotionsTime_PotionsTimeStaticConfig.GreaterAgility, PotionsTimeState.GreaterAgility, lastDrinkTime)
 end
 
 function CAPotionsTime_shouldAtemptToDrinkHeal(lastDrinkTime)
@@ -1057,8 +1066,8 @@ function CAPotionsDrink_drink(potionGraphicID, potionName, shouldAtemptDrinkPred
 end
 
 HealingPotionsConfig = {
-    Enable = false,
-    HPDrinkThreshould = 20
+    Enable = false, -- Drinks healing potions when bellow threshould
+    HPDrinkThreshould = 20 -- in percentage, when to use heal potion
 }
 
 HealingPotionsStaticConfig = {
@@ -1122,7 +1131,7 @@ end
 
 PotionsCureConfig = {
     Enable = false,
-    ColldownTime = 1000
+    ColldownTime = 1000 --- in milliseconds, overridable
 }
 
 CAPotionsCure_PotionsCureStaticConfig = {
@@ -1187,17 +1196,17 @@ function CAPotionsCure_cure(forced)
 end
 
 BandageConfig = {
-    Enable = false,
-    BandageHP = 99
+    Enable = false, --- Bandages player if HP is below BandageHP or if poisoned and no cure potions
+    BandageHP = 99 --- in percentage, when to use bandage
 }
 
-CABandage_BandageStaticConfig = {
+BandageStaticConfig = {
     Bandages = { 0x00e21 },
-    OverheadPauseTime = 0,
+    OverheadPauseTime = 0, --- in ms, zero means only when beginning bandage
     WarningPauseTime = 60 * 1000
 }
 
-CABandage_BandageState = {
+BandageState = {
     lastOverheadTime = 0,
     isBandaging = false,
     bandageTimeEnd = nil
@@ -1237,22 +1246,22 @@ function CABandage_bandage()
         return
     end
 
-    if CABandage_BandageState.isBandaging then
+    if BandageState.isBandaging then
         CALog_debug("Already healing, skipping bandage.")
-        timeLeft = CABandage_BandageState.bandageTimeEnd - currentTickTime
+        timeLeft = BandageState.bandageTimeEnd - currentTickTime
 
-        if timeLeft > 0 and CABandage_BandageStaticConfig.OverheadPauseTime > 0  then
-            if CATime_exceedsDuration(CABandage_BandageState.lastOverHeadTime, currentTickTime, CABandage_BandageStaticConfig.OverheadPauseTime) then
+        if timeLeft > 0 and BandageStaticConfig.OverheadPauseTime > 0  then
+            if CATime_exceedsDuration(BandageState.lastOverHeadTime, currentTickTime, BandageStaticConfig.OverheadPauseTime) then
                 countdown = math.floor(timeLeft / 1000)
                 if countdown >= 1 then
                     CALog_info("Bandaging " .. countdown .. "s")
                 end
-                CABandage_BandageState.lastOverHeadTime = currentTickTime
+                BandageState.lastOverHeadTime = currentTickTime
             end
         end
 
-        if currentTickTime > CABandage_BandageState.bandageTimeEnd then
-            CABandage_BandageState.isBandaging = false
+        if currentTickTime > BandageState.bandageTimeEnd then
+            BandageState.isBandaging = false
         end
 
         return
@@ -1266,8 +1275,8 @@ function CABandage_bandage()
 
     if Journal.Contains("You begin applying the bandages") then
         CALog_debug("Already manually bandaging, skipping.")
-        CABandage_BandageState.bandageTimeEnd = CABandage_bandageEndTime(currentTickTime)
-        CABandage_BandageState.isBandaging = true
+        BandageState.bandageTimeEnd = CABandage_bandageEndTime(currentTickTime)
+        BandageState.isBandaging = true
         return
     end
 
@@ -1278,19 +1287,19 @@ function CABandage_bandage()
         return
     end
 
-    if Player.IsPoisoned and CABandage_BandageState.useBandages then
+    if Player.IsPoisoned and BandageState.useBandages then
         CALog_debug("Using bandages due to previous poison.")
         info("Curing with bandage")
-        CABandage_BandageState.useBandages = false
+        BandageState.useBandages = false
     end
 
     CALog_debug("Looing for bandages...")
-    bandages = BaseLib_findInInventory(CABandage_BandageStaticConfig.Bandages)
+    bandages = BaseLib_findInInventory(BandageStaticConfig.Bandages)
 
     if not bandages or #bandages == 0 then
-        if CATime_exceedsDuration(CABandage_BandageState.lastOverheadTime, currentTickTime, CABandage_BandageStaticConfig.WarningPauseTime) then
+        if CATime_exceedsDuration(BandageState.lastOverheadTime, currentTickTime, BandageStaticConfig.WarningPauseTime) then
             CALog_warning("No bandages found")
-            CABandage_BandageState.lastOverheadTime = currentTickTime
+            BandageState.lastOverheadTime = currentTickTime
         end
         return
     end
@@ -1330,34 +1339,34 @@ function CABandage_bandage()
     end, 50, 500)
 
     if not bandaging then
-        CABandage_BandageState.isBandaging = false
-        CABandage_BandageState.lastBandageStart = nil
+        BandageState.isBandaging = false
+        BandageState.lastBandageStart = nil
         return
     end
 
     CALog_debug("Bandaging")
 
-    if CABandage_BandageStaticConfig.OverheadPauseTime == 0 then
+    if BandageStaticConfig.OverheadPauseTime == 0 then
         CALog_info("Bandaging...")
-        CABandage_BandageState.lastOverHeadTime = currentTickTime
+        BandageState.lastOverHeadTime = currentTickTime
     end
 
-    CABandage_BandageState.isBandaging = bandaging
-    CABandage_BandageState.lastBandageStart = currentTickTime
-    CABandage_BandageState.bandageTimeEnd = CABandage_bandageEndTime(CABandage_BandageState.lastBandageStart)
+    BandageState.isBandaging = bandaging
+    BandageState.lastBandageStart = currentTickTime
+    BandageState.bandageTimeEnd = CABandage_bandageEndTime(BandageState.lastBandageStart)
 end
 
 SongOfHealingConfig = {
     Enable = false,
-    FailWait = 30 * 1000,
+    FailWait = 30 * 1000, -- in ms, how long to retry if already under effects by manual cast
     Instruments = {"Drum", "Lute", "Tambourine", "Lap Harp" }
 }
 
-CABuffs_CASongOfHealing_SongOfHealingState = {
+SongOfHealingState = {
     isActive = false,
     startTime = nil,
     endTime = nil,
-    duration = 163 * 1000,
+    duration = 163 * 1000, -- Need to calculate based on music skill?
     lastWarningTickTime = nil,
     instrument = nil,
 }
@@ -1405,27 +1414,27 @@ function CASongOfHealing_songOfHealing()
     end
 
     currentTickTime = CATime_getCurrentTickTime()
-    if CABuffs_CASongOfHealing_SongOfHealingState.isActive then
-        if currentTickTime > CABuffs_CASongOfHealing_SongOfHealingState.endTime then
-            CABuffs_CASongOfHealing_SongOfHealingState.isActive = false
+    if SongOfHealingState.isActive then
+        if currentTickTime > SongOfHealingState.endTime then
+            SongOfHealingState.isActive = false
             CALog_debug("Song of Healing ended.")
             return
         end
         CALog_debug("Waiting for Song of Healing to end in: " ..
-        ((CABuffs_CASongOfHealing_SongOfHealingState.endTime - currentTickTime) / 1000) .. " seconds.")
+        ((SongOfHealingState.endTime - currentTickTime) / 1000) .. " seconds.")
         return
     end
 
     if recentCast() then
         CALog_debug("Buff was recently cast, wait to retry")
-        CABuffs_CASongOfHealing_SongOfHealingState.isActive = true
-        CABuffs_CASongOfHealing_SongOfHealingState.startTime = currentTickTime
+        SongOfHealingState.isActive = true
+        SongOfHealingState.startTime = currentTickTime
         recastWaitTime = 8
-        CABuffs_CASongOfHealing_SongOfHealingState.endTime = CABuffs_CASongOfHealing_SongOfHealingState.startTime + recastWaitTime
+        SongOfHealingState.endTime = SongOfHealingState.startTime + recastWaitTime
         return
     end
 
-    if not CABuffs_CASongOfHealing_SongOfHealingState.instrument then
+    if not SongOfHealingState.instrument then
         instrument = nil
         for _, instrumentName in ipairs(SongOfHealingConfig.Instruments) do
             CALog_debug("Looking for instrument: " .. instrumentName)
@@ -1441,17 +1450,17 @@ function CASongOfHealing_songOfHealing()
             return
         end
 
-        CABuffs_CASongOfHealing_SongOfHealingState.instrument = instrument
+        SongOfHealingState.instrument = instrument
     end
 
     CALog_debug("Casting Song of Healing...")
     if not Spells.Cast("SongOfHealing") then
-        if CATime_exceedsDuration(CABuffs_CASongOfHealing_SongOfHealingState.lastWarningTickTime, currentTickTime, SongOfHealingConfig.FailWait) then
+        if CATime_exceedsDuration(SongOfHealingState.lastWarningTickTime, currentTickTime, SongOfHealingConfig.FailWait) then
             CALog_info("Recasting Song of Healing")
             CALog_debug("Failed to cast Song of Healing, waiting " .. (SongOfHealingConfig.FailWait / 1000) .. " seconds to retry.")
-            CABuffs_CASongOfHealing_SongOfHealingState.lastWarningTickTime = currentTickTime
+            SongOfHealingState.lastWarningTickTime = currentTickTime
         end
-        startBuff(CABuffs_CASongOfHealing_SongOfHealingState, SongOfHealingConfig.FailWait)
+        startBuff(SongOfHealingState, SongOfHealingConfig.FailWait)
         return
     end
 
@@ -1463,30 +1472,30 @@ function CASongOfHealing_songOfHealing()
             return true
         elseif Journal.Contains("What instrument shall you play?") then
             CALog_debug("Instrument depleeted, will look for a new one")
-            CABuffs_CASongOfHealing_SongOfHealingState.instrument = nil
+            SongOfHealingState.instrument = nil
             return false
         end
         return false
     end, 50, CATime_getActionWaitTime())
 
     if not castSuccess then
-        if CATime_exceedsDuration(CABuffs_CASongOfHealing_SongOfHealingState.lastWarningTickTime, currentTickTime, SongOfHealingConfig.FailWait) then
+        if CATime_exceedsDuration(SongOfHealingState.lastWarningTickTime, currentTickTime, SongOfHealingConfig.FailWait) then
             CALog_info("Recasting Song of Healing")
             CALog_debug("Journal did not contain expectations for Song of Healing, waiting " .. (SongOfHealingConfig.FailWait / 1000)
             .. " seconds to retry.")
-            CABuffs_CASongOfHealing_SongOfHealingState.lastWarningTickTime = currentTickTime
+            SongOfHealingState.lastWarningTickTime = currentTickTime
         end
-        startBuff(CABuffs_CASongOfHealing_SongOfHealingState, SongOfHealingConfig.FailWait)
+        startBuff(SongOfHealingState, SongOfHealingConfig.FailWait)
         return
     end
 
-    startBuff(CABuffs_CASongOfHealing_SongOfHealingState, CABuffs_CASongOfHealing_SongOfHealingState.duration)
+    startBuff(SongOfHealingState, SongOfHealingState.duration)
     CALog_info("Casted Song of Healing")
     CALog_debug("Song of Healing started.")
 end
 
 NightsightPotionsConfig = {
-    Enable = false
+    Enable = false --- continuously drinks nightsight potions when missing that buff
 }
 
 CAPotionsNightsight_NightsightPotionsStaticConfig = {
@@ -1541,7 +1550,7 @@ end
 
 StaminaPotionsConfig = {
     Enable = false,
-    DrinkThreshould = 30
+    DrinkThreshould = 30 -- in percentage, when to drink stamina potion
 }
 
 CAPotionsStamina_StaminaPotionsStaticConfig = {
@@ -1629,7 +1638,9 @@ function CAPotionsStrength_setConfig(config)
 end
 
 function CAPotionsStrength_shouldAtemptDrink(forced)
-
+    --if CAPotionsTime_shouldAtemptToDrinkStrength(CAPotionsStrength_StrengthPotionsState.lastDrinkTime) == false then
+    --    return false
+    --end
     CALog_debug("Checking if strength is debuffed or dropped")
     if Player.Str > StrengthPotionsConfig.BaseStrength then
         CALog_debug("Player strength is above base strength, skipping strength buff.")
@@ -1692,7 +1703,9 @@ function CAPotionsAgility_setConfig(config)
 end
 
 function CAPotionsAgility_shouldAtemptDrink(forced)
-
+    --if CAPotionsTime_shouldAtemptToDrinkAgility(CAPotionsAgility_AgilityPotionsState.lastDrinkTime) == false then
+    --    return false
+    --end
     CALog_debug("Checking if dexterity is debuffed or dropped")
     if Player.Dex > AgilityPotionsConfig.BaseAgility then
         CALog_debug("Player dexterity is above base value, skipping agility buff.")
@@ -1726,10 +1739,10 @@ EatFoodConfig = {
 }
 
 CAEatFood_EatFoodStaticConfig = {
-    EatCooldown = 15 * 60 * 1000,
+    EatCooldown = 15 * 60 * 1000, -- in ms, how often to eat food
     BuffFoods = {
-        65340,
-        65342
+        65340, --- Meat Feast
+        65342 --- Fish Plate
     }
 }
 
@@ -1748,7 +1761,7 @@ end
 function CAEatFood_eatFood()
 
     if true then
-
+        --- Bugged: buff foods don't prevent eating if already under the effect
         return
     end
 
@@ -1795,7 +1808,7 @@ function CAEatFood_eatFood()
 end
 
 BuffsConfig = {
-    Enable = false
+    Enable = false --- To enable/disable auto-buffs altogether
 }
 
 function CABuffs_setEnable(val)
@@ -1885,7 +1898,7 @@ function CAPeacemaking_peacemaking()
 end
 
 DebuffsConfig = {
-    Enable = false
+    Enable = false --
 }
 
 function CADebuffs_setEnable(val)
@@ -1920,7 +1933,7 @@ DetectPlayersConfig = {
 
 CADetectPlayers_DetectPlayersStaticConfig = {
     Players = { "oFrizz", "FloodgateUO", "Lespunk Strange", "Vector", "BTK", "RDY", "BRG", "URK" },
-    AlertPauseTime = 10 * 1000
+    AlertPauseTime = 10 * 1000 -- alert once per 10 seconds
 }
 
 CADetectPlayers_DetectPlayersState = {
@@ -1966,11 +1979,12 @@ end
 
 ScavengeConfig = {
     Enable = false,
-    Frequency = 0,
-    Items = {
+    Frequency = 0, -- milliseconds, zero means immediate
+    LootItemsSerials = {
         0x0F3F,
         0x1BFB
     },
+    LootItemsNames = {},
     DisallowGold = false,
     DisallowBones = false,
     DisallowGrimoire = false
@@ -1988,8 +2002,12 @@ function CAScavenge_setFrequency(val)
     ScavengeConfig.Frequency = val
 end
 
-function CAScavenge_setItems(val)
-    ScavengeConfig.Items = val
+function CAScavenge_setLootItemsSerials(val)
+    ScavengeConfig.LootItemsSerials = val
+end
+
+function CAScavenge_setLootItemsNames(val)
+    ScavengeConfig.LootItemsNames = val
 end
 
 CAScavenge_graphicIdLootableSet = {}
@@ -1998,14 +2016,15 @@ CAScavenge_graphicIdToPriority = {}
 function CAScavenge_setConfig(config)
     CAScavenge_setEnable(config.Enable)
     CAScavenge_setFrequency(config.Frequency)
-    CAScavenge_setItems(config.Items)
+    CAScavenge_setLootItemsSerials(config.LootItemsSerials)
+    CAScavenge_setLootItemsNames(config.LootItemsNames)
     ScavengeConfig.DisallowGold = config.DisallowGold
     ScavengeConfig.DisallowBones = config.DisallowBones
     ScavengeConfig.DisallowGrimoire = config.DisallowGrimoire
 
     CAScavenge_graphicIdLootableSet = {}
     CAScavenge_graphicIdToPriority = {}
-    for i, graphic in ipairs(ScavengeConfig.Items) do
+    for i, graphic in ipairs(ScavengeConfig.LootItemsSerials) do
 
         if graphic == 0x0EED and ScavengeConfig.DisallowGold then
             goto continue
@@ -2057,13 +2076,23 @@ function MarkCorpseProcessed_(serial)
 end
 
 function extractWeight_(item)
+    -- Pattern explanation:
+    -- .*- matches any character (including newlines due to how Lua handles this in patterns) zero or more times, as few as possible.
+    -- (?:...) - this is a general regex concept, but not directly supported in standard Lua patterns.
+    -- The approach below uses Lua's native patterns and capture groups.
 
+    -- Attempt to match "Weight: " followed by 1-3 digits.
+    -- 'Weight:%s*(%d%d?%d?)'
+    -- %s* matches zero or more whitespace characters.
+    -- (%d%d?%d?) captures 1, 2, or 3 digits.
     local weight_str = string.match(item.Properties, "Weight:%s*(%d%d?%d?) Stone")
 
     if weight_str then
-        return tonumber(weight_str)
+        return tonumber(weight_str) -- Convert the captured string to a number
     else
-
+        -- If the "Weight: " pattern isn't found, you might want to return nil or a default value
+        -- depending on your specific needs when it's missing entirely.
+        -- In this case, it returns nil, so you can handle it.
         return nil
     end
 end
@@ -2101,10 +2130,6 @@ function GetSortedItemList_()
             goto continue
         end
 
-        if not CAScavenge_graphicIdLootableSet[item.Graphic] then
-            goto continue
-        end
-
         if item.IsLootable == false then
             goto continue
         end
@@ -2114,6 +2139,10 @@ function GetSortedItemList_()
         end
 
         if item.Properties == nil then
+            goto continue
+        end
+
+        if not CAScavenge_graphicIdLootableSet[item.Graphic] and not BaseLib_equalsAnyInTable(item.Name, ScavengeConfig.LootItemsNames) then
             goto continue
         end
 
@@ -2153,8 +2182,8 @@ end
 function AutoLoot_()
     local sortedItemList = GetSortedItemList_()
     if #sortedItemList > 0 then
-        for _, item in ipairs(sortedItemList) do
-            Player.PickUp(sortedItemList[1].Serial, sortedItemList[1].Amount)
+        for i, item in ipairs(sortedItemList) do
+            Player.PickUp(sortedItemList[i].Serial, sortedItemList[i].Amount)
             Player.DropInBackpack()
             Pause(ACTION_DELAY)
         end
@@ -2169,7 +2198,7 @@ function CAScavenge_scavenge()
 
     currentTickTime = CATime_getCurrentTickTime()
 
-    if not CATime_exceedsDuration(CAScavenge_ScavengeState.lastTickTime, currentTickTime, ScavengeConfig.Tick) then
+    if not CATime_exceedsDuration(CAScavenge_ScavengeState.lastTickTime, currentTickTime, ScavengeConfig.Frequency) then
         CALog_debug("Scavenging is not ready yet, skipping this tick.")
         return
     end
@@ -2211,9 +2240,11 @@ IUMinerSwap_IUSwapItemInHand_debugEnabled = true
 
 function IUSwapItemInHand_swapItemInHand(config, callback)
 
+    --- Get items to swap
     local first_item = Items.FindByType(config.first.serial)
     local second_item = Items.FindByType(config.second.serial)
 
+    --- Get item in hand
     local item_in_hand = Items.FindByLayer(1)
     if not item_in_hand then
         item_in_hand = Items.FindByLayer(2)
@@ -2284,7 +2315,7 @@ end
 config = {
     first = { serial = pickaxe_type_id, equip = IUMinerSwap_equipPickaxe , acceptPredicate = nil},
     second = { serial = war_axe_type_id, equip = IUMinerSwap_equipWarAxeAndFight , acceptPredicate = nil }
-
+    --second = { serial = war_hammer_type_id, equip = equipWarHammerAndFight, acceptPredicate = nil  }
 }
 
 function IUMinerSwap_minerSwap(pickaxeAcceptPredicate_, callback)
@@ -2356,6 +2387,7 @@ end
 
 function IUIDWand_useIdWand(callback)
 
+    --- get wand with less charges
     local wandGraphicIDs = { 3570, 3571, 3572, 3573 }
     wand = IPLib_getItemWithLessIdentificationCharges(wandGraphicIDs, nil)
     if wand == nil then
@@ -2383,8 +2415,9 @@ end
 
 UserTriggeredCommandsConfig = {
     Enable = false,
-    CommandStringPrefix = ""
-
+    CommandStringPrefix = ""    --- The Log Prefix that commands are expecting as comming from you
+    --Password = ""             --- For security: so others can't interract with your combat bot!
+                                --- Set and never share it
 }
 
 function CAUserTriggeredCommands_setEnable(val)
@@ -2464,7 +2497,8 @@ end
 AttackConfig = {
     Enable = false,
     Rangemax = 10,
-    MobilesExceptionList = nil,
+    MobilesExceptionsSerials = nil,
+    MobilesExceptionsNames = nil,
     CheckFrequency = 3000
 }
 
@@ -2480,8 +2514,12 @@ function CAAttack_setRangemax(val)
     AttackConfig.Rangemax = val
 end
 
-function CAAttack_setMobilesExceptionList(val)
-    AttackConfig.MobilesExceptionList = val
+function CAAttack_setMobilesExceptionSerialsList(val)
+    AttackConfig.MobilesExceptionsSerials = val
+end
+
+function CAAttack_setMobilesExceptionNamesList(val)
+    AttackConfig.MobilesExceptionsNames = val
 end
 
 function CAAttack_setCheckFrequency(val)
@@ -2491,7 +2529,8 @@ end
 function CAAttack_setConfig(config)
     CAAttack_setEnable(config.Enable)
     CAAttack_setRangemax(config.Rangemax)
-    CAAttack_setMobilesExceptionList(config.MobilesExceptionList)
+    CAAttack_setMobilesExceptionSerialsList(config.MobilesExceptionsSerials)
+    CAAttack_setMobilesExceptionNamesList(config.MobilesExceptionsNames)
     CAAttack_setCheckFrequency(config.CheckFrequency)
 end
 
@@ -2519,7 +2558,11 @@ function CAAttack_targetAcceptPredicate(mobile)
         return false
     end
 
-    if BaseLib_stringContainsAnySubString(mobile.Name, AttackConfig.MobilesExceptionList) then
+    if BaseLib_equalsAnyInTable(mobile.Serial, AttackConfig.MobilesExceptionsSerials) then
+        return false
+    end
+
+    if BaseLib_equalsAnyInTable(mobile.Name, AttackConfig.MobilesExceptionsNames) then
         return false
     end
 
@@ -2627,17 +2670,19 @@ end
 
 function CAMainLoop_journalIndependantActions()
     CAArmDisarm_disarmed()
+    CAAttack_attack()
     CAScavenge_scavenge()
     CAEscape_moongate()
-    CAAttack_attack()
 end
 
 function CAMainLoop_mainLoopInit(config)
 
+    --- Configure and Greet
     CAMainLoop_configure(config)
     CALog_mainInfo("Sagas Combat Assistant")
     CALog_debug("Sagas Combat Assistant - Started")
 
+    --- Start with a clean journal
     Journal.Clear()
 end
 
@@ -2841,6 +2886,7 @@ end
 
 function CARunUIGump_updateCombatAssistantConfig(CAConfig)
 
+    --- Override values
     CAConfig.modules.Buffs.Enable = not CARunUIGump_RunUIGumpState.OverrideWithNoBuffs
     CAConfig.userCommands.Enable = not CARunUIGump_RunUIGumpState.OverrideWithNoCommands
     CAConfig.modules.Attack.Enable = not CARunUIGump_RunUIGumpState.OverrideWithNoAttacks
@@ -2849,8 +2895,10 @@ function CARunUIGump_updateCombatAssistantConfig(CAConfig)
     CAConfig.modules.Scavenging.DisallowBones = not CARunUIGump_RunUIGumpState.ScavengerAllowBones
     CAConfig.modules.Scavenging.DisallowGrimoire = not CARunUIGump_RunUIGumpState.ScavengerAllowGrimoire
 
+    --- Because of internal error, nightsight may disable itself (don't override that part)
     CAConfig.modules.Buffs.Nightsight.Enable = CAPotionsNightsight_getEnable()
 
+    --- Configure again to save information
     CAMainLoop_configure(CAConfig)
 
     CALog_debug(''
@@ -2928,25 +2976,26 @@ end
 function CARunUIGump_runGump(CAConfig)
 
     CALog_debug('Starting Combat Assistant Iteration!')
-    UI.DestroyAllWindows()
-    CARunUIGump_initMainGump()
-    CAMainLoop_mainLoopInit(CAConfig)
+    UI.DestroyAllWindows()          --- Cleanup
+    CARunUIGump_initMainGump()                 --- Init main gump (create UI, set up event handlers, etc)
+    CAMainLoop_mainLoopInit(CAConfig)     --- Initialize main loop (configure modules, etc)
     while true do
 
-        CARunUIGump_processUIGumpInteractions()
-        CARunUIGump_updateCombatAssistantConfig(CAConfig)
+        CARunUIGump_processUIGumpInteractions()                --- Check for UI changes
+        CARunUIGump_updateCombatAssistantConfig(CAConfig)      --- Process Update
 
+        --- Is the Combat Assistant set to run?
         if CARunUIGump_RunUIGumpState.IterateCAMainLoop then
 
             CALog_debug('Starting Combat Assistant Iteration!')
-            CARunUIGump_runStatusLabel:SetText('Running...')
-            CARunUIGump_runStatusLabel:SetColor(1, 0.5, 0, 1)
+            CARunUIGump_runStatusLabel:SetText('Running...')                --- Starting Iteration
+            CARunUIGump_runStatusLabel:SetColor(1, 0.5, 0, 1)               --- Orange
 
-            CAMainLoop_mainLoopIterate(CAConfig)
+            CAMainLoop_mainLoopIterate(CAConfig)                      --- Iterate main loop once (process actions, etc)
 
             CALog_debug('Combat Assistant Iteration Done!')
-            CARunUIGump_runStatusLabel:SetText('Running...')
-            CARunUIGump_runStatusLabel:SetColor(0, 1, 0, 1)
+            CARunUIGump_runStatusLabel:SetText('Running...')                --- Iteration Done
+            CARunUIGump_runStatusLabel:SetColor(0, 1, 0, 1)                 --- Green
 
         else
             CALog_debug('Combat Assistant Disabled!')
@@ -2956,7 +3005,7 @@ function CARunUIGump_runGump(CAConfig)
     end
 end
 
-local DexerMainLoopConfig = {
+DexerMainLoopConfig = {
     time = {
         ActionWaitTime = 1000,  --- in milliseconds, how long to wait for actions like using items, targeting etc.
                                 --- Adjust ActionWaitTime if you experience issues, set it longer, ex. 1500 on high ping
@@ -3030,21 +3079,23 @@ local DexerMainLoopConfig = {
             Enable = false  --- Alerts you when a player from the hunt list is visible
         },
         Scavenging = {
-            Enable = false,     --- Scavenges items from the ground, only arrows, add more if needed
-            Frequency = 0,      --- milliseconds, zero means immediate
-            Items = {           --- List of items to scavenge
+            Enable = false,         --- Scavenges items from the ground, only arrows, add more if needed
+            Frequency = 0,          --- milliseconds, zero means immediate
+            LootItemsSerials = {    --- List of items to scavenge
                 0x0F3F,
                 0x1BFB
             },
+            LootItemsNames = {},        --- Use if serial not available
             DisallowGold = false,       --- Disallow scavenging gold (should it already be on the list above)
             DisallowBones = false,      --- Disallow scavenging bones (should it already be on the list above)
             DisallowGrimoire = false    --- Disallow scavenging grimoires (should it already be on the list above)
         },
         Attack = {
-            Enable = false,             --- Attacks nearby enemies automatically
-            Rangemax = 10,              --- Attack search range
-            MobilesExceptionList = {},  --- Mobiles to ignore, add friends so to not attack should they become grey
-            CheckFrequency = 3000       --- in milliseconds, how often to check for new targets, adjust if needed
+            Enable = false,                 --- Attacks nearby enemies automatically
+            Rangemax = 10,                  --- Attack search range
+            MobilesExceptionsSerials = {},  --- Mobiles Serials to ignore (add friends so to not attack should they become grey)
+            MobilesExceptionsNames = {},    --- Mobiles Names to ignore (use if don't have serial, use name: cows, ...)
+            CheckFrequency = 500            --- in milliseconds, how often to check for new targets, adjust if needed
         }
     },
     userCommands = {
