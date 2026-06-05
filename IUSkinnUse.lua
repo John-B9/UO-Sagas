@@ -12,4 +12,4 @@ local cacd = Import('CAConfigDexer')
 --- Run ---
 -----------
 
-ius.useSkinningKnife(cacd.run)
+ius.useSkinningKnife(cacd.run, true)

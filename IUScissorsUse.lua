@@ -12,4 +12,4 @@ local cacd = Import('CAConfigDexer')
 --- Run ---
 -----------
 
-ius.useScissors(cacd.run)
+ius.useScissors(cacd.run, true)

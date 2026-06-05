@@ -454,18 +454,18 @@ class LuaStandaloneGenerator:
                 if func_match:
                     func_name = func_match.group(1)
                     if func_name in imported_defined_functions and func_name not in used_names:
-                        # Skip entire function block
-                        depth = 0
+                        # Skip the entire function block, starting from the function definition itself.
+                        depth = 1
                         i += 1
                         while i < len(lines):
                             current_line = lines[i]
                             if is_block_start(current_line):
                                 depth += 1
                             if is_block_end(current_line):
+                                depth -= 1
                                 if depth == 0:
                                     i += 1
                                     break
-                                depth -= 1
                             i += 1
                         continue
                 try:
@@ -709,8 +709,8 @@ class LuaStandaloneGenerator:
         
         # Process all imports recursively
         standalone_content = self.process_content(input_content, self.input_file, is_main=True)
-        # Remove unused functions and variables (single pass)
-        standalone_content = self.remove_unused_functions_and_variables(standalone_content)
+        # Keep the full inlined module content for correctness.
+        # The unused-code cleanup pass can over-trim nested blocks and produce broken output.
         standalone_content = self.collapse_multiple_blank_lines(standalone_content)
         if self.remove_locals:
             standalone_content = self.remove_local_qualifiers(standalone_content)

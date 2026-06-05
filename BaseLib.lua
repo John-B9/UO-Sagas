@@ -36,6 +36,15 @@ local function equalsAnyInTable_(value, tableToCompare)
     return false
 end
 
+local function tableContains_(tbl, val)
+    for _, value in ipairs(tbl) do
+        if value == val then
+            return true
+        end
+    end
+    return false
+end
+
 local function findInInventory_(itemTypeID)
 
     local items = Items.FindByFilter({ graphics = itemTypeID, onground = false })
@@ -117,8 +126,8 @@ local function printIfDebug_(debug, stringToPrint)
     end
 end
 
-local function getHpPercentage_()
-    return (Player.Hits / Player.HitsMax) * 100
+local function getHpPercentage_(player)
+    return (player.Hits / player.HitsMax) * 100
 end
 
 --------------
@@ -128,6 +137,7 @@ end
 local Obj = {
     deepCopy = deepCopy_,
     equalsAnyInTable = equalsAnyInTable_,
+    tableContains = tableContains_,
     findInInventory = findInInventory_,
     findInInventoryGetFirst = findInInventoryGetFirst_,
     getSkillValue = getSkillValue_,

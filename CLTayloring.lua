@@ -43,7 +43,7 @@ local function postWork(config_)
 
     for i, item in ipairs(itemToCut) do
         --- use scissors
-        ius.useScissors(nil)
+        ius.useScissors(nil, true)
         Target.WaitForTarget(1000)
         --- select crafted item
         Target.TargetSerial(item.Serial)

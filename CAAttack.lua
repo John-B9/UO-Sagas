@@ -21,6 +21,7 @@ AttackConfig = {
     Enable = false,
     Rangemax = 10,
     MobilesExceptionsSerials = nil,
+    MobilesExceptionsGraphicIDs = nil,
     MobilesExceptionsNames = nil,
     CheckFrequency = 3000
 }
@@ -45,6 +46,10 @@ local function setMobilesExceptionSerialsList_(val)
     AttackConfig.MobilesExceptionsSerials = val
 end
 
+local function setMobilesExceptionGraphicIDsList_(val)
+    AttackConfig.MobilesExceptionsGraphicIDs = val
+end
+
 local function setMobilesExceptionNamesList_(val)
     AttackConfig.MobilesExceptionsNames = val
 end
@@ -57,6 +62,7 @@ local function setConfig_(config)
     setEnable_(config.Enable)
     setRangemax_(config.Rangemax)
     setMobilesExceptionSerialsList_(config.MobilesExceptionsSerials)
+    setMobilesExceptionGraphicIDsList_(config.MobilesExceptionsGraphicIDs)
     setMobilesExceptionNamesList_(config.MobilesExceptionsNames)
     setCheckFrequency_(config.CheckFrequency)
 end
@@ -90,6 +96,10 @@ local function targetAcceptPredicate_(mobile)
     end
 
     if bl.equalsAnyInTable(mobile.Serial, AttackConfig.MobilesExceptionsSerials) then
+        return false
+    end
+
+    if bl.equalsAnyInTable(mobile.Graphic, AttackConfig.MobilesExceptionsGraphicIDs) then
         return false
     end
 

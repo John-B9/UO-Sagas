@@ -280,7 +280,8 @@ end
 local Obj = {
     setEnable = setEnable_,
     setFrequency = setFrequency_,
-    setItems = setItems_,
+    setLootItemsSerials = setLootItemsSerials_,
+    setLootItemsNames = setLootItemsNames_,
     setConfig = setConfig_,
     scavenge = scavenge_
 }

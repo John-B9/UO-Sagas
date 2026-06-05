@@ -57,7 +57,7 @@ local function shouldAtemptDrink_(forced)
         cal.debug("Player is hiding, skipping health potion.")
         return false
     end
-    local playerHpPercentage = bl.getHpPercentage()
+    local playerHpPercentage = bl.getHpPercentage(Player)
     if not forced and (playerHpPercentage > HealingPotionsConfig.HPDrinkThreshould) then
         cal.debug("Player HP is above health potion threshold, skipping health potion.")
         return false

@@ -28,6 +28,35 @@ local RunUIGumpState = {
     ScavengerAllowGrimoire = true
 }
 
+--------------------------------------
+--- Main Window - Layout Constants ---
+--------------------------------------
+
+local mainWindowTopLabelPosX = 10
+local mainWindowTopLabelPosY = 40
+local mainWindowModuleEnableButtonPosX = 10
+local mainWindowModuleEnableButtonSizeX = 100
+local mainWindowModuleEnableButtonSizeY = 30
+local mainWindowModuleEnableStatusLabelPosX = 140
+local mainWindowModuleConfigButtonPosX = 220
+local mainWindowModuleConfigButtonSizeX = 30
+local mainWindowModuleConfigButtonSizeY = 30
+local mainWindowModuleRowPosYStart = 70
+local mainWindowModuleRowPosYIncrement = 50
+local mainWindowModuleRowPosYLabelAlignIncrement = 8
+local mainWindowRunButtonSizeX = 80
+local mainWindowRunButtonSizeY = 30
+
+local mainWindowNumberOfModules = 5
+local mainWindowSizeX = mainWindowModuleConfigButtonPosX + 50
+local mainWindowSizeY = mainWindowModuleRowPosYStart + mainWindowModuleRowPosYIncrement * (mainWindowNumberOfModules -1) + 50
+local mainWindowStartPosX = 200
+local mainWindowStartPosY = 200
+
+---------------------------------
+--- Main Window - UI Elements ---
+---------------------------------
+
 local mainWindow = nil
 local titleLabel = nil
 local runButton = nil
@@ -36,16 +65,37 @@ local activateBuffsButton = nil
 local buffsStatusLabel = nil
 local activateCommandsButton = nil
 local commandsStatusLabel = nil
-local activateAttacksButton = nil
+local activateAttackButton = nil
 local attackStatusLabel = nil
 local activateScavengerButton = nil
 local scavengerStatusLabel = nil
 local scavengerConfigButton = nil
 
+-------------------------------------------------------
+--- Generic Module Config Window - Layout Constants ---
+-------------------------------------------------------
+
+local moduleConfigWindowStartPosX = 200
+local moduleConfigWindowStartPosY = 200
+local moduleConfigWindowFeatureEnableButtonPosX = 10
+local moduleConfigWindowFeatureEnableButtonPosYStart = 40
+local moduleConfigWindowFeatureEnableButtonPosYIncrement = 50
+local moduleConfigWindowFeatureEnableButtonSizeX = 110
+local moduleConfigWindowFeatureEnableButtonSizeY = 30
+
+local moduleConfigWindowSizeX = 90
+
+-------------------------------------
+--- UI Elements - ScavengerConfig ---
+-------------------------------------
+
 local scavengerConfigWindow = nil
 local activateScavengerGoldButton = nil
 local activateScavengerBonesButton = nil
 local activateScavengerGrimoireButton = nil
+
+local scavengerConfigNumberOfFeatures = 3
+local scavengerConfigWindowSizeY = moduleConfigWindowFeatureEnableButtonPosYStart + moduleConfigWindowFeatureEnableButtonPosYIncrement * (scavengerConfigNumberOfFeatures - 1) + 50
 
 -----------------
 --- Functions ---
@@ -167,7 +217,7 @@ local function processUIGumpInteractions_()
         onOverrideWithNoCommandsButtonPressed_(RunUIGumpState.OverrideWithNoCommands)
     end
 
-    if activateAttacksButton:WasClicked() then
+    if activateAttackButton:WasClicked() then
         onAttackButtonPressed_(RunUIGumpState.OverrideWithNoAttacks)
     end
 
@@ -219,6 +269,69 @@ local function updateCombatAssistantConfig_(CAConfig)
     )
 end
 
+local function initMainGumpRun_(mainWindow)
+    cal.debug('Initializing Run Checkbox...')
+    local runCheckboxPosY = mainWindowModuleRowPosYStart
+    runButton = mainWindow:AddButton(mainWindowModuleEnableButtonPosX, runCheckboxPosY, 'Run', mainWindowRunButtonSizeX, mainWindowRunButtonSizeY)
+    runStatusLabel = mainWindow:AddLabel(mainWindowModuleEnableStatusLabelPosX, runCheckboxPosY + mainWindowModuleRowPosYLabelAlignIncrement, 'Stopped')
+    runStatusLabel:SetColor(1, 0, 0, 1)
+end
+
+local function initMainGumpBuffs_(mainWindow)
+    cal.debug('Initializing Buffs Checkbox...')
+    local buffsCheckboxPosY = mainWindowModuleRowPosYStart + mainWindowModuleRowPosYIncrement
+    activateBuffsButton = mainWindow:AddButton(mainWindowModuleEnableButtonPosX, buffsCheckboxPosY, 'Buffs', mainWindowModuleEnableButtonSizeX, mainWindowModuleEnableButtonSizeY)
+    buffsStatusLabel = mainWindow:AddLabel(mainWindowModuleEnableStatusLabelPosX, buffsCheckboxPosY + mainWindowModuleRowPosYLabelAlignIncrement, 'Enabled')
+    buffsStatusLabel:SetColor(0, 1, 0, 1)
+end
+
+local function initMainGumpCommands_(mainWindow)
+    cal.debug('Initializing Commands Checkbox...')
+    local commandsCheckboxPosY = mainWindowModuleRowPosYStart + mainWindowModuleRowPosYIncrement * 2
+    activateCommandsButton = mainWindow:AddButton(mainWindowModuleEnableButtonPosX, commandsCheckboxPosY, 'Commands', mainWindowModuleEnableButtonSizeX, mainWindowModuleEnableButtonSizeY)
+    commandsStatusLabel = mainWindow:AddLabel(mainWindowModuleEnableStatusLabelPosX, commandsCheckboxPosY + mainWindowModuleRowPosYLabelAlignIncrement, 'Enabled')
+    commandsStatusLabel:SetColor(0, 1, 0, 1)
+end
+
+local function initMainGumpAttack_(mainWindow)
+    cal.debug('Initializing Attack Checkbox...')
+    local attackCheckboxPosY = mainWindowModuleRowPosYStart + mainWindowModuleRowPosYIncrement * 3
+    activateAttackButton = mainWindow:AddButton(mainWindowModuleEnableButtonPosX, attackCheckboxPosY, 'Attack', mainWindowModuleEnableButtonSizeX, mainWindowModuleEnableButtonSizeY)
+    attackStatusLabel = mainWindow:AddLabel(mainWindowModuleEnableStatusLabelPosX, attackCheckboxPosY + mainWindowModuleRowPosYLabelAlignIncrement, 'Disabled')
+    attackStatusLabel:SetColor(1, 0, 0, 1)
+end
+
+local function initMainGumpScavenge_(mainWindow)
+    cal.debug('Initializing Scavenger Checkbox...')
+    local scavengerCheckboxPosY = mainWindowModuleRowPosYStart + mainWindowModuleRowPosYIncrement * 4
+    activateScavengerButton = mainWindow:AddButton(mainWindowModuleEnableButtonPosX, scavengerCheckboxPosY, 'Scavenge', mainWindowModuleEnableButtonSizeX, mainWindowModuleEnableButtonSizeY)
+    scavengerStatusLabel = mainWindow:AddLabel(mainWindowModuleEnableStatusLabelPosX, scavengerCheckboxPosY + mainWindowModuleRowPosYLabelAlignIncrement, 'Disabled')
+    scavengerStatusLabel:SetColor(1, 0, 0, 1)
+
+    cal.debug('Initializing Scavenger Config Button...')
+    scavengerConfigButton = mainWindow:AddButton(mainWindowModuleConfigButtonPosX, scavengerCheckboxPosY, '+', mainWindowModuleConfigButtonSizeX, mainWindowModuleConfigButtonSizeY)
+
+    cal.debug('Initializing Scavenger Config window...')
+    scavengerConfigWindow = UI.CreateWindow('scavengerConfigWindow', 'Scavenger')
+    if not scavengerConfigWindow then
+        cal.debug('Failed to create scavenger config window!')
+        return
+    end
+    cal.debug('Initializing Scavenger Config Window...')
+    scavengerConfigWindow:SetPosition(moduleConfigWindowStartPosX, moduleConfigWindowStartPosY)
+    scavengerConfigWindow:SetSize(moduleConfigWindowSizeX, scavengerConfigWindowSizeY)
+    scavengerConfigWindow:Hide()
+
+    cal.debug('Initializing Scavenger Config Window buttons...')
+    local activateScavengerGoldButtonPosY = moduleConfigWindowFeatureEnableButtonPosYStart
+    activateScavengerGoldButton = scavengerConfigWindow:AddButton(moduleConfigWindowFeatureEnableButtonPosX, activateScavengerGoldButtonPosY, 'Gold (Y)', moduleConfigWindowFeatureEnableButtonSizeX, moduleConfigWindowFeatureEnableButtonSizeY)
+    local activateScavengerBonesButtonPosY = moduleConfigWindowFeatureEnableButtonPosYStart + moduleConfigWindowFeatureEnableButtonPosYIncrement
+    activateScavengerBonesButton = scavengerConfigWindow:AddButton(moduleConfigWindowFeatureEnableButtonPosX, activateScavengerBonesButtonPosY, 'Bones (Y)', moduleConfigWindowFeatureEnableButtonSizeX, moduleConfigWindowFeatureEnableButtonSizeY)
+    local activateScavengerGrimoireButtonPosY = moduleConfigWindowFeatureEnableButtonPosYStart + moduleConfigWindowFeatureEnableButtonPosYIncrement * 2
+    activateScavengerGrimoireButton = scavengerConfigWindow:AddButton(moduleConfigWindowFeatureEnableButtonPosX, activateScavengerGrimoireButtonPosY, 'Grimoires (Y)', moduleConfigWindowFeatureEnableButtonSizeX, moduleConfigWindowFeatureEnableButtonSizeY)
+
+end
+
 local function initMainGump_()
 
     cal.debug('Initializing main gump...')
@@ -229,55 +342,18 @@ local function initMainGump_()
     end
 
     cal.debug('Initializing Main Window...')
-    mainWindow:SetPosition(200, 200)
-    mainWindow:SetSize(270, 320)
+    mainWindow:SetPosition(mainWindowStartPosX, mainWindowStartPosY)
+    mainWindow:SetSize(mainWindowSizeX, mainWindowSizeY)
 
-    titleLabel = mainWindow:AddLabel(10, 40, 'SAGAS Combat Assistant')
+    titleLabel = mainWindow:AddLabel(mainWindowTopLabelPosX, mainWindowTopLabelPosY, 'SAGAS Combat Assistant')
     titleLabel:SetColor(0.2, 0.8, 1, 1)
 
-    cal.debug('Initializing Run Checkbox...')
-    runButton = mainWindow:AddButton(10, 70, 'Run', 80, 30)
-    runStatusLabel = mainWindow:AddLabel(140, 78, 'Stopped')
-    runStatusLabel:SetColor(1, 0, 0, 1)
-
-    cal.debug('Initializing Buffs Checkbox...')
-    activateBuffsButton = mainWindow:AddButton(10, 120, 'Buffs', 100, 30)
-    buffsStatusLabel = mainWindow:AddLabel(140, 128, 'Enabled')
-    buffsStatusLabel:SetColor(0, 1, 0, 1)
-
-    cal.debug('Initializing Commands Checkbox...')
-    activateCommandsButton = mainWindow:AddButton(10, 170, 'Commands', 100, 30)
-    commandsStatusLabel = mainWindow:AddLabel(140, 178, 'Enabled')
-    commandsStatusLabel:SetColor(0, 1, 0, 1)
-
-    cal.debug('Initializing Attack Checkbox...')
-    activateAttacksButton = mainWindow:AddButton(10, 220, 'Attack', 100, 30)
-    attackStatusLabel = mainWindow:AddLabel(140, 228, 'Disabled')
-    attackStatusLabel:SetColor(1, 0, 0, 1)
-
-    cal.debug('Initializing Scavenger Checkbox...')
-    activateScavengerButton = mainWindow:AddButton(10, 270, 'Scavenge', 100, 30)
-    scavengerStatusLabel = mainWindow:AddLabel(140, 278, 'Disabled')
-    scavengerStatusLabel:SetColor(1, 0, 0, 1)
-
-    cal.debug('Initializing Scavenger Config Button...')
-    scavengerConfigButton = mainWindow:AddButton(220, 270, '+', 30, 30)
-
-    cal.debug('Initializing Scavenger Config window...')
-    scavengerConfigWindow = UI.CreateWindow('scavengerConfigWindow', 'Scavenger')
-    if not scavengerConfigWindow then
-        cal.debug('Failed to create scavenger config window!')
-        return
-    end
-    cal.debug('Initializing Scavenger Config Window...')
-    scavengerConfigWindow:SetPosition(200, 200)
-    scavengerConfigWindow:SetSize(90, 190)
-    scavengerConfigWindow:Hide()
-
-    cal.debug('Initializing Scavenger Config Window buttons...')
-    activateScavengerGoldButton = scavengerConfigWindow:AddButton(10, 40, 'Gold (Y)', 100, 30)
-    activateScavengerBonesButton = scavengerConfigWindow:AddButton(10, 90, 'Bones (Y)', 100, 30)
-    activateScavengerGrimoireButton = scavengerConfigWindow:AddButton(10, 140, 'Grimoires (Y)', 110, 30)
+    --- Modules
+    initMainGumpRun_(mainWindow)
+    initMainGumpBuffs_(mainWindow)
+    initMainGumpCommands_(mainWindow)
+    initMainGumpAttack_(mainWindow)
+    initMainGumpScavenge_(mainWindow)
 
     cal.debug("Window created and ready!")
 end

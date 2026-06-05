@@ -24,21 +24,23 @@ local skinning_knife_type_id = 65193
 --- Functions ---
 -----------------
 
-local function useSkinningKnife_(callback)
+local function getSkinningKnife_(verbose)
+    local best_skinning_knife = il.getItemWithLessUsesRemaining(skinning_knife_type_id, nil)
+    if verbose and best_skinning_knife == nil then
+        Messages.OverheadMobile(Player.Serial, "Missing Skinning Knife", messageHue)
+    end
+    return best_skinning_knife
+end
 
-    local skinning_knife = Items.FindByType(skinning_knife_type_id)
-    if skinning_knife == nil then
-        Messages.Overhead("Missing Skinning Knife", messageHue, Player.Serial)
-    else
-        local best_skinning_knife = il.getItemWithLessUsesRemaining(skinning_knife_type_id, nil)
+local function useSkinningKnife_(callback, verbose)
+    local best_skinning_knife = getSkinningKnife_(verbose)
+    if best_skinning_knife then
         Player.UseObject(best_skinning_knife.Serial)
     end
-
-    Pause(1000)
     if callback then
         callback()
     end
-
+    return best_skinning_knife ~= nil
 end
 
 --------------
@@ -46,6 +48,7 @@ end
 --------------
 
 local Obj = {
+    getSkinningKnife = getSkinningKnife_,
     useSkinningKnife = useSkinningKnife_
 }
 

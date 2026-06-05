@@ -202,8 +202,7 @@ local function mostPropertyFirstValueComparePredicate_(lprops, rprops)
 end
 
 local function getItemWithMostDoublePropertyFirstValue_(itemID, fieldStr)
-    return getItemWithBestPropertyValue_(itemID, getItemDoubleValueProperty_, fieldStr,
-    mostPropertyFirstValueComparePredicate_, nil)
+    return getItemWithBestPropertyValue_(itemID, getItemDoubleValueProperty_, fieldStr, mostPropertyFirstValueComparePredicate_, nil)
 end
 
 local function equipItemWithLessDoublePropertyFirstValue_(itemID, fieldStr, itemName)

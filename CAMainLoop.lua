@@ -20,7 +20,8 @@ local caban = Import('CABandage')
 local cabuf = Import('CABuffs')
 local cadbuf = Import('CADebuffs')
 local cadp = Import('CADetectPlayers')
-local cas = Import('CAScavenge')
+local casca = Import('CAScavenge')
+local caski = Import('CASkinn')
 local cautc = Import('CAUserTriggeredCommands')
 local caa = Import('CAAttack')
 
@@ -45,7 +46,8 @@ local function configureModules_(config)
     cabuf.setConfig(config.modules.Buffs)
     cadbuf.setConfig(config.modules.Debuffs)
     cadp.setConfig(config.modules.DetectPlayers)
-    cas.setConfig(config.modules.Scavenging)
+    caski.setConfig(config.modules.Skinning)
+    casca.setConfig(config.modules.Scavenging)
     caa.setConfig(config.modules.Attack)
 end
 
@@ -76,7 +78,8 @@ end
 local function journalIndependantActions_()
     caad.disarmed()
     caa.attack()
-    cas.scavenge()
+    caski.skinn()
+    casca.scavenge()
     cae.moongate()
 end
 

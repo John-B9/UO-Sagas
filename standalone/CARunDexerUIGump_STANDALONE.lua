@@ -247,6 +247,43 @@ function BaseLib_findInInventoryGetFirst(itemTypeID)
     return firstItem
 end
 
+function BaseLib_findItemOnGround(itemGraphicID)
+    local filter = { onground = true, rangemax = 2, graphics = {itemGraphicID} }
+    local list = Items.FindByFilter(filter)
+    if #list > 0 then
+        local board = list[1]
+        Messages.Print("Found Board at X:"..board.X.." Y:"..board.Y)
+        return board
+    else
+        Messages.Print("No Board (Graphic: 0x"..string.format("%X", itemGraphicID)..") found on the ground within range.")
+        return nil
+    end
+end
+
+function BaseLib_findItemOnGroundPickAndDropInBackpack(itemGraphicID, quantity)
+    local item = BaseLib_findItemOnGround(itemGraphicID)
+    if item == nil then
+        Messages.Print("Found no item...")
+        return false
+    end
+
+    itemName = item.Name
+    Messages.Print("Picking up "..quantity.." "..itemName)
+    Player.PickUp(item.Serial, quantity)
+    Pause(600)
+
+    Messages.Print("Picking up "..quantity.." "..itemName.." into backpack...")
+    Player.DropInBackpack()
+    Pause(300)
+
+    return true
+end
+
+function BaseLib_getSkillValue(skillNameStr)
+    local skill = Skills.GetValue(skillNameStr)
+    return tonumber(string.format("%.1f", skill))
+end
+
 function BaseLib_printIfDebug(debug, stringToPrint)
     if debug then
         Console.debug(stringToPrint)
@@ -254,8 +291,8 @@ function BaseLib_printIfDebug(debug, stringToPrint)
     end
 end
 
-function BaseLib_getHpPercentage()
-    return (Player.Hits / Player.HitsMax) * 100
+function BaseLib_getHpPercentage(player)
+    return (player.Hits / player.HitsMax) * 100
 end
 
 debugEnabled = false
@@ -280,6 +317,9 @@ function IPLib_getItemSingleValuePropertyNumber(item, singleValuePropertyRegexSt
 end
 
 uses_remaining_regex_str = "Uses Remaining: (%d+)"
+function IPLib_getUsesRemaining(item)
+    return IPLib_getItemSingleValuePropertyNumber(item, uses_remaining_regex_str)
+end
 
 identification_charges_regex_str = "Identification Charges: (%d+)"
 function IPLib_getIdentificationCharges(item)
@@ -306,6 +346,9 @@ function IPLib_getItemDoubleValueProperty(item, doubleValuePropertyRegexStr)
 end
 
 contents_regex_str = "Contents: (%d+)/(%d+) Items"
+function IPLib_getContents(item)
+    return IPLib_getItemDoubleValueProperty(item, contents_regex_str)
+end
 
 durability_regex_str = "Durability: (%d+)/(%d+)"
 function IPLib_getDurability(item)
@@ -407,6 +450,14 @@ function IPLib_getItemWithLessDoublePropertyFirstValue(itemID, fieldStr)
     return IPLib_getItemWithBestPropertyValue(itemID, IPLib_getItemDoubleValueProperty, fieldStr, IPLib_lessPropertyFirstValueComparePredicate, nil)
 end
 
+function IPLib_mostPropertyFirstValueComparePredicate(lprops, rprops)
+    return lprops[1] >= rprops[1]
+end
+
+function IPLib_getItemWithMostDoublePropertyFirstValue(itemID, fieldStr)
+    return IPLib_getItemWithBestPropertyValue(itemID, IPLib_getItemDoubleValueProperty, fieldStr, IPLib_mostPropertyFirstValueComparePredicate, nil)
+end
+
 function IPLib_equipItemWithLessDoublePropertyFirstValue(itemID, fieldStr, itemName)
     local itemToEquip = IPLib_getItemWithLessDoublePropertyFirstValue(itemID, fieldStr)
     if itemToEquip == nil then
@@ -415,6 +466,14 @@ function IPLib_equipItemWithLessDoublePropertyFirstValue(itemID, fieldStr, itemN
     end
     Player.Equip(itemToEquip.Serial)
     return itemToEquip
+end
+
+function IPLib_getItemWithLessContent(itemID)
+    return IPLib_getItemWithLessDoublePropertyFirstValue(itemID, contents_regex_str)
+end
+
+function IPLib_getItemWithMostContent(itemID)
+    return IPLib_getItemWithMostDoublePropertyFirstValue(itemID, contents_regex_str)
 end
 
 function IPLib_equipItemWithLessDurability(itemID, itemName)
@@ -1097,7 +1156,7 @@ function CAPotionsHealing_shouldAtemptDrink(forced)
         CALog_debug("Player is hiding, skipping health potion.")
         return false
     end
-    playerHpPercentage = BaseLib_getHpPercentage()
+    playerHpPercentage = BaseLib_getHpPercentage(Player)
     if not forced and (playerHpPercentage > HealingPotionsConfig.HPDrinkThreshould) then
         CALog_debug("Player HP is above health potion threshold, skipping health potion.")
         return false
@@ -1196,13 +1255,16 @@ function CAPotionsCure_cure(forced)
 end
 
 BandageConfig = {
-    Enable = false, --- Bandages player if HP is below BandageHP or if poisoned and no cure potions
-    BandageHP = 99 --- in percentage, when to use bandage
+    Enable = false,                 --- Bandages player if HP is below BandageSelfHPThreshould or if poisoned and no cure potions
+    BandageSelfHPThreshould = 99,   --- in percentage, when to use bandage
+    BandageAllies = false,          --- Whether to attempt to bandage allies when player is not in need of bandaging
+    BandageAlliesHPThreshould = 90, --- in percentage, when to use bandage
+    AlliesSerials = {}              --- List of allies serials to bandage, if BandageAllies is true
 }
 
 BandageStaticConfig = {
     Bandages = { 0x00e21 },
-    OverheadPauseTime = 0, --- in ms, zero means only when beginning bandage
+    OverheadPauseTime = 0,          --- in ms, zero means only when beginning bandage
     WarningPauseTime = 60 * 1000
 }
 
@@ -1217,18 +1279,140 @@ function CABandage_setEnable(val)
 end
 
 function CABandage_setBandageHP(val)
-    BandageConfig.BandageHP = val
+    BandageConfig.BandageSelfHPThreshould = val
 end
 
 function CABandage_setConfig(config)
     CABandage_setEnable(config.Enable)
-    CABandage_setBandageHP(config.BandageHP)
+    CABandage_setBandageHP(config.BandageSelfHPThreshould)
+    BandageConfig.BandageAllies = config.BandageAllies
+    BandageConfig.BandageAlliesHPThreshould = config.BandageAlliesHPThreshould
+    BandageConfig.AlliesSerials = config.AlliesSerials
 end
 
-function CABandage_bandageEndTime(start)
+function CABandage_bandageSelfEndTime(start)
     local delayMs = math.ceil((9.0 + 0.85 * ((130 - Player.Dex) / 20)) * 1000)
     local baseTime = start or CATime_getCurrentTickTime() or math.floor(os.time() * 1000)
     return baseTime + delayMs
+end
+
+function CABandage_bandageOtherEndTime(start)
+    --local delayMs = math.ceil((9.0 + 0.85 * ((130 - Player.Dex) / 20)) * 1000)
+    local delayMs = 5000
+    local baseTime = start or CATime_getCurrentTickTime() or math.floor(os.time() * 1000)
+    return baseTime + delayMs
+end
+
+function CABandage_getBandages()
+    CALog_debug("Looking for bandages...")
+    local bandages = BaseLib_findInInventory(BandageStaticConfig.Bandages)
+    if not bandages or #bandages == 0 then
+        if CATime_exceedsDuration(BandageState.lastOverheadTime, currentTickTime, BandageStaticConfig.WarningPauseTime) then
+            CALog_warning("No bandages found")
+            BandageState.lastOverheadTime = currentTickTime
+        end
+        return nil
+    end
+
+    bandageCount = #bandages > 1 and #bandages or 1
+    CALog_debug("Have " .. bandageCount .. " bandage(s)...")
+    return bandages
+end
+
+function CABandage_appyBandages(target)
+
+    local bandages = CABandage_getBandages()
+    if not bandages then
+        return false
+    end
+
+    CALog_debug("Attempting to bandage...")
+    isBandagingSuccessful = false
+    for _, item in ipairs(bandages) do
+        if not Player.UseObject(item.Serial) then
+            CALog_debug("Unable to use bandage item.")
+            goto continue
+        end
+
+        if not Target.WaitForTarget(1000) then
+            CALog_debug("Targeting failed, unable to bandage.")
+            goto continue
+        end
+
+        if target == nil then
+            if Target.Self() then
+                isBandagingSuccessful = true
+                break
+            end
+        elseif Target.TargetSerial(target.Serial) then
+            isBandagingSuccessful = true
+            break
+        end
+
+        :: continue ::
+    end
+
+    if not isBandagingSuccessful then
+        CALog_debug("Failed to bandage, the bandages found are probably in bank?")
+        return false
+    end
+
+    isBandagingSuccessful = CATime_pauseUntil(function()
+        return Journal.Contains("You begin applying the bandages.")
+    end, 50, 500)
+
+    if not isBandagingSuccessful then
+        BandageState.isBandaging = false
+        BandageState.lastBandageStart = nil
+        return false
+    end
+
+    return true
+end
+
+function CABandage_bandageOther(currentTickTime)
+
+    if not BandageConfig.BandageAllies then
+        return
+    end
+
+    CALog_debug("Atempting to bandage allies...")
+    for _, serial in ipairs(BandageConfig.AlliesSerials) do
+        if serial == Player.Serial then
+            goto continue
+        end
+
+        ally = Mobiles.FindBySerial(serial)
+
+        if ally and ally.Hits > 0 and ally.Distance <= 1 then
+            if BaseLib_getHpPercentage(ally) <= BandageConfig.BandageAlliesHPThreshould or ally.IsPoisoned then
+
+                CALog_debug("Ally " .. ally.Name .. " needs bandage, attempting to bandage...")
+
+                bandages = CABandage_getBandages()
+                if not bandages then
+                    return
+                end
+
+                isBandagingSuccessful = CABandage_appyBandages(ally)
+                if not isBandagingSuccessful then
+                    return
+                end
+
+                CALog_debug("Bandaging " .. ally.Name)
+
+                if BandageStaticConfig.OverheadPauseTime == 0 then
+                    CALog_info("Bandaging... " .. ally.Name)
+                    BandageState.lastOverHeadTime = currentTickTime
+                end
+
+                BandageState.isBandaging = isBandagingSuccessful
+                BandageState.lastBandageStart = currentTickTime
+                BandageState.bandageTimeEnd = CABandage_bandageOtherEndTime(BandageState.lastBandageStart)
+            end
+        end
+        ::continue::
+    end
 end
 
 function CABandage_bandage()
@@ -1275,85 +1459,38 @@ function CABandage_bandage()
 
     if Journal.Contains("You begin applying the bandages") then
         CALog_debug("Already manually bandaging, skipping.")
-        BandageState.bandageTimeEnd = CABandage_bandageEndTime(currentTickTime)
+        BandageState.bandageTimeEnd = CABandage_bandageSelfEndTime(currentTickTime)
         BandageState.isBandaging = true
         return
     end
 
-    playerHpPercentage = BaseLib_getHpPercentage()
-
-    if not Player.IsPoisoned and (playerHpPercentage >= BandageConfig.BandageHP) then
+    playerHpPercentage = BaseLib_getHpPercentage(Player)
+    if not Player.IsPoisoned and (playerHpPercentage >= BandageConfig.BandageSelfHPThreshould) then
         CALog_debug("Player not poisoned or HP is above threshold, no bandage needed.")
+        CABandage_bandageOther(currentTickTime)
         return
     end
 
-    if Player.IsPoisoned and BandageState.useBandages then
+    if Player.IsPoisoned then
         CALog_debug("Using bandages due to previous poison.")
-        info("Curing with bandage")
-        BandageState.useBandages = false
+        CALog_info("Curing with bandage")
     end
 
-    CALog_debug("Looing for bandages...")
-    bandages = BaseLib_findInInventory(BandageStaticConfig.Bandages)
-
-    if not bandages or #bandages == 0 then
-        if CATime_exceedsDuration(BandageState.lastOverheadTime, currentTickTime, BandageStaticConfig.WarningPauseTime) then
-            CALog_warning("No bandages found")
-            BandageState.lastOverheadTime = currentTickTime
-        end
-        return
-    end
-
-    CALog_debug("Attempting to bandage...")
-
-    bandageCount = #bandages > 1 and #bandages or 1
-    CALog_debug("Bandaging with " .. bandageCount .. " bandage(s)...")
-
-    isBandagingSuccessful = false
-    for _, item in ipairs(bandages) do
-        if not Player.UseObject(item.Serial) then
-            CALog_debug("Unable to use bandage item.")
-            goto continue
-        end
-
-        if not Target.WaitForTarget(1000) then
-            CALog_debug("Targeting failed, unable to bandage.")
-            goto continue
-        end
-
-        if Target.Self() then
-            isBandagingSuccessful = true
-            break
-        end
-
-        :: continue ::
-    end
-
+    isBandagingSuccessful = CABandage_appyBandages(nil)
     if not isBandagingSuccessful then
-        CALog_debug("Failed to bandage, the bandages found are probably in bank?")
         return
     end
 
-    bandaging = CATime_pauseUntil(function()
-        return Journal.Contains("You begin applying the bandages.")
-    end, 50, 500)
-
-    if not bandaging then
-        BandageState.isBandaging = false
-        BandageState.lastBandageStart = nil
-        return
-    end
-
-    CALog_debug("Bandaging")
+    CALog_info("Bandaging self")
 
     if BandageStaticConfig.OverheadPauseTime == 0 then
-        CALog_info("Bandaging...")
+        CALog_debug("Bandaging...")
         BandageState.lastOverHeadTime = currentTickTime
     end
 
-    BandageState.isBandaging = bandaging
+    BandageState.isBandaging = isBandagingSuccessful
     BandageState.lastBandageStart = currentTickTime
-    BandageState.bandageTimeEnd = CABandage_bandageEndTime(BandageState.lastBandageStart)
+    BandageState.bandageTimeEnd = CABandage_bandageSelfEndTime(BandageState.lastBandageStart)
 end
 
 SongOfHealingConfig = {
@@ -2227,10 +2364,46 @@ function IPMaterialPredicates_itemIsOfIron(item)
     return false
 end
 
+function IPMaterialPredicates_itemIsOfShadow(item)
+    local itemMaterial = IPLib_getMaterial(item)
+    BaseLib_printIfDebug(true, itemMaterial)
+    if itemMaterial == "Shadow" then
+        return true
+    end
+    return false
+end
+
 function IPMaterialPredicates_itemIsOfCopper(item)
     local itemMaterial = IPLib_getMaterial(item)
     BaseLib_printIfDebug(true, itemMaterial)
     if itemMaterial == "Copper" then
+        return true
+    end
+    return false
+end
+
+function IPMaterialPredicates_itemIsOfBronze(item)
+    local itemMaterial = IPLib_getMaterial(item)
+    BaseLib_printIfDebug(true, itemMaterial)
+    if itemMaterial == "Bronze" then
+        return true
+    end
+    return false
+end
+
+function IPMaterialPredicates_itemIsOfVerite(item)
+    local itemMaterial = IPLib_getMaterial(item)
+    BaseLib_printIfDebug(true, itemMaterial)
+    if itemMaterial == "Verite" then
+        return true
+    end
+    return false
+end
+
+function IPMaterialPredicates_itemIsOfValorite(item)
+    local itemMaterial = IPLib_getMaterial(item)
+    BaseLib_printIfDebug(true, itemMaterial)
+    if itemMaterial == "Valorite" then
         return true
     end
     return false
@@ -2308,6 +2481,15 @@ function IUMinerSwap_equipWarAxeAndFight()
     IPLib_equipItemWithLessDurability(war_axe_type_id, war_axe.Name)
     if postSwapCallback then
         Pause(500)
+        postSwapCallback()
+    end
+end
+
+function IUMinerSwap_equipWarHammerAndFight()
+    local war_axe = Items.FindByType(war_hammer_type_id)
+    IPLib_equipItemWithLessDurability(war_hammer_type_id, war_axe.Name)
+    Pause(500)
+    if postSwapCallback then
         postSwapCallback()
     end
 end
@@ -2712,6 +2894,13 @@ function CAMainLoop_mainLoopIterate(config)
     Pause(config.time.MainLoopTick)
 end
 
+function CAMainLoop_mainLoop(config)
+    CAMainLoop_mainLoopInit(config)                   --- Init main loop
+    while true do
+        CAMainLoop_mainLoopIterate(config)            --- Iterate main loop
+    end
+end
+
 CARunUIGump_RunUIGumpState = {
     IterateCAMainLoop = false,
     OverrideWithNoBuffs = false,
@@ -3038,8 +3227,11 @@ DexerMainLoopConfig = {
             HPDrinkThreshould = 20  --- in percentage, when to use heal potion
         },
         Bandages = {
-            Enable = true,  --- Auto bandage (damage and poison)
-            BandageHP = 99  --- in percentage, when to use bandage
+            Enable = true,                  --- Bandages player if HP is below BandageSelfHPThreshould or if poisoned and no cure potions
+            BandageSelfHPThreshould = 99,   --- in percentage, when to use bandage
+            BandageAllies = true,           --- Whether to attempt to bandage allies when player is not in need of bandaging
+            BandageAlliesHPThreshould = 90, --- in percentage, when to use bandage
+            AlliesSerials = {}              --- List of allies serials to bandage, if BandageAllies is true
         },
         Buffs = {
             Enable = true,              --- Enables automatic buffs, see bellow (disable if you prefer to use manually)
@@ -3104,8 +3296,22 @@ DexerMainLoopConfig = {
     }
 }
 
+function CAConfigDexer_run()
+    CAMainLoop_mainLoop(DexerMainLoopConfig)
+end
+
 function CAConfigDexer_runUiGump()
     CARunUIGump_runGump(DexerMainLoopConfig)
+end
+
+function CAConfigDexer_runWithCommandsDisabled()
+    DexerMainLoopConfig.userCommands.Enable = false
+    CAMainLoop_mainLoop(DexerMainLoopConfig)
+end
+
+function CAConfigDexer_runWithBuffsDisabled()
+    DexerMainLoopConfig.modules.Buffs.Enable = false
+    CAMainLoop_mainLoop(DexerMainLoopConfig)
 end
 
 -- End of: CAConfigDexer

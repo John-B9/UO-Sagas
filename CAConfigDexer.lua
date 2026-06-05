@@ -51,8 +51,11 @@ local DexerMainLoopConfig = {
             HPDrinkThreshould = 20  --- in percentage, when to use heal potion
         },
         Bandages = {
-            Enable = true,  --- Auto bandage (damage and poison)
-            BandageHP = 99  --- in percentage, when to use bandage
+            Enable = true,                  --- Bandages player if HP is below BandageSelfHPThreshould or if poisoned and no cure potions
+            BandageSelfHPThreshould = 99,   --- in percentage, when to use bandage
+            BandageAllies = true,           --- Whether to attempt to bandage allies when player is not in need of bandaging
+            BandageAlliesHPThreshould = 90, --- in percentage, when to use bandage
+            AlliesSerials = {}              --- List of allies serials to bandage, if BandageAllies is true
         },
         Buffs = {
             Enable = true,              --- Enables automatic buffs, see bellow (disable if you prefer to use manually)
@@ -91,6 +94,21 @@ local DexerMainLoopConfig = {
         DetectPlayers = {
             Enable = false  --- Alerts you when a player from the hunt list is visible
         },
+        Skinning = {
+            Enable = false,
+            NoisyMode = true,       --- To Log XOR Say when dropping or keeping a resource
+            LeatherHuesToKeep = {
+                --- 0x0000,         --- Regular
+                --- 0x0973,         --- Dull Copper
+                --- 0x0966,         --- Shadow Iron
+                --- 0x096D,         --- Copper
+                0x0972,             --- Bronze
+                0x08A5,             --- Gold
+                0x0979,             --- Agapite
+                0x089F,             --- Verite
+                0x08AB              --- Valorite
+            }
+        },
         Scavenging = {
             Enable = false,         --- Scavenges items from the ground, only arrows, add more if needed
             Frequency = 0,          --- milliseconds, zero means immediate
@@ -104,11 +122,12 @@ local DexerMainLoopConfig = {
             DisallowGrimoire = false    --- Disallow scavenging grimoires (should it already be on the list above)
         },
         Attack = {
-            Enable = false,                 --- Attacks nearby enemies automatically
-            Rangemax = 10,                  --- Attack search range
-            MobilesExceptionsSerials = {},  --- Mobiles Serials to ignore (add friends so to not attack should they become grey)
-            MobilesExceptionsNames = {},    --- Mobiles Names to ignore (use if don't have serial, use name: cows, ...)
-            CheckFrequency = 500            --- in milliseconds, how often to check for new targets, adjust if needed
+            Enable = false,                     --- Attacks nearby enemies automatically
+            Rangemax = 10,                      --- Attack search range
+            MobilesExceptionsSerials = {},      --- Mobiles Serials to ignore (add friends so to not attack should they become grey)
+            MobilesExceptionsGraphicIDs = {},   --- Mobiles GraphicIDs to ignore (don't kill: cows, dogs...)
+            MobilesExceptionsNames = {},        --- Mobiles Names to ignore (use if don't have serial or graphic available)
+            CheckFrequency = 500                --- in milliseconds, how often to check for new targets, adjust if needed
         }
     },
     userCommands = {
