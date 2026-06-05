@@ -87,15 +87,15 @@ end
 
 local processedCorpses = {}
 
-function HasProcessedCorpse(serial)
+local function HasProcessedCorpse(serial)
     return processedCorpses[serial] == true
 end
 
-function MarkCorpseProcessed(serial)
+local function MarkCorpseProcessed(serial)
     processedCorpses[serial] = true
 end
 
-function skinn_()
+local function skinn_()
 
     if not SkinnConfig.Enable then
         return

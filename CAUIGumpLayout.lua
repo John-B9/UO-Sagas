@@ -38,6 +38,10 @@ local CAUIGumpLayoutConstants = {
 --- Functions ---
 -----------------
 
+local function getLayoutConstants_()
+    return CAUIGumpLayoutConstants
+end
+
 local function createModuleEnableButtonAtRow_(mainWindow, row, buttonText, sizeX, sizeY)
     cal.debug('Initializing Module Enable "..buttonText.." Button (At Row: "..row..")...')
     local buttonPosX = CAUIGumpLayoutConstants.ModuleEnableButtonPosX
@@ -97,6 +101,7 @@ end
 --------------
 
 local Obj = {
+    getLayoutConstants = getLayoutConstants_,
     createModuleEnableButtonAtRow = createModuleEnableButtonAtRow_,
     createModuleEnableLabelAtRow = createModuleEnableLabelAtRow_,
     createModuleConfigButtonAtRow = createModuleConfigButtonAtRow_,

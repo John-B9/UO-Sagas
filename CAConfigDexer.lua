@@ -117,9 +117,10 @@ local DexerMainLoopConfig = {
                 0x1BFB
             },
             LootItemsNames = {},        --- Use if serial not available
-            DisallowGold = false,       --- Disallow scavenging gold (should it already be on the list above)
-            DisallowBones = false,      --- Disallow scavenging bones (should it already be on the list above)
-            DisallowGrimoire = false    --- Disallow scavenging grimoires (should it already be on the list above)
+            DisallowGold = false,       --- Toggle scavenging gold
+            DisallowBones = false,      --- Toggle scavenging bones
+            DisallowGrimoire = false,   --- Toggle scavenging grimoires
+            DisallowRibs = false        --- Toggle scavenging ribs
         },
         Attack = {
             Enable = false,                     --- Attacks nearby enemies automatically

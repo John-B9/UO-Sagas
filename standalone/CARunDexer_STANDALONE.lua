@@ -2132,7 +2132,15 @@ ScavengeConfig = {
     LootItemsNames = {},
     DisallowGold = false,
     DisallowBones = false,
-    DisallowGrimoire = false
+    DisallowGrimoire = false,
+    DisallowRibs = false
+}
+
+CAScavenge_GraphicIDs = {
+    Gold = 0x0EED,
+    Bones = 0x0F7E,
+    Grimoire = 0x2D9D,
+    Ribs = 0x09F1
 }
 
 CAScavenge_ScavengeState = {
@@ -2166,27 +2174,72 @@ function CAScavenge_setConfig(config)
     ScavengeConfig.DisallowGold = config.DisallowGold
     ScavengeConfig.DisallowBones = config.DisallowBones
     ScavengeConfig.DisallowGrimoire = config.DisallowGrimoire
+    ScavengeConfig.DisallowRibs = config.DisallowRibs
 
+    local haveGold = false
+    local haveBones = false
+    local haveGrimoire = false
+    local haveRibs = false
     CAScavenge_graphicIdLootableSet = {}
     CAScavenge_graphicIdToPriority = {}
     for i, graphic in ipairs(ScavengeConfig.LootItemsSerials) do
 
-        if graphic == 0x0EED and ScavengeConfig.DisallowGold then
-            goto continue
+        if graphic == CAScavenge_GraphicIDs.Gold then
+            haveGold = true
+            if ScavengeConfig.DisallowGold then
+                goto continue
+            end
         end
 
-        if graphic == 0x0F7E and ScavengeConfig.DisallowBones then
-            goto continue
+        if graphic == CAScavenge_GraphicIDs.Bones then
+            haveBones = true
+            if ScavengeConfig.DisallowBones then
+                goto continue
+            end
         end
 
-        if graphic == 0x2D9D and ScavengeConfig.DisallowGrimoire then
-            goto continue
+        if graphic == CAScavenge_GraphicIDs.Grimoire then
+            haveGrimoire = true
+            if ScavengeConfig.DisallowGrimoire then
+                goto continue
+            end
+        end
+
+        if graphic == CAScavenge_GraphicIDs.Ribs then
+            haveRibs = true
+            if ScavengeConfig.DisallowRibs then
+                goto continue
+            end
         end
 
         CAScavenge_graphicIdLootableSet[graphic] = true
         CAScavenge_graphicIdToPriority[graphic] = i
 
         ::continue::
+    end
+
+    if not haveGold and not ScavengeConfig.DisallowGold then
+        CALog_debug("Manually adding gold to Scavenging list...")
+        CAScavenge_graphicIdLootableSet[CAScavenge_GraphicIDs.Gold] = true
+        CAScavenge_graphicIdToPriority[CAScavenge_GraphicIDs.Gold] = #ScavengeConfig.LootItemsSerials + 1
+    end
+
+    if not haveBones and not ScavengeConfig.DisallowBones then
+        CALog_debug("Manually adding gold to Scavenging list...")
+        CAScavenge_graphicIdLootableSet[CAScavenge_GraphicIDs.Bones] = true
+        CAScavenge_graphicIdToPriority[CAScavenge_GraphicIDs.Bones] = #ScavengeConfig.LootItemsSerials + 2
+    end
+
+    if not haveGrimoire and not ScavengeConfig.DisallowGrimoire then
+        CALog_debug("Manually adding gold to Scavenging list...")
+        CAScavenge_graphicIdLootableSet[CAScavenge_GraphicIDs.Grimoire] = true
+        CAScavenge_graphicIdToPriority[CAScavenge_GraphicIDs.Grimoire] = #ScavengeConfig.LootItemsSerials + 3
+    end
+
+    if not haveRibs and not ScavengeConfig.DisallowRibs then
+        CALog_debug("Manually adding gold to Scavenging list...")
+        CAScavenge_graphicIdLootableSet[CAScavenge_GraphicIDs.Ribs] = true
+        CAScavenge_graphicIdToPriority[CAScavenge_GraphicIDs.Ribs] = #ScavengeConfig.LootItemsSerials + 3
     end
 
 end
@@ -2474,7 +2527,7 @@ function MarkCorpseProcessed(serial)
     processedCorpses[serial] = true
 end
 
-function skinn_()
+function CASkinn_skinn()
 
     if not SkinnConfig.Enable then
         return
@@ -2494,7 +2547,7 @@ function skinn_()
             goto skip_corpse
         end
 
-        Pause(CATime_getActionWaitTime())
+        Pause(1.5 * CATime_getActionWaitTime())
 
         if not IUSkinn_useSkinningKnife(nil, false) then
             if CATime_exceedsDuration(SkinnState.lastOverHeadTime, CATime_getCurrentTickTime(), SkinnStaticConfig.WarningPauseTime) then
@@ -2527,7 +2580,7 @@ function skinn_()
                 CASkinn_announceFoundHide(hide, false)
                 Player.PickUp(hide.Serial, hide.Amount)
                 Player.DropOnGround()
-                Pause(CATime_getActionWaitTime())
+                Pause(0.5 * CATime_getActionWaitTime())
             else
 
                 CASkinn_announceFoundHide(hide, true)
@@ -2540,7 +2593,7 @@ function skinn_()
                 end
                 Target.WaitForTarget(3000)
                 Target.TargetSerial(hide.Serial)
-                Pause(CATime_getActionWaitTime())
+                Pause(0.5 * CATime_getActionWaitTime())
             end
 
             :: skip_hide ::
@@ -3090,14 +3143,130 @@ function CAMainLoop_mainLoop(config)
     end
 end
 
+CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants = {
+    ModuleEnableButtonPosX = 10,
+    ModuleEnableButtonSizeX = 100,
+    ModuleEnableButtonSizeY = 30,
+    ModuleEnableLabelPosX = 140,
+    ModuleRowPosYStart = 70,
+    ModuleRowPosYIncrement = 50,
+    ModuleRowPosYLabelAlignIncrement = 8,
+    ModuleConfigButtonPosX = 220,
+    ModuleConfigButtonSizeX = 30,
+    ModuleConfigButtonSizeY = 30,
+    ModuleConfigWindowStartPosX = 200,
+    ModuleConfigWindowStartPosY = 200,
+    ModuleConfigWindowSizeX = 90,
+    ModuleConfigWindowFeatureEnableButtonPosX = 10,
+    ModuleConfigWindowFeatureEnableButtonPosYStart = 40,
+    ModuleConfigWindowFeatureEnableButtonPosYIncrement = 50,
+    ModuleConfigWindowFeatureEnableButtonSizeX = 110,
+    ModuleConfigWindowFeatureEnableButtonSizeY = 30
+}
+
+function CAUIGumpLayout_getLayoutConstants()
+    return CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants
+end
+
+function CAUIGumpLayout_createModuleEnableButtonAtRow(mainWindow, row, buttonText, sizeX, sizeY)
+    CALog_debug('Initializing Module Enable "..buttonText.." Button (At Row: "..row..")...')
+    local buttonPosX = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleEnableButtonPosX
+    local buttonPosY = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleRowPosYStart + ((row -1) * CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleRowPosYIncrement)
+    local buttonSizeX = (sizeX ~= nil and sizeX) or CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleEnableButtonSizeX
+    local buttonSizeY = (sizeY ~= nil and sizeY) or CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleEnableButtonSizeY
+    local button = mainWindow:AddButton(buttonPosX, buttonPosY, buttonText, buttonSizeX, buttonSizeY)
+    return button
+end
+
+function CAUIGumpLayout_createModuleEnableLabelAtRow(mainWindow, row, labelText)
+    CALog_debug('Initializing Module Enable Label (At Row: "..row..")...')
+    local labelPosX = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleEnableLabelPosX
+    local labelPosY = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleRowPosYStart + ((row -1) * CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleRowPosYIncrement) + CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleRowPosYLabelAlignIncrement
+    local label = mainWindow:AddLabel(labelPosX, labelPosY, labelText)
+    label:SetColor(0, 1, 0, 1)
+    return label
+end
+
+function CAUIGumpLayout_createModuleConfigButtonAtRow(mainWindow, row)
+    CALog_debug('Initializing Module Config Button (At Row: "..row..")...')
+    local buttonPosX = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigButtonPosX
+    local buttonPosY = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleRowPosYStart + ((row -1) * CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleRowPosYIncrement)
+    local buttonSizeX = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigButtonSizeX
+    local buttonSizeY = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigButtonSizeY
+    local button = mainWindow:AddButton(buttonPosX, buttonPosY, '+', buttonSizeX, buttonSizeY)
+    return button
+end
+
+function CAUIGumpLayout_createModuleConfigWindow(windowIDString, windowHeader, numRows)
+    CALog_debug('Creating Module Config window '..windowIDString..'...')
+    local moduleConfigWindow = UI.CreateWindow(windowIDString, windowHeader)
+    if not moduleConfigWindow then
+        CALog_debug('Failed to create Module Config window '..windowIDString..'!')
+        return nil
+    end
+    CALog_debug('Initializing Module Config window '..windowIDString..'...')
+    moduleConfigWindow:SetPosition(CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowStartPosX, CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowStartPosY)
+    moduleConfigWindowSizeY = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYStart + ((numRows - 1) * CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYIncrement) + 50
+    moduleConfigWindow:SetSize(CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowSizeX, moduleConfigWindowSizeY)
+    moduleConfigWindow:Hide()
+    return moduleConfigWindow
+end
+
+function CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configWindow, row, buttonText)
+    CALog_debug('Initializing Module Config Window "..buttonText.." Button (At Row: "..row..")...')
+    local buttonPosX = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosX
+    local buttonPosY = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYStart + ((row -1) * CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYIncrement)
+    local buttonSizeX = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonSizeX
+    local buttonSizeY = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonSizeY
+    local button = configWindow:AddButton(buttonPosX, buttonPosY, buttonText, buttonSizeX, buttonSizeY)
+    return button
+end
+
+CAUIGumpRunConfig = {
+    IterateCAMainLoop = false
+}
+
+CAUIGumpRun_mainWindowRunButtonSizeX = 80
+CAUIGumpRun_mainWindowRunButtonSizeY = 30
+
+function CAUIGumpRun_getIterateCAMainLoop()
+    return CAUIGumpRunConfig.IterateCAMainLoop
+end
+
+function CAUIGumpRun_onRunCombatAssistantButtonPressed(isChecked, label)
+    CALog_debug('Run Button changed: '..tostring(isChecked))
+    CAUIGumpRunConfig.IterateCAMainLoop = isChecked
+    if isChecked then
+        label:SetText('Enabled')
+        label:SetColor(0, 1, 0, 1)
+    else
+        label:SetText('Disabled')
+        label:SetColor(1, 0, 0, 1)
+    end
+end
+
+function CAUIGumpRun_processUIInteractions(button, label)
+    if button:WasClicked() then
+        CAUIGumpRun_onRunCombatAssistantButtonPressed(not CAUIGumpRunConfig.IterateCAMainLoop, label)
+    end
+end
+
+function CAUIGumpRun_initUI(mainWindow, row)
+    CALog_debug('Creating Run Button UI...')
+    local button = CAUIGumpLayout_createModuleEnableButtonAtRow(mainWindow, row, 'Run', CAUIGumpRun_mainWindowRunButtonSizeX, CAUIGumpRun_mainWindowRunButtonSizeY)
+    local label = CAUIGumpLayout_createModuleEnableLabelAtRow(mainWindow, row, 'Stopped')
+    label:SetColor(1, 0, 0, 1)
+    return button, label
+end
+
 CAUIGumpHealConfig = {
     Enable = false ---
 }
 
-CAUIGump_CAUIGumpHeal_CAUIGumpHealStaticConfig = {
+CAUIGumpHeal_CAUIGumpHealStaticConfig = {
 }
 
-CAUIGump_CAUIGumpHeal_CAUIGumpHealState = {
+CAUIGumpHeal_CAUIGumpHealState = {
 }
 
 function CAUIGumpHeal_setEnable(val)
@@ -3108,329 +3277,286 @@ function CAUIGumpHeal_setConfig(config)
     CAUIGumpHeal_setEnable(config.Enable)
 end
 
-CAUIGump_CAUIGumpBuffs_CAUIGumpLayout_CAUIGumpAttackStaticConfig = {
-    MainWindowModuleEnableButtonPosX = 10,
-    MainWindowModuleEnableButtonSizeX = 100,
-    MainWindowModuleEnableButtonSizeY = 30,
-    MainWindowModuleEnableLabelPosX = 140,
-    MainWindowModuleRowPosYStart = 70,
-    MainWindowModuleRowPosYIncrement = 50,
-    MainWindowModuleRowPosYLabelAlignIncrement = 8
-}
-
-function CAUIGumpLayout_createButtonAtPosition(mainWindow, buttonPosition, button, buttonText)
-    CALog_debug('Initializing "..buttonText.." button (Position: "..buttonPosition..")...')
-    local buttonPosX = CAUIGump_CAUIGumpBuffs_CAUIGumpLayout_CAUIGumpAttackStaticConfig.MainWindowModuleEnableButtonPosX
-    local buttonPosY = CAUIGump_CAUIGumpBuffs_CAUIGumpLayout_CAUIGumpAttackStaticConfig.MainWindowModuleRowPosYStart + (buttonPosition * CAUIGump_CAUIGumpBuffs_CAUIGumpLayout_CAUIGumpAttackStaticConfig.MainWindowModuleRowPosYIncrement)
-    local buttonSizeX = CAUIGump_CAUIGumpBuffs_CAUIGumpLayout_CAUIGumpAttackStaticConfig.MainWindowModuleEnableButtonSizeX
-    local buttonSizeY = CAUIGump_CAUIGumpBuffs_CAUIGumpLayout_CAUIGumpAttackStaticConfig.MainWindowModuleEnableButtonSizeY
-    button = mainWindow:AddButton(buttonPosX, buttonPosY, buttonText, buttonSizeX, buttonSizeY)
-end
-
-function CAUIGumpLayout_createLabelAtPosition(mainWindow, labelPosition, label, labelText)
-    CALog_debug('Initializing "..labelText.." label (Position: "..labelPosition..")...')
-    local labelPosX = CAUIGump_CAUIGumpBuffs_CAUIGumpLayout_CAUIGumpAttackStaticConfig.MainWindowModuleEnableLabelPosX
-    local labelPosY = CAUIGump_CAUIGumpBuffs_CAUIGumpLayout_CAUIGumpAttackStaticConfig.MainWindowModuleRowPosYStart + (labelPosition * CAUIGump_CAUIGumpBuffs_CAUIGumpLayout_CAUIGumpAttackStaticConfig.MainWindowModuleRowPosYIncrement) + CAUIGump_CAUIGumpBuffs_CAUIGumpLayout_CAUIGumpAttackStaticConfig.MainWindowModuleRowPosYLabelAlignIncrement
-    label = mainWindow:AddLabel(labelPosX, labelPosY, labelText)
-    label:SetColor(0, 1, 0, 1)
-end
-
-activateBuffsButton = nil
-buffsStatusLabel = nil
-
-CAUIGumpBuffsState = {
+CAUIGumpBuffs_CAUIGumpBuffsState = {
     OverrideWithNoBuffs = false,
 }
 
-function onOverrideWithNoBuffsButtonPressed_(isChecked)
+function CAUIGumpBuffs_onOverrideWithNoBuffsButtonPressed(isChecked, label)
     CALog_debug('Buffs disabled checkbox changed: '..tostring(isChecked))
-    CAUIGumpBuffsState.OverrideWithNoBuffs = not isChecked
+    CAUIGumpBuffs_CAUIGumpBuffsState.OverrideWithNoBuffs = not isChecked
     if isChecked then
-        buffsStatusLabel:SetText('Enabled')
-        buffsStatusLabel:SetColor(0, 1, 0, 1)
+        label:SetText('Enabled')
+        label:SetColor(0, 1, 0, 1)
     else
-        buffsStatusLabel:SetText('Disabled')
-        buffsStatusLabel:SetColor(1, 0, 0, 1)
+        label:SetText('Disabled')
+        label:SetColor(1, 0, 0, 1)
     end
 end
 
-function CAUIGumpBuffs_processUIInteractions()
-    if activateBuffsButton:WasClicked() then                                                --- Buffs
-        onOverrideWithNoBuffsButtonPressed_(CAUIGumpBuffsState.OverrideWithNoBuffs)
+function CAUIGumpBuffs_processUIInteractions(button, label)
+    if button:WasClicked() then
+        CAUIGumpBuffs_onOverrideWithNoBuffsButtonPressed(CAUIGumpBuffs_CAUIGumpBuffsState.OverrideWithNoBuffs, label)
     end
 end
 
 function CAUIGumpBuffs_updateCAConfigToCurrentUIConfig(CAConfigBuffs)
-    CAConfigBuffs.Enable = not CAUIGumpBuffsState.OverrideWithNoBuffs
+    CAConfigBuffs.Enable = not CAUIGumpBuffs_CAUIGumpBuffsState.OverrideWithNoBuffs
 end
 
-function CAUIGumpBuffs_initUI(mainWindow, position)
+function CAUIGumpBuffs_initUI(mainWindow, row)
     CALog_debug('Creating Buffs UI...')
-    CAUIGumpLayout_createButtonAtPosition(mainWindow, position, activateBuffsButton, 'Buffs')
-    CAUIGumpLayout_createLabelAtPosition(mainWindow, position, buffsStatusLabel, 'Enabled')
-end
-
-CAUIGumpAttackConfig = {
-    Enable = false ---
-}
-
-CAUIGumpAttack_CAUIGumpAttackStaticConfig = {
-}
-
-CAUIGumpAttack_CAUIGumpAttackState = {
-}
-
-function CAUIGumpAttack_setEnable(val)
-    CAUIGumpAttackConfig.Enable = val
-end
-
-function CAUIGumpAttack_setConfig(config)
-    CAUIGumpAttack_setEnable(config.Enable)
+    local button = CAUIGumpLayout_createModuleEnableButtonAtRow(mainWindow, row, 'Buffs')
+    local label = CAUIGumpLayout_createModuleEnableLabelAtRow(mainWindow, row, 'Enabled')
+    return button, label
 end
 
 CAUIGumpCommandsConfig = {
-    Enable = false ---
+    OverrideWithNoCommands = false
 }
 
-CAUIGumpCommands_CAUIGumpCommandsStaticConfig = {
-}
-
-CAUIGumpCommands_CAUIGumpCommandsState = {
-}
-
-function CAUIGumpCommands_setEnable(val)
-    CAUIGumpCommandsConfig.Enable = val
+function CAUIGumpCommands_onOverrideWithNoCommandsButtonPressed(isChecked, label)
+    CALog_debug('Commands disabled checkbox changed: '..tostring(isChecked))
+    CAUIGumpCommandsConfig.OverrideWithNoCommands = not isChecked
+    if isChecked then
+        label:SetText('Enabled')
+        label:SetColor(0, 1, 0, 1)
+    else
+        label:SetText('Disabled')
+        label:SetColor(1, 0, 0, 1)
+    end
 end
 
-function CAUIGumpCommands_setConfig(config)
-    CAUIGumpCommands_setEnable(config.Enable)
+function CAUIGumpCommands_processUIInteractions(button, label)
+    if button:WasClicked() then
+        CAUIGumpCommands_onOverrideWithNoCommandsButtonPressed(CAUIGumpCommandsConfig.OverrideWithNoCommands, label)
+    end
+end
+
+function CAUIGumpCommands_updateCAConfigToCurrentUIConfig(CAConfigCommands)
+    CAConfigCommands.Enable = not CAUIGumpCommandsConfig.OverrideWithNoCommands
+end
+
+function CAUIGumpCommands_initUI(mainWindow, row)
+    CALog_debug('Creating Commands UI...')
+    local button = CAUIGumpLayout_createModuleEnableButtonAtRow(mainWindow, row, 'Commands')
+    local label = CAUIGumpLayout_createModuleEnableLabelAtRow(mainWindow, row, 'Enabled')
+    return button, label
+end
+
+CAUIGumpAttackConfig = {
+    OverrideWithNoAttacks = true
+}
+
+function CAUIGumpAttack_onAttackButtonPressed(isChecked, label)
+    CALog_debug('Attack disabled checkbox changed: '..tostring(isChecked))
+    CAUIGumpAttackConfig.OverrideWithNoAttacks = not isChecked
+    if isChecked then
+        label:SetText('Enabled')
+        label:SetColor(0, 1, 0, 1)
+    else
+        label:SetText('Disabled')
+        label:SetColor(1, 0, 0, 1)
+    end
+end
+
+function CAUIGumpAttack_processUIInteractions(button, label)
+    if button:WasClicked() then
+        CAUIGumpAttack_onAttackButtonPressed(CAUIGumpAttackConfig.OverrideWithNoAttacks, label)
+    end
+end
+
+function CAUIGumpAttack_updateCAConfigToCurrentUIConfig(CAConfigAttack)
+    CAConfigAttack.Enable = not CAUIGumpAttackConfig.OverrideWithNoAttacks
+end
+
+function CAUIGumpAttack_initUI(mainWindow, row)
+    CALog_debug('Creating Attack UI...')
+    local button = CAUIGumpLayout_createModuleEnableButtonAtRow(mainWindow, row, 'Attack')
+    local label = CAUIGumpLayout_createModuleEnableLabelAtRow(mainWindow, row, 'Disabled')
+    label:SetColor(1, 0, 0, 1)
+    return button, label
 end
 
 CAUIGumpScavengeConfig = {
-    Enable = false ---
-}
-
-CAUIGumpScavenge_CAUIGumpScavengeStaticConfig = {
-}
-
-CAUIGumpScavenge_CAUIGumpScavengeState = {
-}
-
-function CAUIGumpScavenge_setEnable(val)
-    CAUIGumpScavengeConfig.Enable = val
-end
-
-function CAUIGumpScavenge_setConfig(config)
-    CAUIGumpScavenge_setEnable(config.Enable)
-end
-
-RunUIGumpState = {
-    IterateCAMainLoop = false,
-    OverrideWithNoCommands = false,
-    OverrideWithNoAttacks = true,
     OverrideWithNoScavenger = true,
     ScavengerConfigOpen = true,
     ScavengerAllowGold = true,
     ScavengerAllowBones = true,
-    ScavengerAllowGrimoire = true
+    ScavengerAllowGrimoire = true,
+    ScavengerAllowRibs = true
 }
 
-mainWindowTopLabelPosX = 10
-mainWindowTopLabelPosY = 40
-mainWindowModuleEnableButtonPosX = 10
-mainWindowModuleEnableButtonSizeX = 100
-mainWindowModuleEnableButtonSizeY = 30
-mainWindowModuleEnableStatusLabelPosX = 140
-mainWindowModuleConfigButtonPosX = 220
-mainWindowModuleConfigButtonSizeX = 30
-mainWindowModuleConfigButtonSizeY = 30
-mainWindowModuleRowPosYStart = 70
-mainWindowModuleRowPosYIncrement = 50
-mainWindowModuleRowPosYLabelAlignIncrement = 8
-mainWindowRunButtonSizeX = 80
-mainWindowRunButtonSizeY = 30
-
-mainWindowNumberOfModules = 5
-mainWindowSizeX = mainWindowModuleConfigButtonPosX + 50
-mainWindowSizeY = mainWindowModuleRowPosYStart + mainWindowModuleRowPosYIncrement * (mainWindowNumberOfModules -1) + 50
-mainWindowStartPosX = 200
-mainWindowStartPosY = 200
-
-mainWindow = nil
-titleLabel = nil
-
-runButton = nil
-runStatusLabel = nil
-
-activateHealButton = nil
-healStatusLabel = nil
-healConfigButton = nil
-
-activateCommandsButton = nil
-commandsStatusLabel = nil
-
-activateAttackButton = nil
-attackStatusLabel = nil
-
-activateScavengerButton = nil
-scavengerStatusLabel = nil
-scavengerConfigButton = nil
-
-moduleConfigWindowStartPosX = 200
-moduleConfigWindowStartPosY = 200
-moduleConfigWindowFeatureEnableButtonPosX = 10
-moduleConfigWindowFeatureEnableButtonPosYStart = 40
-moduleConfigWindowFeatureEnableButtonPosYIncrement = 50
-moduleConfigWindowFeatureEnableButtonSizeX = 110
-moduleConfigWindowFeatureEnableButtonSizeY = 30
-
-moduleConfigWindowSizeX = 90
-
-scavengerConfigWindow = nil
-activateScavengerGoldButton = nil
-activateScavengerBonesButton = nil
-activateScavengerGrimoireButton = nil
-
-scavengerConfigNumberOfFeatures = 3
-scavengerConfigWindowSizeY = moduleConfigWindowFeatureEnableButtonPosYStart + moduleConfigWindowFeatureEnableButtonPosYIncrement * (scavengerConfigNumberOfFeatures - 1) + 50
-
-function onRunCombatAssistantButtonPressed_(isChecked)
-    CALog_debug('Run checkbox changed: '..tostring(isChecked))
-    RunUIGumpState.IterateCAMainLoop = isChecked
-    if isChecked then
-        runStatusLabel:SetText('Running')
-        runStatusLabel:SetColor(0, 1, 0, 1)
-    else
-        runStatusLabel:SetText('Stopped')
-        runStatusLabel:SetColor(1, 0, 0, 1)
-    end
-end
-
-function onOverrideWithNoCommandsButtonPressed_(isChecked)
-    CALog_debug('Commands disabled checkbox changed: '..tostring(isChecked))
-    RunUIGumpState.OverrideWithNoCommands = not isChecked
-    if isChecked then
-        commandsStatusLabel:SetText('Enabled')
-        commandsStatusLabel:SetColor(0, 1, 0, 1)
-    else
-        commandsStatusLabel:SetText('Disabled')
-        commandsStatusLabel:SetColor(1, 0, 0, 1)
-    end
-end
-
-function onAttackButtonPressed_(isChecked)
-    CALog_debug('Attack disabled checkbox changed: '..tostring(isChecked))
-    RunUIGumpState.OverrideWithNoAttacks = not isChecked
-    if isChecked then
-        attackStatusLabel:SetText('Enabled')
-        attackStatusLabel:SetColor(0, 1, 0, 1)
-    else
-        attackStatusLabel:SetText('Disabled')
-        attackStatusLabel:SetColor(1, 0, 0, 1)
-    end
-end
-
-function onScavengerButtonPressed_(isChecked)
+function onScavengeButtonPressed_(isChecked, label)
     CALog_debug('Scavenger disabled checkbox changed: '..tostring(isChecked))
-    RunUIGumpState.OverrideWithNoScavenger = not isChecked
+    CAUIGumpScavengeConfig.OverrideWithNoScavenger = not isChecked
     if isChecked then
-        scavengerStatusLabel:SetText('Enabled')
-        scavengerStatusLabel:SetColor(0, 1, 0, 1)
+        label:SetText('Enabled')
+        label:SetColor(0, 1, 0, 1)
     else
-        scavengerStatusLabel:SetText('Disabled')
-        scavengerStatusLabel:SetColor(1, 0, 0, 1)
+        label:SetText('Disabled')
+        label:SetColor(1, 0, 0, 1)
     end
 end
 
-function onScavengerConfigButtonPressed_(isChecked)
+function onScavengerConfigButtonPressed_(isChecked, button, window)
     CALog_debug('Scavenger config checkbox changed: '..tostring(isChecked))
-    RunUIGumpState.ScavengerConfigOpen = isChecked
+    CAUIGumpScavengeConfig.ScavengerConfigOpen = isChecked
     if isChecked then
-        scavengerConfigButton:SetText('+')
-        scavengerConfigWindow:Hide()
+        button:SetText('+')
+        window:Hide()
     else
-        scavengerConfigButton:SetText('-')
-        scavengerConfigWindow:Show()
+        button:SetText('-')
+        window:Show()
     end
 end
 
-function onScavengerGoldButtonPressed_(isChecked)
+function onScavengerGoldButtonPressed_(isChecked, button)
     CALog_debug('Scavenger allow gold checkbox changed: '..tostring(isChecked))
-    RunUIGumpState.ScavengerAllowGold = isChecked
+    CAUIGumpScavengeConfig.ScavengerAllowGold = isChecked
     if isChecked then
-        activateScavengerGoldButton:SetText('Gold (Y)')
+        button:SetText('Gold (Y)')
     else
-        activateScavengerGoldButton:SetText('Gold (N)')
+        button:SetText('Gold (N)')
     end
 end
 
-function onScavengerBonesButtonPressed_(isChecked)
+function onScavengerBonesButtonPressed_(isChecked, button)
     CALog_debug('Scavenger allow bones checkbox changed: '..tostring(isChecked))
-    RunUIGumpState.ScavengerAllowBones = isChecked
+    CAUIGumpScavengeConfig.ScavengerAllowBones = isChecked
     if isChecked then
-        activateScavengerBonesButton:SetText('Bones (Y)')
+        button:SetText('Bones (Y)')
     else
-        activateScavengerBonesButton:SetText('Bones (N)')
+        button:SetText('Bones (N)')
     end
 end
 
-function onScavengerGrimoireButtonPressed_(isChecked)
+function onScavengerGrimoireButtonPressed_(isChecked, button)
     CALog_debug('Scavenger allow grimoire checkbox changed: '..tostring(isChecked))
-    RunUIGumpState.ScavengerAllowGrimoire = isChecked
+    CAUIGumpScavengeConfig.ScavengerAllowGrimoire = isChecked
     if isChecked then
-        activateScavengerGrimoireButton:SetText('Grimoires (Y)')
+        button:SetText('Grimoires (Y)')
     else
-        activateScavengerGrimoireButton:SetText('Grimoires (N)')
+        button:SetText('Grimoires (N)')
     end
 end
+
+function onScavengerRibsButtonPressed_(isChecked, button)
+    CALog_debug('Scavenger allow grimoire checkbox changed: '..tostring(isChecked))
+    CAUIGumpScavengeConfig.ScavengerAllowRibs = isChecked
+    if isChecked then
+        button:SetText('Ribs (Y)')
+    else
+        button:SetText('Ribs (N)')
+    end
+end
+
+function CAUIGumpScavenge_processUIInteractions(enableB, enableL, configB, configW, goldB, bonesB, grimoireB, ribsB)
+    if enableB:WasClicked() then
+        onScavengeButtonPressed_(CAUIGumpScavengeConfig.OverrideWithNoScavenger, enableL)
+    end
+    if configB:WasClicked() then
+        onScavengerConfigButtonPressed_(not CAUIGumpScavengeConfig.ScavengerConfigOpen, configB, configW)
+    end
+    if goldB:WasClicked() then
+        onScavengerGoldButtonPressed_(not CAUIGumpScavengeConfig.ScavengerAllowGold, goldB)
+    end
+    if bonesB:WasClicked() then
+        onScavengerBonesButtonPressed_(not CAUIGumpScavengeConfig.ScavengerAllowBones, bonesB)
+    end
+    if grimoireB:WasClicked() then
+        onScavengerGrimoireButtonPressed_(not CAUIGumpScavengeConfig.ScavengerAllowGrimoire, grimoireB)
+    end
+    if ribsB:WasClicked() then
+        onScavengerRibsButtonPressed_(not CAUIGumpScavengeConfig.ScavengerAllowRibs, ribsB)
+    end
+end
+
+function CAUIGumpScavenge_updateCAConfigToCurrentUIConfig(CAConfigScavenge)
+    CAConfigScavenge.Enable = not CAUIGumpScavengeConfig.OverrideWithNoScavenger
+    CAConfigScavenge.DisallowGold = not CAUIGumpScavengeConfig.ScavengerAllowGold
+    CAConfigScavenge.DisallowBones = not CAUIGumpScavengeConfig.ScavengerAllowBones
+    CAConfigScavenge.DisallowGrimoire = not CAUIGumpScavengeConfig.ScavengerAllowGrimoire
+    CAConfigScavenge.DisallowRibs = not CAUIGumpScavengeConfig.ScavengerAllowRibs
+end
+
+function CAUIGumpScavenge_initUI(mainWindow, row)
+    CALog_debug('Creating Scavenge UI...')
+    local enableB = CAUIGumpLayout_createModuleEnableButtonAtRow(mainWindow, row, 'Scavenge')
+    local enableL = CAUIGumpLayout_createModuleEnableLabelAtRow(mainWindow, row, 'Disabled')
+    enableL:SetColor(1, 0, 0, 1)
+    local configB = CAUIGumpLayout_createModuleConfigButtonAtRow(mainWindow, row)
+    local configW = CAUIGumpLayout_createModuleConfigWindow('scavengerConfigWindow', 'Scavenger', 4)
+    local goldB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 1, 'Gold (Y)')
+    local bonesB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 2, 'Bones (Y)')
+    local grimoireB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 3, 'Grimoires (Y)')
+    local ribsB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 4, 'Ribs (Y)')
+    return enableB, enableL, configB, configW, goldB, bonesB, grimoireB, ribsB
+end
+
+CAUI = {
+    mainWindow = nil,
+    titleLabel = nil,
+    Run = {
+        enableButton = nil,
+        enableLabel = nil
+    },
+    ---Heal = {
+    ---    enableButton = nil,
+    ---    enableLabel = nil
+    ---},
+    Buffs = {
+        enableButton = nil,
+        enableLabel = nil
+    },
+    Commands = {
+        enableButton = nil,
+        enableLabel = nil
+    },
+    Attack = {
+        enableButton = nil,
+        enableLabel = nil
+    },
+    Scavenge = {
+        enableButton = nil,
+        enableLabel = nil,
+        configButton = nil,
+        Config = {
+            window = nil,
+            activateGoldButton = nil,
+            activateBonesButton = nil,
+            activateGrimoireButton = nil,
+            activateRibsButton = nil
+        }
+    }
+}
+
+CAUIMainWindowLayout = {
+    StartPosX = 200,
+    StartPosY = 200,
+    TitleLabelPosX = 10,
+    TitleLabelPosY = 40,
+    SizeXOffset = 20,
+    SizeYOffset = 20,
+    NumberOfModules = 5     --- Must match the current #modules
+}
 
 function CAUIGump_processUIGumpInteractions()
-
-    if runButton:WasClicked() then                                                          --- Run
-        onRunCombatAssistantButtonPressed_(not RunUIGumpState.IterateCAMainLoop)
-    end
-
-    CAUIGumpBuffs_processUIInteractions()
-
-    if activateCommandsButton:WasClicked() then
-        onOverrideWithNoCommandsButtonPressed_(RunUIGumpState.OverrideWithNoCommands)
-    end
-
-    if activateAttackButton:WasClicked() then
-        onAttackButtonPressed_(RunUIGumpState.OverrideWithNoAttacks)
-    end
-
-    if activateScavengerButton:WasClicked() then
-        onScavengerButtonPressed_(RunUIGumpState.OverrideWithNoScavenger)
-    end
-
-    if scavengerConfigButton:WasClicked() then
-        onScavengerConfigButtonPressed_(not RunUIGumpState.ScavengerConfigOpen)
-    end
-
-    if activateScavengerGoldButton:WasClicked() then
-        onScavengerGoldButtonPressed_(not RunUIGumpState.ScavengerAllowGold)
-    end
-
-    if activateScavengerBonesButton:WasClicked() then
-        onScavengerBonesButtonPressed_(not RunUIGumpState.ScavengerAllowBones)
-    end
-
-    if activateScavengerGrimoireButton:WasClicked() then
-        onScavengerGrimoireButtonPressed_(not RunUIGumpState.ScavengerAllowGrimoire)
-    end
+    CAUIGumpRun_processUIInteractions(CAUI.Run.enableButton, CAUI.Run.enableLabel)                     --- Run
+    ---cauigheal.processUIInteractions(CAUI.Run.enableButton, CAUI.Run.enableLabel)                    --- Heal
+    CAUIGumpBuffs_processUIInteractions(CAUI.Buffs.enableButton, CAUI.Buffs.enableLabel)               --- Buffs
+    CAUIGumpCommands_processUIInteractions(CAUI.Commands.enableButton, CAUI.Commands.enableLabel)      --- Commands
+    CAUIGumpAttack_processUIInteractions(CAUI.Attack.enableButton, CAUI.Attack.enableLabel)            --- Attack
+    CAUIGumpScavenge_processUIInteractions(CAUI.Scavenge.enableButton, CAUI.Scavenge.enableLabel, CAUI.Scavenge.configButton, CAUI.Scavenge.Config.window, CAUI.Scavenge.Config.activateGoldButton, CAUI.Scavenge.Config.activateBonesButton, CAUI.Scavenge.Config.activateGrimoireButton, CAUI.Scavenge.Config.activateRibsButton)              --- Scavenge
 end
 
 function CAUIGump_updateCombatAssistantConfig(CAConfig)
 
     --- Override UI values to CA Config
-    CAUIGumpBuffs_updateCAConfigToCurrentUIConfig_(CAConfig.modules.Buffs)                             --- Buffs
-    CAConfig.userCommands.Enable = not RunUIGumpState.OverrideWithNoCommands
-    CAConfig.modules.Attack.Enable = not RunUIGumpState.OverrideWithNoAttacks
-    CAConfig.modules.Scavenging.Enable = not RunUIGumpState.OverrideWithNoScavenger
-    CAConfig.modules.Scavenging.DisallowGold = not RunUIGumpState.ScavengerAllowGold
-    CAConfig.modules.Scavenging.DisallowBones = not RunUIGumpState.ScavengerAllowBones
-    CAConfig.modules.Scavenging.DisallowGrimoire = not RunUIGumpState.ScavengerAllowGrimoire
+    ---cauigheal.updateCAConfigToCurrentUIConfig(CAConfig.modules.Buffs)               --- Heal
+    CAUIGumpBuffs_updateCAConfigToCurrentUIConfig(CAConfig.modules.Buffs)              --- Buffs
+    CAUIGumpCommands_updateCAConfigToCurrentUIConfig(CAConfig.userCommands)            --- Commands
+    CAUIGumpAttack_updateCAConfigToCurrentUIConfig(CAConfig.modules.Attack)            --- Attack
+    CAUIGumpScavenge_updateCAConfigToCurrentUIConfig(CAConfig.modules.Scavenging)      --- Scavenge
 
     --- Because of internal error, nightsight may disable itself (don't override that part)
     CAConfig.modules.Buffs.Nightsight.Enable = CAPotionsNightsight_getEnable()
@@ -3447,116 +3573,37 @@ function CAUIGump_updateCombatAssistantConfig(CAConfig)
     )
 end
 
-function CAUIGump_initMainGumpRun(mainWindow)
-    CALog_debug('Initializing Run Checkbox...')
-    local runCheckboxPosY = mainWindowModuleRowPosYStart
-    runButton = mainWindow:AddButton(mainWindowModuleEnableButtonPosX, runCheckboxPosY, 'Run', mainWindowRunButtonSizeX, mainWindowRunButtonSizeY)
-    runStatusLabel = mainWindow:AddLabel(mainWindowModuleEnableStatusLabelPosX, runCheckboxPosY + mainWindowModuleRowPosYLabelAlignIncrement, 'Stopped')
-    runStatusLabel:SetColor(1, 0, 0, 1)
-end
-
-function CAUIGump_initMainGumpHeal(mainWindow)
-    CALog_debug('Initializing Heal Checkbox...')
-    local scavengerCheckboxPosY = mainWindowModuleRowPosYStart + mainWindowModuleRowPosYIncrement * 4
-    activateScavengerButton = mainWindow:AddButton(mainWindowModuleEnableButtonPosX, scavengerCheckboxPosY, 'Scavenge', mainWindowModuleEnableButtonSizeX, mainWindowModuleEnableButtonSizeY)
-    scavengerStatusLabel = mainWindow:AddLabel(mainWindowModuleEnableStatusLabelPosX, scavengerCheckboxPosY + mainWindowModuleRowPosYLabelAlignIncrement, 'Disabled')
-    scavengerStatusLabel:SetColor(1, 0, 0, 1)
-
-    CALog_debug('Initializing Scavenger Config Button...')
-    scavengerConfigButton = mainWindow:AddButton(mainWindowModuleConfigButtonPosX, scavengerCheckboxPosY, '+', mainWindowModuleConfigButtonSizeX, mainWindowModuleConfigButtonSizeY)
-
-    CALog_debug('Initializing Scavenger Config window...')
-    scavengerConfigWindow = UI.CreateWindow('scavengerConfigWindow', 'Scavenger')
-    if not scavengerConfigWindow then
-        CALog_debug('Failed to create scavenger config window!')
-        return
-    end
-    CALog_debug('Initializing Scavenger Config Window...')
-    scavengerConfigWindow:SetPosition(moduleConfigWindowStartPosX, moduleConfigWindowStartPosY)
-    scavengerConfigWindow:SetSize(moduleConfigWindowSizeX, scavengerConfigWindowSizeY)
-    scavengerConfigWindow:Hide()
-
-    CALog_debug('Initializing Scavenger Config Window buttons...')
-    activateScavengerGoldButtonPosY = moduleConfigWindowFeatureEnableButtonPosYStart
-    activateScavengerGoldButton = scavengerConfigWindow:AddButton(moduleConfigWindowFeatureEnableButtonPosX, activateScavengerGoldButtonPosY, 'Gold (Y)', moduleConfigWindowFeatureEnableButtonSizeX, moduleConfigWindowFeatureEnableButtonSizeY)
-    activateScavengerBonesButtonPosY = moduleConfigWindowFeatureEnableButtonPosYStart + moduleConfigWindowFeatureEnableButtonPosYIncrement
-    activateScavengerBonesButton = scavengerConfigWindow:AddButton(moduleConfigWindowFeatureEnableButtonPosX, activateScavengerBonesButtonPosY, 'Bones (Y)', moduleConfigWindowFeatureEnableButtonSizeX, moduleConfigWindowFeatureEnableButtonSizeY)
-    activateScavengerGrimoireButtonPosY = moduleConfigWindowFeatureEnableButtonPosYStart + moduleConfigWindowFeatureEnableButtonPosYIncrement * 2
-    activateScavengerGrimoireButton = scavengerConfigWindow:AddButton(moduleConfigWindowFeatureEnableButtonPosX, activateScavengerGrimoireButtonPosY, 'Grimoires (Y)', moduleConfigWindowFeatureEnableButtonSizeX, moduleConfigWindowFeatureEnableButtonSizeY)
-
-end
-
-function CAUIGump_initMainGumpCommands(mainWindow)
-    CALog_debug('Initializing Commands Checkbox...')
-    local commandsCheckboxPosY = mainWindowModuleRowPosYStart + mainWindowModuleRowPosYIncrement * 2
-    activateCommandsButton = mainWindow:AddButton(mainWindowModuleEnableButtonPosX, commandsCheckboxPosY, 'Commands', mainWindowModuleEnableButtonSizeX, mainWindowModuleEnableButtonSizeY)
-    commandsStatusLabel = mainWindow:AddLabel(mainWindowModuleEnableStatusLabelPosX, commandsCheckboxPosY + mainWindowModuleRowPosYLabelAlignIncrement, 'Enabled')
-    commandsStatusLabel:SetColor(0, 1, 0, 1)
-end
-
-function CAUIGump_initMainGumpAttack(mainWindow)
-    CALog_debug('Initializing Attack Checkbox...')
-    local attackCheckboxPosY = mainWindowModuleRowPosYStart + mainWindowModuleRowPosYIncrement * 3
-    activateAttackButton = mainWindow:AddButton(mainWindowModuleEnableButtonPosX, attackCheckboxPosY, 'Attack', mainWindowModuleEnableButtonSizeX, mainWindowModuleEnableButtonSizeY)
-    attackStatusLabel = mainWindow:AddLabel(mainWindowModuleEnableStatusLabelPosX, attackCheckboxPosY + mainWindowModuleRowPosYLabelAlignIncrement, 'Disabled')
-    attackStatusLabel:SetColor(1, 0, 0, 1)
-end
-
-function CAUIGump_initMainGumpScavenge(mainWindow)
-    CALog_debug('Initializing Scavenger Checkbox...')
-    local scavengerCheckboxPosY = mainWindowModuleRowPosYStart + mainWindowModuleRowPosYIncrement * 4
-    activateScavengerButton = mainWindow:AddButton(mainWindowModuleEnableButtonPosX, scavengerCheckboxPosY, 'Scavenge', mainWindowModuleEnableButtonSizeX, mainWindowModuleEnableButtonSizeY)
-    scavengerStatusLabel = mainWindow:AddLabel(mainWindowModuleEnableStatusLabelPosX, scavengerCheckboxPosY + mainWindowModuleRowPosYLabelAlignIncrement, 'Disabled')
-    scavengerStatusLabel:SetColor(1, 0, 0, 1)
-
-    CALog_debug('Initializing Scavenger Config Button...')
-    scavengerConfigButton = mainWindow:AddButton(mainWindowModuleConfigButtonPosX, scavengerCheckboxPosY, '+', mainWindowModuleConfigButtonSizeX, mainWindowModuleConfigButtonSizeY)
-
-    CALog_debug('Initializing Scavenger Config window...')
-    scavengerConfigWindow = UI.CreateWindow('scavengerConfigWindow', 'Scavenger')
-    if not scavengerConfigWindow then
-        CALog_debug('Failed to create scavenger config window!')
-        return
-    end
-    CALog_debug('Initializing Scavenger Config Window...')
-    scavengerConfigWindow:SetPosition(moduleConfigWindowStartPosX, moduleConfigWindowStartPosY)
-    scavengerConfigWindow:SetSize(moduleConfigWindowSizeX, scavengerConfigWindowSizeY)
-    scavengerConfigWindow:Hide()
-
-    CALog_debug('Initializing Scavenger Config Window buttons...')
-    activateScavengerGoldButtonPosY = moduleConfigWindowFeatureEnableButtonPosYStart
-    activateScavengerGoldButton = scavengerConfigWindow:AddButton(moduleConfigWindowFeatureEnableButtonPosX, activateScavengerGoldButtonPosY, 'Gold (Y)', moduleConfigWindowFeatureEnableButtonSizeX, moduleConfigWindowFeatureEnableButtonSizeY)
-    activateScavengerBonesButtonPosY = moduleConfigWindowFeatureEnableButtonPosYStart + moduleConfigWindowFeatureEnableButtonPosYIncrement
-    activateScavengerBonesButton = scavengerConfigWindow:AddButton(moduleConfigWindowFeatureEnableButtonPosX, activateScavengerBonesButtonPosY, 'Bones (Y)', moduleConfigWindowFeatureEnableButtonSizeX, moduleConfigWindowFeatureEnableButtonSizeY)
-    activateScavengerGrimoireButtonPosY = moduleConfigWindowFeatureEnableButtonPosYStart + moduleConfigWindowFeatureEnableButtonPosYIncrement * 2
-    activateScavengerGrimoireButton = scavengerConfigWindow:AddButton(moduleConfigWindowFeatureEnableButtonPosX, activateScavengerGrimoireButtonPosY, 'Grimoires (Y)', moduleConfigWindowFeatureEnableButtonSizeX, moduleConfigWindowFeatureEnableButtonSizeY)
-
-end
-
-function CAUIGump_initMainGump()
-
+function CAUIGump_initMainWindow()
     CALog_debug('Initializing main gump...')
-    mainWindow = UI.CreateWindow('mainWindow', 'SAGAS Combat Assistant')
-    if not mainWindow then
+    CAUI.mainWindow = UI.CreateWindow('CAUI.mainWindow', 'SAGAS Combat Assistant')
+    if not CAUI.mainWindow then
         CALog_debug('Failed to create main gump!')
         return
     end
 
     CALog_debug('Initializing Main Window...')
-    mainWindow:SetPosition(mainWindowStartPosX, mainWindowStartPosY)
-    mainWindow:SetSize(mainWindowSizeX, mainWindowSizeY)
+    furthestElementX = CAUIGumpLayout_getLayoutConstants().ModuleConfigButtonPosX + CAUIGumpLayout_getLayoutConstants().ModuleConfigButtonSizeX
+    furthestElementY = CAUIGumpLayout_getLayoutConstants().ModuleRowPosYStart + CAUIGumpLayout_getLayoutConstants().ModuleRowPosYIncrement * (CAUIMainWindowLayout.NumberOfModules -1) + CAUIGumpLayout_getLayoutConstants().ModuleEnableButtonSizeY
+    CAUI.mainWindow:SetPosition(CAUIMainWindowLayout.StartPosX, CAUIMainWindowLayout.StartPosY)
+    CAUI.mainWindow:SetSize(furthestElementX + CAUIMainWindowLayout.SizeXOffset, furthestElementY + CAUIMainWindowLayout.SizeYOffset)
 
-    titleLabel = mainWindow:AddLabel(mainWindowTopLabelPosX, mainWindowTopLabelPosY, 'SAGAS Combat Assistant')
-    titleLabel:SetColor(0.2, 0.8, 1, 1)
-
-    CAUIGump_initMainGumpRun(mainWindow)
-    CAUIGump_initMainGumpHeal(mainWindow)
-    CAUIGumpBuffs_initUI(mainWindow, 1)
-    CAUIGump_initMainGumpCommands(mainWindow)
-    CAUIGump_initMainGumpAttack(mainWindow)
-    CAUIGump_initMainGumpScavenge(mainWindow)
-
+    CAUI.titleLabel = CAUI.mainWindow:AddLabel(CAUIMainWindowLayout.TitleLabelPosX, CAUIMainWindowLayout.TitleLabelPosY, 'SAGAS Combat Assistant')
+    CAUI.titleLabel:SetColor(0.2, 0.8, 1, 1)
     CALog_debug("Window created and ready!")
+end
+
+function CAUIGump_initModules()
+    CAUI.Run.enableButton , CAUI.Run.enableLabel = CAUIGumpRun_initUI(CAUI.mainWindow, 1)                      --- Run
+    ---CAUI.Run.enableButton , CAUI.Run.enableLabel = cauigheal.initUI(CAUI.mainWindow, 1)                  --- Heal
+    CAUI.Buffs.enableButton , CAUI.Buffs.enableLabel = CAUIGumpBuffs_initUI(CAUI.mainWindow, 2)                --- Buffs
+    CAUI.Commands.enableButton , CAUI.Commands.enableLabel = CAUIGumpCommands_initUI(CAUI.mainWindow, 3)       --- Commands
+    CAUI.Attack.enableButton , CAUI.Attack.enableLabel = CAUIGumpAttack_initUI(CAUI.mainWindow, 4)             --- Attack
+    CAUI.Scavenge.enableButton, CAUI.Scavenge.enableLabel, CAUI.Scavenge.configButton, CAUI.Scavenge.Config.window, CAUI.Scavenge.Config.activateGoldButton, CAUI.Scavenge.Config.activateBonesButton, CAUI.Scavenge.Config.activateGrimoireButton, CAUI.Scavenge.Config.activateRibsButton = CAUIGumpScavenge_initUI(CAUI.mainWindow, 5)        --- Scavenge
+end
+
+function CAUIGump_initMainGump()
+    CAUIGump_initMainWindow()
+    CAUIGump_initModules()
 end
 
 function CAUIGump_runGump(CAConfig)
@@ -3571,17 +3618,17 @@ function CAUIGump_runGump(CAConfig)
         CAUIGump_updateCombatAssistantConfig(CAConfig)      --- Process Update
 
         --- Is the Combat Assistant set to run?
-        if RunUIGumpState.IterateCAMainLoop then
+        if CAUIGumpRun_getIterateCAMainLoop() then
 
             CALog_debug('Starting Combat Assistant Iteration!')
-            runStatusLabel:SetText('Running...')                --- Starting Iteration
-            runStatusLabel:SetColor(1, 0.5, 0, 1)               --- Orange
+            CAUI.Run.enableLabel:SetText('Running...')                --- Starting Iteration
+            CAUI.Run.enableLabel:SetColor(1, 0.5, 0, 1)               --- Orange
 
             CAMainLoop_mainLoopIterate(CAConfig)                      --- Iterate main loop once (process actions, etc)
 
             CALog_debug('Combat Assistant Iteration Done!')
-            runStatusLabel:SetText('Running...')                --- Iteration Done
-            runStatusLabel:SetColor(0, 1, 0, 1)                 --- Green
+            CAUI.Run.enableLabel:SetText('Running...')                --- Iteration Done
+            CAUI.Run.enableLabel:SetColor(0, 1, 0, 1)                 --- Green
 
         else
             CALog_debug('Combat Assistant Disabled!')
@@ -3690,9 +3737,10 @@ DexerMainLoopConfig = {
                 0x1BFB
             },
             LootItemsNames = {},        --- Use if serial not available
-            DisallowGold = false,       --- Disallow scavenging gold (should it already be on the list above)
-            DisallowBones = false,      --- Disallow scavenging bones (should it already be on the list above)
-            DisallowGrimoire = false    --- Disallow scavenging grimoires (should it already be on the list above)
+            DisallowGold = false,       --- Toggle scavenging gold
+            DisallowBones = false,      --- Toggle scavenging bones
+            DisallowGrimoire = false,   --- Toggle scavenging grimoires
+            DisallowRibs = false        --- Toggle scavenging ribs
         },
         Attack = {
             Enable = false,                     --- Attacks nearby enemies automatically

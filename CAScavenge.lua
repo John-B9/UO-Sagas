@@ -27,7 +27,15 @@ ScavengeConfig = {
     LootItemsNames = {},
     DisallowGold = false,
     DisallowBones = false,
-    DisallowGrimoire = false
+    DisallowGrimoire = false,
+    DisallowRibs = false
+}
+
+local GraphicIDs = {
+    Gold = 0x0EED,
+    Bones = 0x0F7E,
+    Grimoire = 0x2D9D,
+    Ribs = 0x09F1
 }
 
 local ScavengeState = {
@@ -65,27 +73,72 @@ local function setConfig_(config)
     ScavengeConfig.DisallowGold = config.DisallowGold
     ScavengeConfig.DisallowBones = config.DisallowBones
     ScavengeConfig.DisallowGrimoire = config.DisallowGrimoire
+    ScavengeConfig.DisallowRibs = config.DisallowRibs
 
+    local haveGold = false
+    local haveBones = false
+    local haveGrimoire = false
+    local haveRibs = false
     graphicIdLootableSet = {}
     graphicIdToPriority = {}
     for i, graphic in ipairs(ScavengeConfig.LootItemsSerials) do
-        
-        if graphic == 0x0EED and ScavengeConfig.DisallowGold then
-            goto continue
+
+        if graphic == GraphicIDs.Gold then
+            haveGold = true
+            if ScavengeConfig.DisallowGold then
+                goto continue
+            end
         end
         
-        if graphic == 0x0F7E and ScavengeConfig.DisallowBones then
-            goto continue
+        if graphic == GraphicIDs.Bones then
+            haveBones = true
+            if ScavengeConfig.DisallowBones then
+                goto continue
+            end
         end
         
-        if graphic == 0x2D9D and ScavengeConfig.DisallowGrimoire then
-            goto continue
+        if graphic == GraphicIDs.Grimoire then
+            haveGrimoire = true
+            if ScavengeConfig.DisallowGrimoire then
+                goto continue
+            end
+        end
+        
+        if graphic == GraphicIDs.Ribs then
+            haveRibs = true
+            if ScavengeConfig.DisallowRibs then
+                goto continue
+            end
         end
 
         graphicIdLootableSet[graphic] = true
         graphicIdToPriority[graphic] = i
 
         ::continue::
+    end
+
+    if not haveGold and not ScavengeConfig.DisallowGold then
+        cal.debug("Manually adding gold to Scavenging list...")
+        graphicIdLootableSet[GraphicIDs.Gold] = true
+        graphicIdToPriority[GraphicIDs.Gold] = #ScavengeConfig.LootItemsSerials + 1
+    end
+
+    if not haveBones and not ScavengeConfig.DisallowBones then
+        cal.debug("Manually adding gold to Scavenging list...")
+        graphicIdLootableSet[GraphicIDs.Bones] = true
+        graphicIdToPriority[GraphicIDs.Bones] = #ScavengeConfig.LootItemsSerials + 2
+    end
+
+    if not haveGrimoire and not ScavengeConfig.DisallowGrimoire then
+        cal.debug("Manually adding gold to Scavenging list...")
+        graphicIdLootableSet[GraphicIDs.Grimoire] = true
+        graphicIdToPriority[GraphicIDs.Grimoire] = #ScavengeConfig.LootItemsSerials + 3
+    end
+
+    if not haveRibs and not ScavengeConfig.DisallowRibs then
+        cal.debug("Manually adding gold to Scavenging list...")
+        graphicIdLootableSet[GraphicIDs.Ribs] = true
+        graphicIdToPriority[GraphicIDs.Ribs] = #ScavengeConfig.LootItemsSerials + 3
     end
 
 end
