@@ -14,9 +14,6 @@ local cauiglayout = Import('CAUIGumpLayout')
 --- Variables ---
 -----------------
 
-local activateBuffsButton = nil
-local buffsStatusLabel = nil
-
 local CAUIGumpBuffsState = {
     OverrideWithNoBuffs = false,
 }
@@ -25,21 +22,21 @@ local CAUIGumpBuffsState = {
 --- Functions ---
 -----------------
 
-function onOverrideWithNoBuffsButtonPressed_(isChecked)
+local function onOverrideWithNoBuffsButtonPressed_(isChecked, label)
     cal.debug('Buffs disabled checkbox changed: '..tostring(isChecked))
     CAUIGumpBuffsState.OverrideWithNoBuffs = not isChecked
     if isChecked then
-        buffsStatusLabel:SetText('Enabled')
-        buffsStatusLabel:SetColor(0, 1, 0, 1)
+        label:SetText('Enabled')
+        label:SetColor(0, 1, 0, 1)
     else
-        buffsStatusLabel:SetText('Disabled')
-        buffsStatusLabel:SetColor(1, 0, 0, 1)
+        label:SetText('Disabled')
+        label:SetColor(1, 0, 0, 1)
     end
 end
 
-local function processUIInteractions_()
-    if activateBuffsButton:WasClicked() then                                                --- Buffs
-        onOverrideWithNoBuffsButtonPressed_(CAUIGumpBuffsState.OverrideWithNoBuffs)
+local function processUIInteractions_(button, label)
+    if button:WasClicked() then
+        onOverrideWithNoBuffsButtonPressed_(CAUIGumpBuffsState.OverrideWithNoBuffs, label)
     end
 end
 
@@ -47,10 +44,11 @@ local function updateCAConfigToCurrentUIConfig_(CAConfigBuffs)
     CAConfigBuffs.Enable = not CAUIGumpBuffsState.OverrideWithNoBuffs
 end
 
-local function initUI_(mainWindow, position)
+local function initUI_(mainWindow, row)
     cal.debug('Creating Buffs UI...')
-    cauiglayout.createButtonAtPosition(mainWindow, position, activateBuffsButton, 'Buffs')
-    cauiglayout.createLabelAtPosition(mainWindow, position, buffsStatusLabel, 'Enabled')
+    local button = cauiglayout.createModuleEnableButtonAtRow(mainWindow, row, 'Buffs')
+    local label = cauiglayout.createModuleEnableLabelAtRow(mainWindow, row, 'Enabled')
+    return button, label
 end
 
 --------------

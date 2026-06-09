@@ -115,7 +115,7 @@ function skinn_()
             goto skip_corpse
         end
         
-        Pause(cat.getActionWaitTime())                                                                  --- Pause a bit to let the client catch up
+        Pause(1.5 * cat.getActionWaitTime())                                                                  --- Pause a bit to let the client catch up
                                                                                                         --- with the new corpse and avoid targeting errors
 
         if not iuski.useSkinningKnife(nil, false) then                                                                                  --- Skin the corpse
@@ -149,7 +149,7 @@ function skinn_()
                 announceFoundHide_(hide, false)
                 Player.PickUp(hide.Serial, hide.Amount)                                                 --- From inventory to ground
                 Player.DropOnGround()
-                Pause(cat.getActionWaitTime())
+                Pause(0.5 * cat.getActionWaitTime())
             else
 
                 announceFoundHide_(hide, true)
@@ -162,7 +162,7 @@ function skinn_()
                 end
                 Target.WaitForTarget(3000)
                 Target.TargetSerial(hide.Serial)
-                Pause(cat.getActionWaitTime())
+                Pause(0.5 * cat.getActionWaitTime())
             end
 
             :: skip_hide ::

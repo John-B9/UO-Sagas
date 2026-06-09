@@ -1,10 +1,10 @@
 ----------------------------------------------------------------------
---- Combat Assistant (CA) User Interface (UI) Gump Attack
+--- Combat Assistant (CA) User Interface (UI) Gump Run
 --- Author: JohnB9
 ---
 --- Version: 1.0.0  - 
 ---
---- Description: UI for Attack module
+--- Description: Run button
 ----------------------------------------------------------------------
 
 local cal = Import('CALog')
@@ -14,17 +14,24 @@ local cauiglayout = Import('CAUIGumpLayout')
 --- Variables ---
 -----------------
 
-CAUIGumpAttackConfig = {
-    OverrideWithNoAttacks = true
+CAUIGumpRunConfig = {
+    IterateCAMainLoop = false
 }
+
+local mainWindowRunButtonSizeX = 80
+local mainWindowRunButtonSizeY = 30
 
 -----------------
 --- Functions ---
 -----------------
 
-local function onAttackButtonPressed_(isChecked, label)
-    cal.debug('Attack disabled checkbox changed: '..tostring(isChecked))
-    CAUIGumpAttackConfig.OverrideWithNoAttacks = not isChecked
+local function getIterateCAMainLoop_()
+    return CAUIGumpRunConfig.IterateCAMainLoop
+end
+
+local function onRunCombatAssistantButtonPressed_(isChecked, label)
+    cal.debug('Run Button changed: '..tostring(isChecked))
+    CAUIGumpRunConfig.IterateCAMainLoop = isChecked
     if isChecked then
         label:SetText('Enabled')
         label:SetColor(0, 1, 0, 1)
@@ -36,18 +43,14 @@ end
 
 local function processUIInteractions_(button, label)
     if button:WasClicked() then
-        onAttackButtonPressed_(CAUIGumpAttackConfig.OverrideWithNoAttacks, label)
+        onRunCombatAssistantButtonPressed_(not CAUIGumpRunConfig.IterateCAMainLoop, label)
     end
 end
 
-local function updateCAConfigToCurrentUIConfig_(CAConfigAttack)
-    CAConfigAttack.Enable = not CAUIGumpAttackConfig.OverrideWithNoAttacks
-end
-
 local function initUI_(mainWindow, row)
-    cal.debug('Creating Attack UI...')
-    local button = cauiglayout.createModuleEnableButtonAtRow(mainWindow, row, 'Attack')
-    local label = cauiglayout.createModuleEnableLabelAtRow(mainWindow, row, 'Disabled')
+    cal.debug('Creating Run Button UI...')
+    local button = cauiglayout.createModuleEnableButtonAtRow(mainWindow, row, 'Run', mainWindowRunButtonSizeX, mainWindowRunButtonSizeY)
+    local label = cauiglayout.createModuleEnableLabelAtRow(mainWindow, row, 'Stopped')
     label:SetColor(1, 0, 0, 1)
     return button, label
 end
@@ -57,7 +60,7 @@ end
 --------------
 
 local Obj = {
-    updateCAConfigToCurrentUIConfig = updateCAConfigToCurrentUIConfig_,
+    getIterateCAMainLoop = getIterateCAMainLoop_,
     processUIInteractions = processUIInteractions_,
     initUI = initUI_
 }
