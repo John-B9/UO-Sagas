@@ -33,6 +33,15 @@ function BaseLib_equalsAnyInTable(value, tableToCompare)
     return false
 end
 
+function BaseLib_tableContains(tbl, val)
+    for _, value in ipairs(tbl) do
+        if value == val then
+            return true
+        end
+    end
+    return false
+end
+
 function BaseLib_findInInventory(itemTypeID)
 
     local items = Items.FindByFilter({ graphics = itemTypeID, onground = false })
@@ -408,13 +417,25 @@ function CLLib_craftItem(config)
 -- Imported: IUScissors
 -- ========================================
 
-function IUScissors_useScissors(callback)
+IUScissors_messageHue = 42
+
+function IUScissors_getScissors(verbose)
     local scissors = Items.FindByName('Scissors')
-    Player.UseObject(scissors.Serial)
-    Pause(1000)
+    if verbose and scissors == nil then
+        Messages.OverheadMobile(Player.Serial, "Missing Scissors", IUScissors_messageHue)
+    end
+    return scissors
+end
+
+function IUScissors_useScissors(callback, verbose)
+    local scissors = IUScissors_getScissors(verbose)
+    if scissors then
+        Player.UseObject(scissors.Serial)
+    end
     if callback then
         callback()
     end
+    return scissors ~= nil
 end
 
 -- End of: IUScissors
@@ -454,7 +475,7 @@ function postWork(config_)
 
     for i, item in ipairs(itemToCut) do
         --- use scissors
-        IUScissors_useScissors(nil)
+        IUScissors_useScissors(nil, true)
         Target.WaitForTarget(1000)
         --- select crafted item
         Target.TargetSerial(item.Serial)

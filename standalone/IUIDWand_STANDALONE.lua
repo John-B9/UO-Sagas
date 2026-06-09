@@ -37,6 +37,15 @@ function BaseLib_equalsAnyInTable(value, tableToCompare)
     return false
 end
 
+function BaseLib_tableContains(tbl, val)
+    for _, value in ipairs(tbl) do
+        if value == val then
+            return true
+        end
+    end
+    return false
+end
+
 function BaseLib_findInInventory(itemTypeID)
 
     local items = Items.FindByFilter({ graphics = itemTypeID, onground = false })
