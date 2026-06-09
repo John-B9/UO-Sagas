@@ -10,6 +10,12 @@
 
 local cal = Import('CALog')
 local caml = Import('CAMainLoop')
+local cauigheal = Import('CAUIGumpHeal')
+local cauigbuffs = Import('CAUIGumpBuffs')
+local cauigattack = Import('CAUIGumpAttack')
+local cauigcommands = Import('CAUIGumpCommands')
+local cauigscavenge = Import('CAUIGumpScavenge')
+
 local capn = Import('CAPotionsNightsight')
 
 -----------------
@@ -18,7 +24,6 @@ local capn = Import('CAPotionsNightsight')
 
 local RunUIGumpState = {
     IterateCAMainLoop = false,
-    OverrideWithNoBuffs = false,
     OverrideWithNoCommands = false,
     OverrideWithNoAttacks = true,
     OverrideWithNoScavenger = true,
@@ -59,14 +64,20 @@ local mainWindowStartPosY = 200
 
 local mainWindow = nil
 local titleLabel = nil
+
 local runButton = nil
 local runStatusLabel = nil
-local activateBuffsButton = nil
-local buffsStatusLabel = nil
+
+local activateHealButton = nil
+local healStatusLabel = nil
+local healConfigButton = nil
+
 local activateCommandsButton = nil
 local commandsStatusLabel = nil
+
 local activateAttackButton = nil
 local attackStatusLabel = nil
+
 local activateScavengerButton = nil
 local scavengerStatusLabel = nil
 local scavengerConfigButton = nil
@@ -110,18 +121,6 @@ function onRunCombatAssistantButtonPressed_(isChecked)
     else
         runStatusLabel:SetText('Stopped')
         runStatusLabel:SetColor(1, 0, 0, 1)
-    end
-end
-
-function onOverrideWithNoBuffsButtonPressed_(isChecked)
-    cal.debug('Buffs disabled checkbox changed: '..tostring(isChecked))
-    RunUIGumpState.OverrideWithNoBuffs = not isChecked
-    if isChecked then
-        buffsStatusLabel:SetText('Enabled')
-        buffsStatusLabel:SetColor(0, 1, 0, 1)
-    else
-        buffsStatusLabel:SetText('Disabled')
-        buffsStatusLabel:SetColor(1, 0, 0, 1)
     end
 end
 
@@ -205,48 +204,50 @@ end
 
 local function processUIGumpInteractions_()
 
-    if runButton:WasClicked() then
+    if runButton:WasClicked() then                                                          --- Run
         onRunCombatAssistantButtonPressed_(not RunUIGumpState.IterateCAMainLoop)
     end
 
-    if activateBuffsButton:WasClicked() then
-        onOverrideWithNoBuffsButtonPressed_(RunUIGumpState.OverrideWithNoBuffs)
-    end
+    ---if activateHealButton:WasClicked() then                                                 --- Heal
+    ---    onHealButtonPressed_(RunUIGumpState.OverrideWithNoHeal)
+    ---end
 
-    if activateCommandsButton:WasClicked() then
+    cauigbuffs.processUIInteractions()                                                      --- Buffs
+
+    if activateCommandsButton:WasClicked() then                                             --- Commands
         onOverrideWithNoCommandsButtonPressed_(RunUIGumpState.OverrideWithNoCommands)
     end
 
-    if activateAttackButton:WasClicked() then
+    if activateAttackButton:WasClicked() then                                               --- Attack
         onAttackButtonPressed_(RunUIGumpState.OverrideWithNoAttacks)
     end
 
-    if activateScavengerButton:WasClicked() then
+    if activateScavengerButton:WasClicked() then                                            --- Scavenger
         onScavengerButtonPressed_(RunUIGumpState.OverrideWithNoScavenger)
     end
 
-    if scavengerConfigButton:WasClicked() then
+    if scavengerConfigButton:WasClicked() then                                              --- Scavenger Config Button
         onScavengerConfigButtonPressed_(not RunUIGumpState.ScavengerConfigOpen)
     end
 
     --- Scavenging Config Window
-    if activateScavengerGoldButton:WasClicked() then
+    if activateScavengerGoldButton:WasClicked() then                                        --- Scavenger Config Gold
         onScavengerGoldButtonPressed_(not RunUIGumpState.ScavengerAllowGold)
     end
 
-    if activateScavengerBonesButton:WasClicked() then
+    if activateScavengerBonesButton:WasClicked() then                                       --- Scavenger Config Bones
         onScavengerBonesButtonPressed_(not RunUIGumpState.ScavengerAllowBones)
     end
 
-    if activateScavengerGrimoireButton:WasClicked() then
+    if activateScavengerGrimoireButton:WasClicked() then                                    --- Scavenger Config Grimmoire
         onScavengerGrimoireButtonPressed_(not RunUIGumpState.ScavengerAllowGrimoire)
     end
 end
 
 local function updateCombatAssistantConfig_(CAConfig)
 
-    --- Override values
-    CAConfig.modules.Buffs.Enable = not RunUIGumpState.OverrideWithNoBuffs
+    --- Override UI values to CA Config
+    cauigbuffs.updateCAConfigToCurrentUIConfig_(CAConfig.modules.Buffs)                             --- Buffs
     CAConfig.userCommands.Enable = not RunUIGumpState.OverrideWithNoCommands
     CAConfig.modules.Attack.Enable = not RunUIGumpState.OverrideWithNoAttacks
     CAConfig.modules.Scavenging.Enable = not RunUIGumpState.OverrideWithNoScavenger
@@ -277,12 +278,35 @@ local function initMainGumpRun_(mainWindow)
     runStatusLabel:SetColor(1, 0, 0, 1)
 end
 
-local function initMainGumpBuffs_(mainWindow)
-    cal.debug('Initializing Buffs Checkbox...')
-    local buffsCheckboxPosY = mainWindowModuleRowPosYStart + mainWindowModuleRowPosYIncrement
-    activateBuffsButton = mainWindow:AddButton(mainWindowModuleEnableButtonPosX, buffsCheckboxPosY, 'Buffs', mainWindowModuleEnableButtonSizeX, mainWindowModuleEnableButtonSizeY)
-    buffsStatusLabel = mainWindow:AddLabel(mainWindowModuleEnableStatusLabelPosX, buffsCheckboxPosY + mainWindowModuleRowPosYLabelAlignIncrement, 'Enabled')
-    buffsStatusLabel:SetColor(0, 1, 0, 1)
+local function initMainGumpHeal_(mainWindow)
+    cal.debug('Initializing Heal Checkbox...')
+    local scavengerCheckboxPosY = mainWindowModuleRowPosYStart + mainWindowModuleRowPosYIncrement * 4
+    activateScavengerButton = mainWindow:AddButton(mainWindowModuleEnableButtonPosX, scavengerCheckboxPosY, 'Scavenge', mainWindowModuleEnableButtonSizeX, mainWindowModuleEnableButtonSizeY)
+    scavengerStatusLabel = mainWindow:AddLabel(mainWindowModuleEnableStatusLabelPosX, scavengerCheckboxPosY + mainWindowModuleRowPosYLabelAlignIncrement, 'Disabled')
+    scavengerStatusLabel:SetColor(1, 0, 0, 1)
+
+    cal.debug('Initializing Scavenger Config Button...')
+    scavengerConfigButton = mainWindow:AddButton(mainWindowModuleConfigButtonPosX, scavengerCheckboxPosY, '+', mainWindowModuleConfigButtonSizeX, mainWindowModuleConfigButtonSizeY)
+
+    cal.debug('Initializing Scavenger Config window...')
+    scavengerConfigWindow = UI.CreateWindow('scavengerConfigWindow', 'Scavenger')
+    if not scavengerConfigWindow then
+        cal.debug('Failed to create scavenger config window!')
+        return
+    end
+    cal.debug('Initializing Scavenger Config Window...')
+    scavengerConfigWindow:SetPosition(moduleConfigWindowStartPosX, moduleConfigWindowStartPosY)
+    scavengerConfigWindow:SetSize(moduleConfigWindowSizeX, scavengerConfigWindowSizeY)
+    scavengerConfigWindow:Hide()
+
+    cal.debug('Initializing Scavenger Config Window buttons...')
+    local activateScavengerGoldButtonPosY = moduleConfigWindowFeatureEnableButtonPosYStart
+    activateScavengerGoldButton = scavengerConfigWindow:AddButton(moduleConfigWindowFeatureEnableButtonPosX, activateScavengerGoldButtonPosY, 'Gold (Y)', moduleConfigWindowFeatureEnableButtonSizeX, moduleConfigWindowFeatureEnableButtonSizeY)
+    local activateScavengerBonesButtonPosY = moduleConfigWindowFeatureEnableButtonPosYStart + moduleConfigWindowFeatureEnableButtonPosYIncrement
+    activateScavengerBonesButton = scavengerConfigWindow:AddButton(moduleConfigWindowFeatureEnableButtonPosX, activateScavengerBonesButtonPosY, 'Bones (Y)', moduleConfigWindowFeatureEnableButtonSizeX, moduleConfigWindowFeatureEnableButtonSizeY)
+    local activateScavengerGrimoireButtonPosY = moduleConfigWindowFeatureEnableButtonPosYStart + moduleConfigWindowFeatureEnableButtonPosYIncrement * 2
+    activateScavengerGrimoireButton = scavengerConfigWindow:AddButton(moduleConfigWindowFeatureEnableButtonPosX, activateScavengerGrimoireButtonPosY, 'Grimoires (Y)', moduleConfigWindowFeatureEnableButtonSizeX, moduleConfigWindowFeatureEnableButtonSizeY)
+
 end
 
 local function initMainGumpCommands_(mainWindow)
@@ -350,7 +374,8 @@ local function initMainGump_()
 
     --- Modules
     initMainGumpRun_(mainWindow)
-    initMainGumpBuffs_(mainWindow)
+    initMainGumpHeal_(mainWindow)
+    cauigbuffs.initUI(mainWindow, 1) --- Buffs
     initMainGumpCommands_(mainWindow)
     initMainGumpAttack_(mainWindow)
     initMainGumpScavenge_(mainWindow)

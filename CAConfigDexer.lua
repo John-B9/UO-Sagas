@@ -16,7 +16,7 @@
 ----------------------------------------------------------------------
 
 local caml = Import('CAMainLoop')
-local caruig = Import('CARunUIGump')
+local cauig = Import('CAUIGump')
 
 local DexerMainLoopConfig = {
     time = {
@@ -141,7 +141,7 @@ local function run_()
 end
 
 local function runUiGump_()
-    caruig.runGump(DexerMainLoopConfig)
+    cauig.runGump(DexerMainLoopConfig)
 end
 
 local function runWithCommandsDisabled_()
