@@ -227,6 +227,10 @@ local function getItemWithMostContent_(itemID)
     return getItemWithMostDoublePropertyFirstValue_(itemID, contents_regex_str)
 end
 
+local function getItemWithMostDurability_(itemID)
+    return getItemWithMostDoublePropertyFirstValue_(itemID, durability_regex_str)
+end
+
 local function equipItemWithLessDurability_(itemID, itemName)
     return equipItemWithLessDoublePropertyFirstValue_(itemID, durability_regex_str, itemName)
 end
@@ -255,6 +259,7 @@ local Obj = {
     equipItemWithLessDoublePropertyFirstValue = equipItemWithLessDoublePropertyFirstValue_,
     getItemWithLessContent = getItemWithLessContent_,
     getItemWithMostContent = getItemWithMostContent_,
+    getItemWithMostDurability = getItemWithMostDurability_,
     equipItemWithLessDurability = equipItemWithLessDurability_
 }
 

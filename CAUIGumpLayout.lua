@@ -86,12 +86,12 @@ local function createModuleConfigWindow_(windowIDString, windowHeader, numRows)
     return moduleConfigWindow
 end
 
-local function createModuleConfigWindowButtonAtRow_(configWindow, row, buttonText)
+local function createModuleConfigWindowButtonAtRow_(configWindow, row, buttonText, sizeX, sizeY)
     cal.debug('Initializing Module Config Window "..buttonText.." Button (At Row: "..row..")...')
     local buttonPosX = CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosX
     local buttonPosY = CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYStart + ((row -1) * CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYIncrement)
-    local buttonSizeX = CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonSizeX
-    local buttonSizeY = CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonSizeY
+    local buttonSizeX = (sizeX ~= nil and sizeX) or CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonSizeX
+    local buttonSizeY = (sizeY ~= nil and sizeY) or CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonSizeY
     local button = configWindow:AddButton(buttonPosX, buttonPosY, buttonText, buttonSizeX, buttonSizeY)
     return button
 end

@@ -484,20 +484,26 @@ function IPLib_getItemWithMostContent(itemID)
     return IPLib_getItemWithMostDoublePropertyFirstValue(itemID, contents_regex_str)
 end
 
+function IPLib_getItemWithMostDurability(itemID)
+    return IPLib_getItemWithMostDoublePropertyFirstValue(itemID, durability_regex_str)
+end
+
 function IPLib_equipItemWithLessDurability(itemID, itemName)
     return IPLib_equipItemWithLessDoublePropertyFirstValue(itemID, durability_regex_str, itemName)
 end
 
 ArmDisarmConfig = {
     Enable  = false, -- Rearms your weapon if you are disarmed
-    AlwaysRearm = false -- rearm without moving, warning will spam messages if you drag from hands
+    AlwaysRearm = false, -- rearm without moving, warning will spam messages if you drag from hands
+    AutoRearmWithDelay = false
 }
 
 ArmDisarmStaticConfig = {
     durabilityDisarmThreshould = 0, -- will disarm player and avoid re-arm, if durability <= threshould
     layerOneHanded = 1,
     layerTwoHanded = 2,
-    rearmBusrtRequestDelta = 500
+    rearmBusrtRequestDelta = 500,
+    rearmAtemptDelay = 5000
 }
 
 ArmDisarmState = {
@@ -506,7 +512,8 @@ ArmDisarmState = {
     lastRightHand = nil,
     lastLeftHand = nil,
     lastRightHandEquipAtemptTime = 0,
-    lastLeftHandEquipAtemptTime = 0
+    lastLeftHandEquipAtemptTime = 0,
+    lastDisarmedTime = 0
 }
 
 function CAArmDisarm_setEnable(val)
@@ -520,6 +527,7 @@ end
 function CAArmDisarm_setConfig(config)
     CAArmDisarm_setEnable(config.Enable)
     CAArmDisarm_setAlwaysRearm(config.AlwaysRearm)
+    ArmDisarmConfig.AutoRearmWithDelay = config.AutoRearmWithDelay
 end
 
 function CAArmDisarm_disarmPlayer()
@@ -548,56 +556,6 @@ function CAArmDisarm_disarmPlayer()
     return disarmState
 end
 
-function CAArmDisarm_disarmPlayerIfWeaponDurabilityIsLow()
-
-    if not ArmDisarmConfig.Enable then
-        return
-    end
-
-    CALog_debug("Checking right-hand weapon durability...")
-    rightWeapon = Items.FindByLayer(ArmDisarmStaticConfig.layerOneHanded)
-    if rightWeapon and rightWeapon.Properties then
-        CALog_debug("Have valid right-hand weapon: "..rightWeapon.Name)
-        durability = IPLib_getDurability(rightWeapon)
-        if durability and durability[1] <= ArmDisarmStaticConfig.durabilityDisarmThreshould then
-            CALog_debug("Right-hand weapon durability low, disarming...")
-            Player.ClearHands("left")
-            ArmDisarmState.lastRightHand = nil
-            ArmDisarmState.disarm.x = 0
-            ArmDisarmState.disarm.y = 0
-            Pause(CATime_getActionWaitTime())
-        end
-    else
-        if rightWeapon then
-            CALog_debug("Have valid Properties in item")
-        else
-            CALog_debug("No valid right-hand weapon found")
-        end
-    end
-
-    CALog_debug("Checking left-hand weapon durability...")
-    leftWeapon = Items.FindByLayer(ArmDisarmStaticConfig.layerTwoHanded)
-
-    if leftWeapon and leftWeapon.Properties then
-        CALog_debug("Have valid left-hand weapon: "..leftWeapon.Name)
-        durability = IPLib_getDurability(leftWeapon)
-        if durability and durability[1] <= ArmDisarmStaticConfig.durabilityDisarmThreshould then
-            CALog_debug("Left-hand weapon durability low, disarming...")
-            Player.ClearHands("right")
-            ArmDisarmState.lastLeftHand = nil
-            ArmDisarmState.disarm.x = 0
-            ArmDisarmState.disarm.y = 0
-            Pause(CATime_getActionWaitTime())
-        end
-    else
-        if leftWeapon then
-            CALog_debug("Have valid Properties in item")
-        else
-            CALog_debug("No valid left-hand weapon found")
-        end
-    end
-end
-
 function CAArmDisarm_equipWeaponIfDurabilityIsOk(weapon)
 
     if not weapon then
@@ -617,6 +575,86 @@ function CAArmDisarm_equipWeaponIfDurabilityIsOk(weapon)
     end
 
     return Player.Equip(weapon.Serial)
+end
+
+function CAArmDisarm_disarmPlayerIfWeaponDurabilityIsLow(replaceImmediately)
+
+    if not ArmDisarmConfig.Enable then
+        return
+    end
+
+    CALog_debug("Checking right-hand weapon durability...")
+    rightWeapon = Items.FindByLayer(ArmDisarmStaticConfig.layerOneHanded)
+    if rightWeapon and rightWeapon.Properties then
+        CALog_debug("Have valid right-hand weapon: "..rightWeapon.Name)
+        durability = IPLib_getDurability(rightWeapon)
+        if durability and durability[1] <= ArmDisarmStaticConfig.durabilityDisarmThreshould then
+            CALog_debug("Right-hand weapon durability low, disarming...")
+            Player.ClearHands("left")
+            clearState = true
+            if replaceImmediately then
+                replaceWeapon = IPLib_getItemWithMostDurability(rightWeapon.Graphic)
+                replaceWeaponDurability = replaceWeapon~=nil and IPLib_getDurability(replaceWeapon)
+                CALog_debug("Replace weapon: "..((replaceWeapon~=nil and ("found ("..replaceWeapon.Name..")")) or " not found..."))
+                CALog_debug("Replace weapon durability: "..((replaceWeapon~=nil and replaceWeaponDurability~=nil and replaceWeaponDurability[1]) or " not found..."))
+                if replaceWeapon and replaceWeaponDurability and replaceWeaponDurability[1] > ArmDisarmStaticConfig.durabilityDisarmThreshould then
+                    Pause(CATime_getActionWaitTime())
+                    CAArmDisarm_equipWeaponIfDurabilityIsOk(replaceWeapon)
+                    ArmDisarmState.lastRightHand = replaceWeapon
+                    clearState = false
+                end
+            end
+            if clearState then
+                ArmDisarmState.lastRightHand = nil
+                ArmDisarmState.disarm.x = 0
+                ArmDisarmState.disarm.y = 0
+            end
+            Pause(CATime_getActionWaitTime())
+        end
+    else
+        if rightWeapon then
+            CALog_debug("Have valid Properties in item")
+        else
+            CALog_debug("No valid right-hand weapon found")
+        end
+    end
+
+    CALog_debug("Checking left-hand weapon durability...")
+    leftWeapon = Items.FindByLayer(ArmDisarmStaticConfig.layerTwoHanded)
+
+    if leftWeapon and leftWeapon.Properties then
+        CALog_debug("Have valid left-hand weapon: "..leftWeapon.Name)
+        durability = IPLib_getDurability(leftWeapon)
+        if durability and durability[1] <= ArmDisarmStaticConfig.durabilityDisarmThreshould then
+            CALog_debug("Left-hand weapon durability low, disarming...")
+            Player.ClearHands("right")
+            clearState = true
+            if replaceImmediately then
+                replaceWeapon = IPLib_getItemWithMostDurability(leftWeapon.Graphic)
+                replaceWeaponDurability = replaceWeapon~=nil and IPLib_getDurability(replaceWeapon)
+                CALog_debug("Replace weapon: "..((replaceWeapon~=nil and ("found ("..replaceWeapon.Name..")")) or " not found..."))
+                CALog_debug("Replace weapon durability: "..((replaceWeapon~=nil and replaceWeaponDurability~=nil and replaceWeaponDurability[1]) or " not found..."))
+                if replaceWeapon and replaceWeaponDurability and replaceWeaponDurability[1] > ArmDisarmStaticConfig.durabilityDisarmThreshould then
+                    Pause(CATime_getActionWaitTime())
+                    CAArmDisarm_equipWeaponIfDurabilityIsOk(replaceWeapon)
+                    ArmDisarmState.lastLeftHand = replaceWeapon
+                    clearState = false
+                end
+            end
+            if clearState then
+                ArmDisarmState.lastRightHand = nil
+                ArmDisarmState.disarm.x = 0
+                ArmDisarmState.disarm.y = 0
+            end
+            Pause(CATime_getActionWaitTime())
+        end
+    else
+        if leftWeapon then
+            CALog_debug("Have valid Properties in item")
+        else
+            CALog_debug("No valid left-hand weapon found")
+        end
+    end
 end
 
 function CAArmDisarm_rearmPlayer()
@@ -671,7 +709,7 @@ function CAArmDisarm_checkAndFixItemsErrorState()
         end
 
         CALog_warning("Found inconssistant re-arm state: correction complete.")
-        CAArmDisarm_disarmPlayerIfWeaponDurabilityIsLow()
+        CAArmDisarm_disarmPlayerIfWeaponDurabilityIsLow(true)
     end
 end
 
@@ -731,12 +769,31 @@ function CAArmDisarm_disarmed()
     CALog_debug("isDisarmed = "..tostring(isDisarmed)..", playerMoved = "..tostring(playerMoved)..", Player.X = "..Player.X..
     ", Player.y = "..Player.X..", disarm.x = "..ArmDisarmState.disarm.x..", disarm.y = "..ArmDisarmState.disarm.y)
 
-    if isDisarmed and (ArmDisarmConfig.AlwaysRearm or playerMoved) then
+    autoRearmTimerExpired = false
+    if isDisarmed and ArmDisarmConfig.AutoRearmWithDelay then
+        currentTickTime = CATime_getCurrentTickTime()
+
+        if ArmDisarmState.lastDisarmedTime == 0 then
+            CALog_info("Rearming in "..ArmDisarmStaticConfig.rearmAtemptDelay.."ms")
+            ArmDisarmState.lastDisarmedTime = currentTickTime
+        end
+    end
+
+    if ArmDisarmState.lastDisarmedTime ~= 0 and CATime_exceedsDuration(ArmDisarmState.lastDisarmedTime, currentTickTime, ArmDisarmStaticConfig.rearmAtemptDelay) then
+        ArmDisarmState.lastDisarmedTime = 0
+        if isDisarmed then
+            CALog_info("Rearming now...")
+            autoRearmTimerExpired = true
+        else
+            CALog_info("Weapon already equiped...")
+        end
+    end
+
+    if isDisarmed and (ArmDisarmConfig.AlwaysRearm or playerMoved or autoRearmTimerExpired) then
 
         alreadyHasRightHand = Items.FindByLayer(ArmDisarmStaticConfig.layerOneHanded)
         if alreadyHasRightHand then
-            CALog_debug("Weapon " ..
-            ((ArmDisarmState.lastRightHand and ArmDisarmState.lastRightHand.Name) or "No Weapon Name") .. " already equipped in right hand")
+            CALog_debug("Weapon " .. ((ArmDisarmState.lastRightHand and ArmDisarmState.lastRightHand.Name) or "No Weapon Name") .. " already equipped in right hand")
         end
 
         canEquipRightHand = not alreadyHasRightHand and ArmDisarmState.lastRightHand and ArmDisarmState.lastRightHand.Serial
@@ -3079,7 +3136,7 @@ function CAMainLoop_configure(config)
 end
 
 function CAMainLoop_journalDependantActions()
-    CAArmDisarm_disarmPlayerIfWeaponDurabilityIsLow()
+    CAArmDisarm_disarmPlayerIfWeaponDurabilityIsLow(true)
     CAEscape_popPouch()
     CAEscape_escape()
     CAPotionsCure_cure(false)
@@ -3212,14 +3269,176 @@ function CAUIGumpLayout_createModuleConfigWindow(windowIDString, windowHeader, n
     return moduleConfigWindow
 end
 
-function CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configWindow, row, buttonText)
+function CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configWindow, row, buttonText, sizeX, sizeY)
     CALog_debug('Initializing Module Config Window "..buttonText.." Button (At Row: "..row..")...')
     local buttonPosX = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosX
     local buttonPosY = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYStart + ((row -1) * CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYIncrement)
-    local buttonSizeX = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonSizeX
-    local buttonSizeY = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonSizeY
+    local buttonSizeX = (sizeX ~= nil and sizeX) or CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonSizeX
+    local buttonSizeY = (sizeY ~= nil and sizeY) or CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonSizeY
     local button = configWindow:AddButton(buttonPosX, buttonPosY, buttonText, buttonSizeX, buttonSizeY)
     return button
+end
+
+CAUIGumpMainRow_CAUIGumpMainRowLayout = {
+    TitleLabelPosX = 10,
+    TitleLabelPosY = 40,
+    ConfigButtonPosX = 200,
+    ConfigButtonPosY = 35,
+    ConfigButtonSizeX = 60,
+    ConfigButtonSizeY = 25
+}
+
+CAUIGumpMainRow_RearmModeValues = {
+    None = 1,
+    Move = 2,
+    Time = 3
+}
+
+CAUIGumpMainRow_RearmModeStrings = {
+    'Rearm (None)',
+    'Rearm (On Move)',
+    'Rearm (Timer)'
+}
+
+CAUIGumpMainRow_SkinnModeValues = {
+    None = 1,
+    All = 2,
+    ShaddowPlus = 3,
+    CopperPlus = 4,
+    BronzePlus = 5,
+    VeritePlus = 6,
+    ValoritePlus = 7
+}
+
+CAUIGumpMainRow_SkinnModeStrings = {
+    'Skinn (None)',
+    'Skinn (All)',
+    'Skinn (Shaddow +)',
+    'Skinn (Copper +)',
+    'Skinn (Bronze +)',
+    'Skinn (Verite +)',
+    'Skinn (Valorite +)'
+}
+
+CAUIGumpMainRow_LeatherHuesToKeepNone = {
+}
+
+CAUIGumpMainRow_LeatherHuesToKeepAll = {
+    0x0000,             --- Regular
+    ---0x0973,             --- Dull Copper
+    0x0966,             --- Shadow Iron
+    0x096D,             --- Copper
+    0x0972,             --- Bronze
+    ---0x08A5,             --- Gold
+    ---0x0979,             --- Agapite
+    0x089F,             --- Verite
+    0x08AB              --- Valorite
+}
+
+CAUIGumpMainRow_LeatherHuesToKeepShadowPlus = {
+    0x0966,             --- Shadow Iron
+    0x096D,             --- Copper
+    0x0972,             --- Bronze
+    0x089F,             --- Verite
+    0x08AB              --- Valorite
+}
+
+CAUIGumpMainRow_LeatherHuesToKeepCopperPlus = {
+    0x096D,             --- Copper
+    0x0972,             --- Bronze
+    0x089F,             --- Verite
+    0x08AB              --- Valorite
+}
+
+CAUIGumpMainRow_LeatherHuesToKeepBronzePlus = {
+    0x0972,             --- Bronze
+    0x089F,             --- Verite
+    0x08AB              --- Valorite
+}
+
+CAUIGumpMainRow_LeatherHuesToKeepVeritePlus = {
+    0x089F,             --- Verite
+    0x08AB              --- Valorite
+}
+
+CAUIGumpMainRow_LeatherHuesToKeepValoritePlus = {
+    0x08AB              --- Valorite
+}
+
+CAUIGumpMainRow_SkinnModeHueKeepTables = {
+    CAUIGumpMainRow_LeatherHuesToKeepNone,
+    CAUIGumpMainRow_LeatherHuesToKeepAll,
+    CAUIGumpMainRow_LeatherHuesToKeepShadowPlus,
+    CAUIGumpMainRow_LeatherHuesToKeepCopperPlus,
+    CAUIGumpMainRow_LeatherHuesToKeepBronzePlus,
+    CAUIGumpMainRow_LeatherHuesToKeepVeritePlus,
+    CAUIGumpMainRow_LeatherHuesToKeepValoritePlus
+}
+
+CAUIGumpMainRowState = {
+    MainConfigOpen = true,
+    RearmMode = CAUIGumpMainRow_RearmModeValues.Move,
+    SkinnMode = CAUIGumpMainRow_SkinnModeValues.None
+}
+
+function onconfigButtonPressed_(isChecked, button, window)
+    CALog_debug('Main config button changed: '..tostring(isChecked))
+    CAUIGumpMainRowState.MainConfigOpen = isChecked
+    if isChecked then
+        button:SetText('CONFIG')
+        window:Hide()
+    else
+        button:SetText('-')
+        window:Show()
+    end
+end
+
+function onRearmModePressed_(button)
+    CALog_debug('Rearm Mode button pressed...')
+    CAUIGumpMainRowState.RearmMode = (CAUIGumpMainRowState.RearmMode == CAUIGumpMainRow_RearmModeValues.Time and CAUIGumpMainRow_RearmModeValues.None) or CAUIGumpMainRowState.RearmMode+1
+    button:SetText(CAUIGumpMainRow_RearmModeStrings[CAUIGumpMainRowState.RearmMode])
+end
+
+function onSkinnModePressed_(button)
+    CALog_debug('Skinn Mode button pressed...')
+    CAUIGumpMainRowState.SkinnMode = (CAUIGumpMainRowState.SkinnMode == CAUIGumpMainRow_SkinnModeValues.ValoritePlus and CAUIGumpMainRow_SkinnModeValues.None) or CAUIGumpMainRowState.SkinnMode+1
+    button:SetText(CAUIGumpMainRow_SkinnModeStrings[CAUIGumpMainRowState.SkinnMode])
+end
+
+function CAUIGumpMainRow_processUIInteractions(configB, configW, rearmB, skinnB)
+    if configB:WasClicked() then
+        onconfigButtonPressed_(not CAUIGumpMainRowState.MainConfigOpen, configB, configW)
+    end
+    if rearmB:WasClicked() then
+        onRearmModePressed_(rearmB)
+    end
+    if skinnB:WasClicked() then
+        onSkinnModePressed_(skinnB)
+    end
+end
+
+function CAUIGumpMainRow_updateCAConfigToCurrentUIConfig(CAConfigArmDisarm, CAConfigSkinning)
+    CAConfigArmDisarm.Enable = CAUIGumpMainRowState.RearmMode ~= CAUIGumpMainRow_RearmModeValues.None
+    CAConfigArmDisarm.AutoRearmWithDelay = CAConfigArmDisarm.Enable and CAUIGumpMainRowState.RearmMode == CAUIGumpMainRow_RearmModeValues.Time
+
+    CAConfigSkinning.Enable = CAUIGumpMainRowState.SkinnMode ~= CAUIGumpMainRow_SkinnModeValues.None
+    CAConfigSkinning.LeatherHuesToKeep = CAUIGumpMainRow_SkinnModeHueKeepTables[CAUIGumpMainRowState.SkinnMode]
+end
+
+function CAUIGumpMainRow_initUI(mainWindow)
+
+    CALog_debug('Creating Scavenge UI...')
+
+    local titleLabel = mainWindow:AddLabel(CAUIGumpMainRow_CAUIGumpMainRowLayout.TitleLabelPosX, CAUIGumpMainRow_CAUIGumpMainRowLayout.TitleLabelPosY, 'SAGAS Combat Assistant')
+    titleLabel:SetColor(0.2, 0.8, 1, 1)
+
+    local configButton = mainWindow:AddButton(CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonPosX, CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonPosY, 'CONFIG', CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonSizeX, CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonSizeY)
+
+    local configW = CAUIGumpLayout_createModuleConfigWindow('MainConfigWindow', 'Main Config', 2)
+    local rearmB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 1, CAUIGumpMainRow_RearmModeStrings[CAUIGumpMainRowState.RearmMode], 180, CAUIGumpLayout_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    local skinnB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 2, CAUIGumpMainRow_SkinnModeStrings[CAUIGumpMainRowState.SkinnMode], 180, CAUIGumpLayout_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+
+    return titleLabel, configButton, configW, rearmB, skinnB
 end
 
 CAUIGumpRunConfig = {
@@ -3496,6 +3715,12 @@ end
 CAUI = {
     mainWindow = nil,
     titleLabel = nil,
+    configButton = nil,
+    Config = {
+        window = nil,
+        rearmButton = nil,
+        skinnButton = nil
+    },
     Run = {
         enableButton = nil,
         enableLabel = nil
@@ -3533,14 +3758,19 @@ CAUI = {
 CAUIMainWindowLayout = {
     StartPosX = 200,
     StartPosY = 200,
-    TitleLabelPosX = 10,
-    TitleLabelPosY = 40,
+    ---TitleLabelPosX = 10,
+    ---TitleLabelPosY = 40,
+    ---ConfigButtonPosX = 200,
+    ---ConfigButtonPosY = 35,
+    ---ConfigButtonSizeX = 60,
+    ---ConfigButtonSizeY = 25,
     SizeXOffset = 20,
     SizeYOffset = 20,
     NumberOfModules = 5     --- Must match the current #modules
 }
 
 function CAUIGump_processUIGumpInteractions()
+    CAUIGumpMainRow_processUIInteractions(CAUI.configButton, CAUI.Config.window, CAUI.Config.rearmButton, CAUI.Config.skinnButton)
     CAUIGumpRun_processUIInteractions(CAUI.Run.enableButton, CAUI.Run.enableLabel)                     --- Run
     ---cauigheal.processUIInteractions(CAUI.Run.enableButton, CAUI.Run.enableLabel)                    --- Heal
     CAUIGumpBuffs_processUIInteractions(CAUI.Buffs.enableButton, CAUI.Buffs.enableLabel)               --- Buffs
@@ -3552,11 +3782,12 @@ end
 function CAUIGump_updateCombatAssistantConfig(CAConfig)
 
     --- Override UI values to CA Config
-    ---cauigheal.updateCAConfigToCurrentUIConfig(CAConfig.modules.Buffs)               --- Heal
-    CAUIGumpBuffs_updateCAConfigToCurrentUIConfig(CAConfig.modules.Buffs)              --- Buffs
-    CAUIGumpCommands_updateCAConfigToCurrentUIConfig(CAConfig.userCommands)            --- Commands
-    CAUIGumpAttack_updateCAConfigToCurrentUIConfig(CAConfig.modules.Attack)            --- Attack
-    CAUIGumpScavenge_updateCAConfigToCurrentUIConfig(CAConfig.modules.Scavenging)      --- Scavenge
+    CAUIGumpMainRow_updateCAConfigToCurrentUIConfig(CAConfig.modules.ArmDisarm, CAConfig.modules.Skinning)     --- Main
+    ---cauigheal.updateCAConfigToCurrentUIConfig(CAConfig.modules.Buffs)                                    --- Heal
+    CAUIGumpBuffs_updateCAConfigToCurrentUIConfig(CAConfig.modules.Buffs)                                      --- Buffs
+    CAUIGumpCommands_updateCAConfigToCurrentUIConfig(CAConfig.userCommands)                                    --- Commands
+    CAUIGumpAttack_updateCAConfigToCurrentUIConfig(CAConfig.modules.Attack)                                    --- Attack
+    CAUIGumpScavenge_updateCAConfigToCurrentUIConfig(CAConfig.modules.Scavenging)                              --- Scavenge
 
     --- Because of internal error, nightsight may disable itself (don't override that part)
     CAConfig.modules.Buffs.Nightsight.Enable = CAPotionsNightsight_getEnable()
@@ -3574,6 +3805,7 @@ function CAUIGump_updateCombatAssistantConfig(CAConfig)
 end
 
 function CAUIGump_initMainWindow()
+
     CALog_debug('Initializing main gump...')
     CAUI.mainWindow = UI.CreateWindow('CAUI.mainWindow', 'SAGAS Combat Assistant')
     if not CAUI.mainWindow then
@@ -3587,12 +3819,11 @@ function CAUIGump_initMainWindow()
     CAUI.mainWindow:SetPosition(CAUIMainWindowLayout.StartPosX, CAUIMainWindowLayout.StartPosY)
     CAUI.mainWindow:SetSize(furthestElementX + CAUIMainWindowLayout.SizeXOffset, furthestElementY + CAUIMainWindowLayout.SizeYOffset)
 
-    CAUI.titleLabel = CAUI.mainWindow:AddLabel(CAUIMainWindowLayout.TitleLabelPosX, CAUIMainWindowLayout.TitleLabelPosY, 'SAGAS Combat Assistant')
-    CAUI.titleLabel:SetColor(0.2, 0.8, 1, 1)
     CALog_debug("Window created and ready!")
 end
 
 function CAUIGump_initModules()
+    CAUI.titleLabel, CAUI.configButton, CAUI.Config.window, CAUI.Config.rearmButton, CAUI.Config.skinnButton = CAUIGumpMainRow_initUI(CAUI.mainWindow)
     CAUI.Run.enableButton , CAUI.Run.enableLabel = CAUIGumpRun_initUI(CAUI.mainWindow, 1)                      --- Run
     ---CAUI.Run.enableButton , CAUI.Run.enableLabel = cauigheal.initUI(CAUI.mainWindow, 1)                  --- Heal
     CAUI.Buffs.enableButton , CAUI.Buffs.enableLabel = CAUIGumpBuffs_initUI(CAUI.mainWindow, 2)                --- Buffs
@@ -3654,8 +3885,9 @@ DexerMainLoopConfig = {
     },
     modules = {
         ArmDisarm = {
-            Enable = true,          --- Re-arms when disarmed, disarms if weapon durability too low
-            AlwaysRearm = false     --- rearm without moving, warning will spam messages if you drag from hands
+            Enable = true,              --- Re-arms once moved char when disarmed, disarms if weapon durability too low
+            AlwaysRearm = false,        --- rearm without moving, warning will spam messages if you drag from hands
+            AutoRearmWithDelay = true   --- Auto-rearm atempt delay
         },
         Escape = {
             EnablePopPouch = true,  --- Pops pouch if you are paralyzed in PvP mode

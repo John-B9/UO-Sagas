@@ -34,8 +34,9 @@ local DexerMainLoopConfig = {
     },
     modules = {
         ArmDisarm = {
-            Enable = true,          --- Re-arms when disarmed, disarms if weapon durability too low
-            AlwaysRearm = false     --- rearm without moving, warning will spam messages if you drag from hands
+            Enable = true,              --- Re-arms once moved char when disarmed, disarms if weapon durability too low
+            AlwaysRearm = false,        --- rearm without moving, warning will spam messages if you drag from hands
+            AutoRearmWithDelay = true   --- Auto-rearm atempt delay
         },
         Escape = {
             EnablePopPouch = true,  --- Pops pouch if you are paralyzed in PvP mode

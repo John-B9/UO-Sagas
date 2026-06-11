@@ -63,7 +63,7 @@ end
 -----------------
 
 local function journalDependantActions_()
-    caad.disarmPlayerIfWeaponDurabilityIsLow()
+    caad.disarmPlayerIfWeaponDurabilityIsLow(true)
     cae.popPouch()
     cae.escape()
     capc.cure(false)

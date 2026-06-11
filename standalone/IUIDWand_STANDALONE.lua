@@ -311,6 +311,10 @@ function IPLib_getItemWithMostContent(itemID)
     return IPLib_getItemWithMostDoublePropertyFirstValue(itemID, contents_regex_str)
 end
 
+function IPLib_getItemWithMostDurability(itemID)
+    return IPLib_getItemWithMostDoublePropertyFirstValue(itemID, durability_regex_str)
+end
+
 function IPLib_equipItemWithLessDurability(itemID, itemName)
     return IPLib_equipItemWithLessDoublePropertyFirstValue(itemID, durability_regex_str, itemName)
 end

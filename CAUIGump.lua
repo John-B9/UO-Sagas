@@ -11,6 +11,7 @@
 local cal = Import('CALog')
 local caml = Import('CAMainLoop')
 local cauiglayout = Import('CAUIGumpLayout')
+local cauigmainrow = Import('CAUIGumpMainRow')
 local cauigrun = Import('CAUIGumpRun')
 ---local cauigheal = Import('CAUIGumpHeal')
 local cauigbuffs = Import('CAUIGumpBuffs')
@@ -26,6 +27,12 @@ local capn = Import('CAPotionsNightsight')
 local CAUI = {
     mainWindow = nil,
     titleLabel = nil,
+    configButton = nil,
+    Config = {
+        window = nil,
+        rearmButton = nil,
+        skinnButton = nil
+    },
     Run = {
         enableButton = nil,
         enableLabel = nil
@@ -63,8 +70,6 @@ local CAUI = {
 local CAUIMainWindowLayout = {
     StartPosX = 200,
     StartPosY = 200,
-    TitleLabelPosX = 10,
-    TitleLabelPosY = 40,
     SizeXOffset = 20,
     SizeYOffset = 20,
     NumberOfModules = 5     --- Must match the current #modules
@@ -75,6 +80,7 @@ local CAUIMainWindowLayout = {
 -----------------
 
 local function processUIGumpInteractions_()
+    cauigmainrow.processUIInteractions(CAUI.configButton, CAUI.Config.window, CAUI.Config.rearmButton, CAUI.Config.skinnButton)
     cauigrun.processUIInteractions(CAUI.Run.enableButton, CAUI.Run.enableLabel)                     --- Run
     ---cauigheal.processUIInteractions(CAUI.Run.enableButton, CAUI.Run.enableLabel)                    --- Heal
     cauigbuffs.processUIInteractions(CAUI.Buffs.enableButton, CAUI.Buffs.enableLabel)               --- Buffs
@@ -86,11 +92,12 @@ end
 local function updateCombatAssistantConfig_(CAConfig)
 
     --- Override UI values to CA Config
-    ---cauigheal.updateCAConfigToCurrentUIConfig(CAConfig.modules.Buffs)               --- Heal
-    cauigbuffs.updateCAConfigToCurrentUIConfig(CAConfig.modules.Buffs)              --- Buffs
-    cauigcommands.updateCAConfigToCurrentUIConfig(CAConfig.userCommands)            --- Commands
-    cauigattack.updateCAConfigToCurrentUIConfig(CAConfig.modules.Attack)            --- Attack
-    cauigscavenge.updateCAConfigToCurrentUIConfig(CAConfig.modules.Scavenging)      --- Scavenge
+    cauigmainrow.updateCAConfigToCurrentUIConfig(CAConfig.modules.ArmDisarm, CAConfig.modules.Skinning)     --- Main
+    ---cauigheal.updateCAConfigToCurrentUIConfig(CAConfig.modules.Buffs)                                    --- Heal
+    cauigbuffs.updateCAConfigToCurrentUIConfig(CAConfig.modules.Buffs)                                      --- Buffs
+    cauigcommands.updateCAConfigToCurrentUIConfig(CAConfig.userCommands)                                    --- Commands
+    cauigattack.updateCAConfigToCurrentUIConfig(CAConfig.modules.Attack)                                    --- Attack
+    cauigscavenge.updateCAConfigToCurrentUIConfig(CAConfig.modules.Scavenging)                              --- Scavenge
 
     --- Because of internal error, nightsight may disable itself (don't override that part)
     CAConfig.modules.Buffs.Nightsight.Enable = capn.getEnable()
@@ -108,6 +115,7 @@ local function updateCombatAssistantConfig_(CAConfig)
 end
 
 local function initMainWindow_()
+
     cal.debug('Initializing main gump...')
     CAUI.mainWindow = UI.CreateWindow('CAUI.mainWindow', 'SAGAS Combat Assistant')
     if not CAUI.mainWindow then
@@ -121,12 +129,11 @@ local function initMainWindow_()
     CAUI.mainWindow:SetPosition(CAUIMainWindowLayout.StartPosX, CAUIMainWindowLayout.StartPosY)
     CAUI.mainWindow:SetSize(furthestElementX + CAUIMainWindowLayout.SizeXOffset, furthestElementY + CAUIMainWindowLayout.SizeYOffset)
 
-    CAUI.titleLabel = CAUI.mainWindow:AddLabel(CAUIMainWindowLayout.TitleLabelPosX, CAUIMainWindowLayout.TitleLabelPosY, 'SAGAS Combat Assistant')
-    CAUI.titleLabel:SetColor(0.2, 0.8, 1, 1)
     cal.debug("Window created and ready!")
 end
 
 local function initModules_()
+    CAUI.titleLabel, CAUI.configButton, CAUI.Config.window, CAUI.Config.rearmButton, CAUI.Config.skinnButton = cauigmainrow.initUI(CAUI.mainWindow)
     CAUI.Run.enableButton , CAUI.Run.enableLabel = cauigrun.initUI(CAUI.mainWindow, 1)                      --- Run
     ---CAUI.Run.enableButton , CAUI.Run.enableLabel = cauigheal.initUI(CAUI.mainWindow, 1)                  --- Heal
     CAUI.Buffs.enableButton , CAUI.Buffs.enableLabel = cauigbuffs.initUI(CAUI.mainWindow, 2)                --- Buffs

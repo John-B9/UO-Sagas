@@ -24,14 +24,16 @@ local cat = Import('CATime')
 
 ArmDisarmConfig = {
     Enable  = false, -- Rearms your weapon if you are disarmed
-    AlwaysRearm = false -- rearm without moving, warning will spam messages if you drag from hands
+    AlwaysRearm = false, -- rearm without moving, warning will spam messages if you drag from hands
+    AutoRearmWithDelay = false
 }
 
 local ArmDisarmStaticConfig = {
     durabilityDisarmThreshould = 0, -- will disarm player and avoid re-arm, if durability <= threshould
     layerOneHanded = 1,
     layerTwoHanded = 2,
-    rearmBusrtRequestDelta = 500
+    rearmBusrtRequestDelta = 500,
+    rearmAtemptDelay = 5000
 }
 
 local ArmDisarmState = {
@@ -40,7 +42,8 @@ local ArmDisarmState = {
     lastRightHand = nil,
     lastLeftHand = nil,
     lastRightHandEquipAtemptTime = 0,
-    lastLeftHandEquipAtemptTime = 0
+    lastLeftHandEquipAtemptTime = 0,
+    lastDisarmedTime = 0
 }
 
 ---------------
@@ -58,6 +61,7 @@ end
 local function setConfig_(config)
     setEnable_(config.Enable)
     setAlwaysRearm_(config.AlwaysRearm)
+    ArmDisarmConfig.AutoRearmWithDelay = config.AutoRearmWithDelay
 end
 
 -----------------
@@ -90,80 +94,6 @@ local function disarmPlayer_()
     return disarmState
 end
 
----local function disarmPlayerIfWeaponDurabilityIsLow_()
----
----    if not ArmDisarmConfig.Enable then
----        return
----    end
----
----    cal.debug("Checking weapon durability...")
----    local handToUnequip = "left"
----    local weapon = Items.FindByLayer(1)
----    if not weapon then
----        handToUnequip = "right"
----        weapon = Items.FindByLayer(2)
----    end
----
----    if weapon and weapon.Properties then
----        local durability = ipl.getDurability(weapon)
----        if durability and durability[1] <= ArmDisarmStaticConfig.durabilityDisarmThreshould then
----            cal.debug("Weapon durability low, disarming...")
----            Player.ClearHands(handToUnequip)
----            Pause(cat.getActionWaitTime()) --- Wait for hands to be cleared
----        end
----    end
----end
-
-local function disarmPlayerIfWeaponDurabilityIsLow_()
-
-    if not ArmDisarmConfig.Enable then
-        return
-    end
-
-    cal.debug("Checking right-hand weapon durability...")
-    local rightWeapon = Items.FindByLayer(ArmDisarmStaticConfig.layerOneHanded)
-    if rightWeapon and rightWeapon.Properties then
-        cal.debug("Have valid right-hand weapon: "..rightWeapon.Name)
-        local durability = ipl.getDurability(rightWeapon)
-        if durability and durability[1] <= ArmDisarmStaticConfig.durabilityDisarmThreshould then
-            cal.debug("Right-hand weapon durability low, disarming...")
-            Player.ClearHands("left")
-            ArmDisarmState.lastRightHand = nil
-            ArmDisarmState.disarm.x = 0
-            ArmDisarmState.disarm.y = 0
-            Pause(cat.getActionWaitTime())
-        end
-    else
-        if rightWeapon then
-            cal.debug("Have valid Properties in item")
-        else
-            cal.debug("No valid right-hand weapon found")
-        end
-    end
-
-    cal.debug("Checking left-hand weapon durability...")
-    local leftWeapon = Items.FindByLayer(ArmDisarmStaticConfig.layerTwoHanded)
-    --- local two_different_weapons = not rightWeapon or (rightWeapon.Serial ~= leftWeapon.Serial)
-    if leftWeapon and leftWeapon.Properties then
-        cal.debug("Have valid left-hand weapon: "..leftWeapon.Name)
-        local durability = ipl.getDurability(leftWeapon)
-        if durability and durability[1] <= ArmDisarmStaticConfig.durabilityDisarmThreshould then
-            cal.debug("Left-hand weapon durability low, disarming...")
-            Player.ClearHands("right")
-            ArmDisarmState.lastLeftHand = nil
-            ArmDisarmState.disarm.x = 0
-            ArmDisarmState.disarm.y = 0
-            Pause(cat.getActionWaitTime())
-        end
-    else
-        if leftWeapon then
-            cal.debug("Have valid Properties in item")
-        else
-            cal.debug("No valid left-hand weapon found")
-        end
-    end
-end
-
 local function equipWeaponIfDurabilityIsOk_(weapon)
 
     if not weapon then
@@ -183,6 +113,86 @@ local function equipWeaponIfDurabilityIsOk_(weapon)
     end
 
     return Player.Equip(weapon.Serial)
+end
+
+local function disarmPlayerIfWeaponDurabilityIsLow_(replaceImmediately)
+
+    if not ArmDisarmConfig.Enable then
+        return
+    end
+
+    cal.debug("Checking right-hand weapon durability...")
+    local rightWeapon = Items.FindByLayer(ArmDisarmStaticConfig.layerOneHanded)
+    if rightWeapon and rightWeapon.Properties then
+        cal.debug("Have valid right-hand weapon: "..rightWeapon.Name)
+        local durability = ipl.getDurability(rightWeapon)
+        if durability and durability[1] <= ArmDisarmStaticConfig.durabilityDisarmThreshould then
+            cal.debug("Right-hand weapon durability low, disarming...")
+            Player.ClearHands("left")
+            local clearState = true
+            if replaceImmediately then
+                local replaceWeapon = ipl.getItemWithMostDurability(rightWeapon.Graphic)
+                local replaceWeaponDurability = replaceWeapon~=nil and ipl.getDurability(replaceWeapon)
+                cal.debug("Replace weapon: "..((replaceWeapon~=nil and ("found ("..replaceWeapon.Name..")")) or " not found..."))
+                cal.debug("Replace weapon durability: "..((replaceWeapon~=nil and replaceWeaponDurability~=nil and replaceWeaponDurability[1]) or " not found..."))
+                if replaceWeapon and replaceWeaponDurability and replaceWeaponDurability[1] > ArmDisarmStaticConfig.durabilityDisarmThreshould then
+                    Pause(cat.getActionWaitTime())
+                    equipWeaponIfDurabilityIsOk_(replaceWeapon)
+                    ArmDisarmState.lastRightHand = replaceWeapon
+                    clearState = false
+                end
+            end
+            if clearState then
+                ArmDisarmState.lastRightHand = nil
+                ArmDisarmState.disarm.x = 0
+                ArmDisarmState.disarm.y = 0
+            end
+            Pause(cat.getActionWaitTime())
+        end
+    else
+        if rightWeapon then
+            cal.debug("Have valid Properties in item")
+        else
+            cal.debug("No valid right-hand weapon found")
+        end
+    end
+
+    cal.debug("Checking left-hand weapon durability...")
+    local leftWeapon = Items.FindByLayer(ArmDisarmStaticConfig.layerTwoHanded)
+    --- local two_different_weapons = not rightWeapon or (rightWeapon.Serial ~= leftWeapon.Serial)
+    if leftWeapon and leftWeapon.Properties then
+        cal.debug("Have valid left-hand weapon: "..leftWeapon.Name)
+        local durability = ipl.getDurability(leftWeapon)
+        if durability and durability[1] <= ArmDisarmStaticConfig.durabilityDisarmThreshould then
+            cal.debug("Left-hand weapon durability low, disarming...")
+            Player.ClearHands("right")
+            local clearState = true
+            if replaceImmediately then
+                local replaceWeapon = ipl.getItemWithMostDurability(leftWeapon.Graphic)
+                local replaceWeaponDurability = replaceWeapon~=nil and ipl.getDurability(replaceWeapon)
+                cal.debug("Replace weapon: "..((replaceWeapon~=nil and ("found ("..replaceWeapon.Name..")")) or " not found..."))
+                cal.debug("Replace weapon durability: "..((replaceWeapon~=nil and replaceWeaponDurability~=nil and replaceWeaponDurability[1]) or " not found..."))
+                if replaceWeapon and replaceWeaponDurability and replaceWeaponDurability[1] > ArmDisarmStaticConfig.durabilityDisarmThreshould then
+                    Pause(cat.getActionWaitTime())
+                    equipWeaponIfDurabilityIsOk_(replaceWeapon)
+                    ArmDisarmState.lastLeftHand = replaceWeapon
+                    clearState = false
+                end
+            end
+            if clearState then
+                ArmDisarmState.lastRightHand = nil
+                ArmDisarmState.disarm.x = 0
+                ArmDisarmState.disarm.y = 0
+            end
+            Pause(cat.getActionWaitTime())
+        end
+    else
+        if leftWeapon then
+            cal.debug("Have valid Properties in item")
+        else
+            cal.debug("No valid left-hand weapon found")
+        end
+    end
 end
 
 local function rearmPlayer_()
@@ -254,7 +264,7 @@ local function checkAndFixItemsErrorState_()
         end
 
         cal.warning("Found inconssistant re-arm state: correction complete.")
-        disarmPlayerIfWeaponDurabilityIsLow_()
+        disarmPlayerIfWeaponDurabilityIsLow_(true)
     end
 end
 
@@ -314,13 +324,33 @@ local function disarmed_()
     cal.debug("isDisarmed = "..tostring(isDisarmed)..", playerMoved = "..tostring(playerMoved)..", Player.X = "..Player.X..
     ", Player.y = "..Player.X..", disarm.x = "..ArmDisarmState.disarm.x..", disarm.y = "..ArmDisarmState.disarm.y)
 
-    if isDisarmed and (ArmDisarmConfig.AlwaysRearm or playerMoved) then
+    local autoRearmTimerExpired = false
+    if isDisarmed and ArmDisarmConfig.AutoRearmWithDelay then
+        local currentTickTime = cat.getCurrentTickTime()
+        ---cal.mainInfo("Equipping right hand")
+        if ArmDisarmState.lastDisarmedTime == 0 then
+            cal.info("Rearming in "..ArmDisarmStaticConfig.rearmAtemptDelay.."ms")
+            ArmDisarmState.lastDisarmedTime = currentTickTime
+        end
+    end
+
+    if ArmDisarmState.lastDisarmedTime ~= 0 and cat.exceedsDuration(ArmDisarmState.lastDisarmedTime, currentTickTime, ArmDisarmStaticConfig.rearmAtemptDelay) then
+        ArmDisarmState.lastDisarmedTime = 0
+        if isDisarmed then
+            cal.info("Rearming now...")
+            autoRearmTimerExpired = true
+        else
+            cal.info("Weapon already equiped...")
+        end
+    end
+
+    if isDisarmed and (ArmDisarmConfig.AlwaysRearm or playerMoved or autoRearmTimerExpired) then
+    ---if isDisarmed and (ArmDisarmConfig.AlwaysRearm or playerMoved) then
 
         --- Right hand
         local alreadyHasRightHand = Items.FindByLayer(ArmDisarmStaticConfig.layerOneHanded)
         if alreadyHasRightHand then
-            cal.debug("Weapon " ..
-            ((ArmDisarmState.lastRightHand and ArmDisarmState.lastRightHand.Name) or "No Weapon Name") .. " already equipped in right hand")
+            cal.debug("Weapon " .. ((ArmDisarmState.lastRightHand and ArmDisarmState.lastRightHand.Name) or "No Weapon Name") .. " already equipped in right hand")
         end
 
         local canEquipRightHand = not alreadyHasRightHand and ArmDisarmState.lastRightHand and ArmDisarmState.lastRightHand.Serial
