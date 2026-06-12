@@ -3283,9 +3283,9 @@ end
 CAUIGumpMainRow_CAUIGumpMainRowLayout = {
     TitleLabelPosX = 10,
     TitleLabelPosY = 40,
-    ConfigButtonPosX = 200,
+    ConfigButtonPosX = 175,
     ConfigButtonPosY = 35,
-    ConfigButtonSizeX = 60,
+    ConfigButtonSizeX = 85,
     ConfigButtonSizeY = 25
 }
 
@@ -3298,7 +3298,7 @@ CAUIGumpMainRow_RearmModeValues = {
 CAUIGumpMainRow_RearmModeStrings = {
     'Rearm (None)',
     'Rearm (On Move)',
-    'Rearm (Timer)'
+    'Rearm (On Move + Timer)'
 }
 
 CAUIGumpMainRow_SkinnModeValues = {
@@ -3386,10 +3386,10 @@ function onconfigButtonPressed_(isChecked, button, window)
     CALog_debug('Main config button changed: '..tostring(isChecked))
     CAUIGumpMainRowState.MainConfigOpen = isChecked
     if isChecked then
-        button:SetText('CONFIG')
+        button:SetText('CONFIG (+)')
         window:Hide()
     else
-        button:SetText('-')
+        button:SetText('CONFIG (-)')
         window:Show()
     end
 end
@@ -3433,7 +3433,7 @@ function CAUIGumpMainRow_initUI(mainWindow)
     local titleLabel = mainWindow:AddLabel(CAUIGumpMainRow_CAUIGumpMainRowLayout.TitleLabelPosX, CAUIGumpMainRow_CAUIGumpMainRowLayout.TitleLabelPosY, 'SAGAS Combat Assistant')
     titleLabel:SetColor(0.2, 0.8, 1, 1)
 
-    local configButton = mainWindow:AddButton(CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonPosX, CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonPosY, 'CONFIG', CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonSizeX, CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonSizeY)
+    local configButton = mainWindow:AddButton(CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonPosX, CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonPosY, 'CONFIG (+)', CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonSizeX, CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonSizeY)
 
     local configW = CAUIGumpLayout_createModuleConfigWindow('MainConfigWindow', 'Main Config', 2)
     local rearmB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 1, CAUIGumpMainRow_RearmModeStrings[CAUIGumpMainRowState.RearmMode], 180, CAUIGumpLayout_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
@@ -3479,31 +3479,43 @@ function CAUIGumpRun_initUI(mainWindow, row)
     return button, label
 end
 
+CAUIGumpHeal_HealPotsModeValues = {
+    None = 1,
+    TenPercent = 2,
+    TwentyPercent = 3,
+    ThirtyPercent = 4,
+    FiftyPercent = 5
+}
+
+CAUIGumpHeal_HealPotsPercentageThreshoulds = {
+    0,
+    10,
+    20,
+    30,
+    50
+}
+
+CAUIGumpHeal_HealPotsModeStrings = {
+    'Heal Pots (Disabled)',
+    'Heal Pots (10% HP)',
+    'Heal Pots (20% HP)',
+    'Heal Pots (30% HP)',
+    'Heal Pots (50% HP)'
+}
+
 CAUIGumpHealConfig = {
-    Enable = false ---
+    OverrideWithNoHeal = false,
+    ConfigWindowOpen = true,
+    BandageSelf = true,
+    BandageOther = true,
+    HealPotsMode = CAUIGumpHeal_HealPotsModeValues.TwentyPercent,
+    HealPotsAfterStrPot = true,
+    CurePots = false
 }
 
-CAUIGumpHeal_CAUIGumpHealStaticConfig = {
-}
-
-CAUIGumpHeal_CAUIGumpHealState = {
-}
-
-function CAUIGumpHeal_setEnable(val)
-    CAUIGumpHealConfig.Enable = val
-end
-
-function CAUIGumpHeal_setConfig(config)
-    CAUIGumpHeal_setEnable(config.Enable)
-end
-
-CAUIGumpBuffs_CAUIGumpBuffsState = {
-    OverrideWithNoBuffs = false,
-}
-
-function CAUIGumpBuffs_onOverrideWithNoBuffsButtonPressed(isChecked, label)
-    CALog_debug('Buffs disabled checkbox changed: '..tostring(isChecked))
-    CAUIGumpBuffs_CAUIGumpBuffsState.OverrideWithNoBuffs = not isChecked
+function onHealButtonPressed_(isChecked, label)
+    CALog_debug('Heal button pressed: '..tostring(isChecked))
+    CAUIGumpHealConfig.OverrideWithNoHeal = not isChecked
     if isChecked then
         label:SetText('Enabled')
         label:SetColor(0, 1, 0, 1)
@@ -3513,21 +3525,271 @@ function CAUIGumpBuffs_onOverrideWithNoBuffsButtonPressed(isChecked, label)
     end
 end
 
-function CAUIGumpBuffs_processUIInteractions(button, label)
-    if button:WasClicked() then
-        CAUIGumpBuffs_onOverrideWithNoBuffsButtonPressed(CAUIGumpBuffs_CAUIGumpBuffsState.OverrideWithNoBuffs, label)
+function onHealConfigButtonPressed_(isChecked, button, window)
+    CALog_debug('Heal config button pressed: '..tostring(isChecked))
+    CAUIGumpHealConfig.ConfigWindowOpen = isChecked
+    if isChecked then
+        button:SetText('+')
+        window:Hide()
+    else
+        button:SetText('-')
+        window:Show()
+    end
+end
+
+function onBandageSelfButtonPressed_(isChecked, button)
+    CALog_debug('Bandage Self button pressed: '..tostring(isChecked))
+    CAUIGumpHealConfig.BandageSelf = isChecked
+    if isChecked then
+        button:SetText('Bandage Self (Y)')
+    else
+        button:SetText('Bandage Self (N)')
+    end
+end
+
+function onBandageOtherButtonPressed_(isChecked, button)
+    CALog_debug('Bandage Other button pressed: '..tostring(isChecked))
+    CAUIGumpHealConfig.BandageOther = isChecked
+    if isChecked then
+        button:SetText('Bandage Others (Y)')
+    else
+        button:SetText('Bandage Others (N)')
+    end
+end
+
+function onHealPotsModeButtonPressed_(button)
+    CALog_debug('Healing Pots Mode button pressed...')
+    CAUIGumpHealConfig.HealPotsMode = (CAUIGumpHealConfig.HealPotsMode == CAUIGumpHeal_HealPotsModeValues.FiftyPercent and CAUIGumpHeal_HealPotsModeValues.None) or CAUIGumpHealConfig.HealPotsMode+1
+    button:SetText(CAUIGumpHeal_HealPotsModeStrings[CAUIGumpHealConfig.HealPotsMode])
+end
+
+function onHealPotAfterStrenghPotButtonPressed_(isChecked, button)
+    CALog_debug('Use Heal after Strength button pressed: '..tostring(isChecked))
+    CAUIGumpHealConfig.HealPotsAfterStrPot = isChecked
+    if isChecked then
+        button:SetText('Heal On Str (Y)')
+    else
+        button:SetText('Heal On Str (N)')
+    end
+end
+
+function onCurePotsModeButtonPressed_(isChecked, button)
+    CALog_debug('Use Cure button pressed: '..tostring(isChecked))
+    CAUIGumpHealConfig.CurePots = isChecked
+    if isChecked then
+        button:SetText('Use Cure (Y)')
+    else
+        button:SetText('Use Cure (N)')
+    end
+end
+
+function CAUIGumpHeal_processUIInteractions(enableB, enableL, configB, configW, bandageSB, bandageOB, healPMB, healPASPB, curePB)
+    if enableB:WasClicked() then
+        onHealButtonPressed_(CAUIGumpHealConfig.OverrideWithNoHeal, enableL)
+    end
+    if configB:WasClicked() then
+        onHealConfigButtonPressed_(not CAUIGumpHealConfig.ConfigWindowOpen, configB, configW)
+    end
+    if bandageSB:WasClicked() then
+        onBandageSelfButtonPressed_(not CAUIGumpHealConfig.BandageSelf, bandageSB)
+    end
+    if bandageOB:WasClicked() then
+        onBandageOtherButtonPressed_(not CAUIGumpHealConfig.BandageOther, bandageOB)
+    end
+    if healPMB:WasClicked() then
+        onHealPotsModeButtonPressed_(healPMB)
+    end
+    if healPASPB:WasClicked() then
+        onHealPotAfterStrenghPotButtonPressed_(not CAUIGumpHealConfig.HealPotsAfterStrPot, healPASPB)
+    end
+    if curePB:WasClicked() then
+        onCurePotsModeButtonPressed_(not CAUIGumpHealConfig.CurePots, curePB)
+    end
+end
+
+function CAUIGumpHeal_updateCAConfigToCurrentUIConfig(CAConfigBandages, CAConfigCurePotions, CAConfigHealingPotions, CAConfigBuffsStrength)
+
+    if not CAUIGumpHealConfig.OverrideWithNoHeal then
+        CAConfigBandages.Enable = CAUIGumpHealConfig.BandageSelf
+        CAConfigBandages.BandageAllies = CAUIGumpHealConfig.BandageOther
+        CAConfigHealingPotions.Enable = CAUIGumpHealConfig.HealPotsMode ~= CAUIGumpHeal_HealPotsModeValues.None
+        CAConfigHealingPotions.HPDrinkThreshould = CAUIGumpHeal_HealPotsPercentageThreshoulds[CAUIGumpHealConfig.HealPotsMode]
+        CAConfigBuffsStrength.DrinkHeal = CAUIGumpHealConfig.HealPotsAfterStrPot
+        CAConfigCurePotions.Enable = CAUIGumpHealConfig.CurePots
+    else
+        CAConfigBandages.Enable = false
+        CAConfigBandages.BandageAllies = false
+        CAConfigHealingPotions.Enable = false
+        CAConfigHealingPotions.HPDrinkThreshould = 0
+        CAConfigBuffsStrength.DrinkHeal = false
+        CAConfigCurePotions.Enable = false
+    end
+end
+
+function CAUIGumpHeal_initUI(mainWindow, row)
+    CALog_debug('Creating Healing UI...')
+    local enableB = CAUIGumpLayout_createModuleEnableButtonAtRow(mainWindow, row, 'Heal')
+    local enableL = CAUIGumpLayout_createModuleEnableLabelAtRow(mainWindow, row, 'Enabled')
+    ---enableL:SetColor(1, 0, 0, 1)
+    local configB = CAUIGumpLayout_createModuleConfigButtonAtRow(mainWindow, row)
+    local configW = CAUIGumpLayout_createModuleConfigWindow('healConfigWindow', 'Heal Config', 5)
+    local bandageSB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 1, 'Bandage Self (Y)', 140, CAUIGumpLayout_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    local bandageOB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 2, 'Bandage Others (Y)', 140, CAUIGumpLayout_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    local healPMB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 3, CAUIGumpHeal_HealPotsModeStrings[CAUIGumpHealConfig.HealPotsMode], 180, CAUIGumpLayout_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    local healPASPB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 4, 'Heal On Str (N)', 140, CAUIGumpLayout_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    local curePB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 5, 'Use Cure (N)', 140, CAUIGumpLayout_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    return enableB, enableL, configB, configW, bandageSB, bandageOB, healPMB, healPASPB, curePB
+end
+
+CAUIGumpBuffs_StaminaPotsModeValues = {
+    None = 1,
+    FiftyPercent = 2,
+    SixtyPercent = 3,
+    SeventyPercent = 4,
+    EightyPercent = 5
+}
+
+CAUIGumpBuffs_StaminaPotsModeThreshoulds = {
+    0,
+    50,
+    60,
+    70,
+    80
+}
+
+CAUIGumpBuffs_StaminaPotsModeStrings = {
+    'Stamina Pots (Disabled)',
+    'Stamina Pots (50% STA)',
+    'Stamina Pots (60% STA)',
+    'Stamina Pots (70% STA)',
+    'Stamina Pots (80% STA)'
+}
+
+CAUIGumpBuffsState = {
+    OverrideWithNoBuffs = false,
+    ConfigWindowOpen = true,
+    EnableNightsight = true,
+    EnableStrength = true,
+    EnableAgility = true,
+    HealPotsAfterStrPot = true,
+    StaminaPotsMode = CAUIGumpBuffs_StaminaPotsModeValues.SixtyPercent
+}
+
+function CAUIGumpBuffs_onOverrideWithNoBuffsButtonPressed(isChecked, label)
+    CALog_debug('Buffs disabled checkbox changed: '..tostring(isChecked))
+    CAUIGumpBuffsState.OverrideWithNoBuffs = not isChecked
+    if isChecked then
+        label:SetText('Enabled')
+        label:SetColor(0, 1, 0, 1)
+    else
+        label:SetText('Disabled')
+        label:SetColor(1, 0, 0, 1)
+    end
+end
+
+function onBuffsConfigButtonPressed_(isChecked, button, window)
+    CALog_debug('Buffs config button pressed: '..tostring(isChecked))
+    CAUIGumpBuffsState.ConfigWindowOpen = isChecked
+    if isChecked then
+        button:SetText('+')
+        window:Hide()
+    else
+        button:SetText('-')
+        window:Show()
+    end
+end
+
+function onNightsightButtonPressed_(isChecked, button)
+    CALog_debug('Nightsight button pressed: '..tostring(isChecked))
+    CAUIGumpBuffsState.EnableNightsight = isChecked
+    if isChecked then
+        button:SetText('Nightsight (Y)')
+    else
+        button:SetText('Nightsight (N)')
+    end
+end
+
+function onStrengthButtonPressed_(isChecked, button)
+    CALog_debug('Strength button pressed: '..tostring(isChecked))
+    CAUIGumpBuffsState.EnableStrength = isChecked
+    if isChecked then
+        button:SetText('Strength (Y)')
+    else
+        button:SetText('Strength (N)')
+    end
+end
+
+function onAgilityButtonPressed_(isChecked, button)
+    CALog_debug('Agility button pressed: '..tostring(isChecked))
+    CAUIGumpBuffsState.EnableAgility = isChecked
+    if isChecked then
+        button:SetText('Agility (Y)')
+    else
+        button:SetText('Agility (N)')
+    end
+end
+
+function onStaminaPotAfterStrenghPotButtonPressed_(isChecked, button)
+    CALog_debug('Use Stamina Pot after Agility Pot button pressed: '..tostring(isChecked))
+    CAUIGumpHealConfig.HealPotsAfterStrPot = isChecked
+    if isChecked then
+        button:SetText('Refresh On Agi (Y)')
+    else
+        button:SetText('Refresh On Agi (N)')
+    end
+end
+
+function onStaminaPotsModeButtonPressed_(button)
+    CALog_debug('Stamina Pots Mode button pressed...')
+    CAUIGumpBuffsState.StaminaPotsMode = (CAUIGumpBuffsState.StaminaPotsMode == CAUIGumpBuffs_StaminaPotsModeValues.EightyPercent and CAUIGumpBuffs_StaminaPotsModeValues.None) or CAUIGumpBuffsState.StaminaPotsMode+1
+    button:SetText(CAUIGumpBuffs_StaminaPotsModeStrings[CAUIGumpBuffsState.StaminaPotsMode])
+end
+
+function CAUIGumpBuffs_processUIInteractions(enableB, enableL, configB, configW, nightsightB, strengthB, agilityB, staminaPAAPB, staminaPMB)
+    if enableB:WasClicked() then
+        CAUIGumpBuffs_onOverrideWithNoBuffsButtonPressed(CAUIGumpBuffsState.OverrideWithNoBuffs, enableL)
+    end
+    if configB:WasClicked() then
+        onBuffsConfigButtonPressed_(not CAUIGumpBuffsState.ConfigWindowOpen, configB, configW)
+    end
+    if nightsightB:WasClicked() then
+        onNightsightButtonPressed_(not CAUIGumpBuffsState.EnableNightsight, nightsightB)
+    end
+    if strengthB:WasClicked() then
+        onStrengthButtonPressed_(not CAUIGumpBuffsState.EnableStrength, strengthB)
+    end
+    if agilityB:WasClicked() then
+        onAgilityButtonPressed_(not CAUIGumpBuffsState.EnableAgility, agilityB)
+    end
+    if staminaPAAPB:WasClicked() then
+        onStaminaPotAfterStrenghPotButtonPressed_(not CAUIGumpBuffsState.HealPotsAfterStrPot, staminaPAAPB)
+    end
+    if staminaPMB:WasClicked() then
+        onStaminaPotsModeButtonPressed_(staminaPMB)
     end
 end
 
 function CAUIGumpBuffs_updateCAConfigToCurrentUIConfig(CAConfigBuffs)
-    CAConfigBuffs.Enable = not CAUIGumpBuffs_CAUIGumpBuffsState.OverrideWithNoBuffs
+    CAConfigBuffs.Enable = not CAUIGumpBuffsState.OverrideWithNoBuffs
+    CAConfigBuffs.Nightsight.Enable = CAUIGumpBuffsState.EnableNightsight
+    CAConfigBuffs.Strength.Enable = CAUIGumpBuffsState.EnableStrength
+    CAConfigBuffs.Agility.Enable = CAUIGumpBuffsState.EnableAgility
+    CAConfigBuffs.Stamina.Enable = CAUIGumpBuffsState.StaminaPotsMode ~= CAUIGumpBuffs_StaminaPotsModeValues.None
+    CAConfigBuffs.Stamina.DrinkThreshould = CAUIGumpBuffs_StaminaPotsModeThreshoulds[CAUIGumpBuffsState.StaminaPotsMode]
 end
 
 function CAUIGumpBuffs_initUI(mainWindow, row)
     CALog_debug('Creating Buffs UI...')
-    local button = CAUIGumpLayout_createModuleEnableButtonAtRow(mainWindow, row, 'Buffs')
-    local label = CAUIGumpLayout_createModuleEnableLabelAtRow(mainWindow, row, 'Enabled')
-    return button, label
+    local enableB = CAUIGumpLayout_createModuleEnableButtonAtRow(mainWindow, row, 'Buffs')
+    local enableL = CAUIGumpLayout_createModuleEnableLabelAtRow(mainWindow, row, 'Enabled')
+    local configB = CAUIGumpLayout_createModuleConfigButtonAtRow(mainWindow, row)
+    local configW = CAUIGumpLayout_createModuleConfigWindow('buffsConfigWindow', 'Buffs Config', 5)
+    local nightsightB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 1, 'Nightsight (Y)')
+    local strengthB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 2, 'Strength (Y)')
+    local agilityB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 3, 'Agility (Y)')
+    local staminaPAAPB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 4, 'Refresh On Agi (Y)', 140, CAUIGumpLayout_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    local staminaPMB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 5, CAUIGumpBuffs_StaminaPotsModeStrings[CAUIGumpBuffsState.StaminaPotsMode], 180, CAUIGumpLayout_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    return enableB, enableL, configB, configW, nightsightB, strengthB, agilityB, staminaPAAPB, staminaPMB
 end
 
 CAUIGumpCommandsConfig = {
@@ -3599,11 +3861,11 @@ end
 
 CAUIGumpScavengeConfig = {
     OverrideWithNoScavenger = true,
-    ScavengerConfigOpen = true,
-    ScavengerAllowGold = true,
-    ScavengerAllowBones = true,
-    ScavengerAllowGrimoire = true,
-    ScavengerAllowRibs = true
+    ConfigWindowOpen = true,
+    ScavengeGold = true,
+    ScavengeBones = true,
+    ScavengeGrimoire = true,
+    ScavengeRibs = true
 }
 
 function onScavengeButtonPressed_(isChecked, label)
@@ -3620,7 +3882,7 @@ end
 
 function onScavengerConfigButtonPressed_(isChecked, button, window)
     CALog_debug('Scavenger config checkbox changed: '..tostring(isChecked))
-    CAUIGumpScavengeConfig.ScavengerConfigOpen = isChecked
+    CAUIGumpScavengeConfig.ConfigWindowOpen = isChecked
     if isChecked then
         button:SetText('+')
         window:Hide()
@@ -3632,7 +3894,7 @@ end
 
 function onScavengerGoldButtonPressed_(isChecked, button)
     CALog_debug('Scavenger allow gold checkbox changed: '..tostring(isChecked))
-    CAUIGumpScavengeConfig.ScavengerAllowGold = isChecked
+    CAUIGumpScavengeConfig.ScavengeGold = isChecked
     if isChecked then
         button:SetText('Gold (Y)')
     else
@@ -3642,7 +3904,7 @@ end
 
 function onScavengerBonesButtonPressed_(isChecked, button)
     CALog_debug('Scavenger allow bones checkbox changed: '..tostring(isChecked))
-    CAUIGumpScavengeConfig.ScavengerAllowBones = isChecked
+    CAUIGumpScavengeConfig.ScavengeBones = isChecked
     if isChecked then
         button:SetText('Bones (Y)')
     else
@@ -3652,7 +3914,7 @@ end
 
 function onScavengerGrimoireButtonPressed_(isChecked, button)
     CALog_debug('Scavenger allow grimoire checkbox changed: '..tostring(isChecked))
-    CAUIGumpScavengeConfig.ScavengerAllowGrimoire = isChecked
+    CAUIGumpScavengeConfig.ScavengeGrimoire = isChecked
     if isChecked then
         button:SetText('Grimoires (Y)')
     else
@@ -3662,7 +3924,7 @@ end
 
 function onScavengerRibsButtonPressed_(isChecked, button)
     CALog_debug('Scavenger allow grimoire checkbox changed: '..tostring(isChecked))
-    CAUIGumpScavengeConfig.ScavengerAllowRibs = isChecked
+    CAUIGumpScavengeConfig.ScavengeRibs = isChecked
     if isChecked then
         button:SetText('Ribs (Y)')
     else
@@ -3675,28 +3937,28 @@ function CAUIGumpScavenge_processUIInteractions(enableB, enableL, configB, confi
         onScavengeButtonPressed_(CAUIGumpScavengeConfig.OverrideWithNoScavenger, enableL)
     end
     if configB:WasClicked() then
-        onScavengerConfigButtonPressed_(not CAUIGumpScavengeConfig.ScavengerConfigOpen, configB, configW)
+        onScavengerConfigButtonPressed_(not CAUIGumpScavengeConfig.ConfigWindowOpen, configB, configW)
     end
     if goldB:WasClicked() then
-        onScavengerGoldButtonPressed_(not CAUIGumpScavengeConfig.ScavengerAllowGold, goldB)
+        onScavengerGoldButtonPressed_(not CAUIGumpScavengeConfig.ScavengeGold, goldB)
     end
     if bonesB:WasClicked() then
-        onScavengerBonesButtonPressed_(not CAUIGumpScavengeConfig.ScavengerAllowBones, bonesB)
+        onScavengerBonesButtonPressed_(not CAUIGumpScavengeConfig.ScavengeBones, bonesB)
     end
     if grimoireB:WasClicked() then
-        onScavengerGrimoireButtonPressed_(not CAUIGumpScavengeConfig.ScavengerAllowGrimoire, grimoireB)
+        onScavengerGrimoireButtonPressed_(not CAUIGumpScavengeConfig.ScavengeGrimoire, grimoireB)
     end
     if ribsB:WasClicked() then
-        onScavengerRibsButtonPressed_(not CAUIGumpScavengeConfig.ScavengerAllowRibs, ribsB)
+        onScavengerRibsButtonPressed_(not CAUIGumpScavengeConfig.ScavengeRibs, ribsB)
     end
 end
 
 function CAUIGumpScavenge_updateCAConfigToCurrentUIConfig(CAConfigScavenge)
     CAConfigScavenge.Enable = not CAUIGumpScavengeConfig.OverrideWithNoScavenger
-    CAConfigScavenge.DisallowGold = not CAUIGumpScavengeConfig.ScavengerAllowGold
-    CAConfigScavenge.DisallowBones = not CAUIGumpScavengeConfig.ScavengerAllowBones
-    CAConfigScavenge.DisallowGrimoire = not CAUIGumpScavengeConfig.ScavengerAllowGrimoire
-    CAConfigScavenge.DisallowRibs = not CAUIGumpScavengeConfig.ScavengerAllowRibs
+    CAConfigScavenge.DisallowGold = not CAUIGumpScavengeConfig.ScavengeGold
+    CAConfigScavenge.DisallowBones = not CAUIGumpScavengeConfig.ScavengeBones
+    CAConfigScavenge.DisallowGrimoire = not CAUIGumpScavengeConfig.ScavengeGrimoire
+    CAConfigScavenge.DisallowRibs = not CAUIGumpScavengeConfig.ScavengeRibs
 end
 
 function CAUIGumpScavenge_initUI(mainWindow, row)
@@ -3705,7 +3967,7 @@ function CAUIGumpScavenge_initUI(mainWindow, row)
     local enableL = CAUIGumpLayout_createModuleEnableLabelAtRow(mainWindow, row, 'Disabled')
     enableL:SetColor(1, 0, 0, 1)
     local configB = CAUIGumpLayout_createModuleConfigButtonAtRow(mainWindow, row)
-    local configW = CAUIGumpLayout_createModuleConfigWindow('scavengerConfigWindow', 'Scavenger', 4)
+    local configW = CAUIGumpLayout_createModuleConfigWindow('scavengerConfigWindow', 'Scavenge Config', 4)
     local goldB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 1, 'Gold (Y)')
     local bonesB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 2, 'Bones (Y)')
     local grimoireB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 3, 'Grimoires (Y)')
@@ -3726,14 +3988,6 @@ CAUI = {
         enableButton = nil,
         enableLabel = nil
     },
-    ---Heal = {
-    ---    enableButton = nil,
-    ---    enableLabel = nil
-    ---},
-    Buffs = {
-        enableButton = nil,
-        enableLabel = nil
-    },
     Commands = {
         enableButton = nil,
         enableLabel = nil
@@ -3741,6 +3995,32 @@ CAUI = {
     Attack = {
         enableButton = nil,
         enableLabel = nil
+    },
+    Heal = {
+        enableButton = nil,
+        enableLabel = nil,
+        configButton = nil,
+        Config = {
+            window = nil,
+            bandageSelfButton = nil,
+            bandageOtherButton = nil,
+            healPotionsModeButton = nil,
+            healPotionAfterStrengthPotionButton = nil,
+            curePotionsButton = nil
+        }
+    },
+    Buffs = {
+        enableButton = nil,
+        enableLabel = nil,
+        configButton = nil,
+        Config = {
+            window = nil,
+            enableNightsight = nil,
+            enableStrength = nil,
+            enableAgility = nil,
+            refreshAfterAgility = nil,
+            staminaPotionsModeButton = nil
+        }
     },
     Scavenge = {
         enableButton = nil,
@@ -3759,35 +4039,29 @@ CAUI = {
 CAUIMainWindowLayout = {
     StartPosX = 200,
     StartPosY = 200,
-    ---TitleLabelPosX = 10,
-    ---TitleLabelPosY = 40,
-    ---ConfigButtonPosX = 200,
-    ---ConfigButtonPosY = 35,
-    ---ConfigButtonSizeX = 60,
-    ---ConfigButtonSizeY = 25,
     SizeXOffset = 20,
     SizeYOffset = 20,
-    NumberOfModules = 5     --- Must match the current #modules
+    NumberOfModules = 6     --- Must match the current #modules
 }
 
 function CAUIGump_processUIGumpInteractions()
     CAUIGumpMainRow_processUIInteractions(CAUI.configButton, CAUI.Config.window, CAUI.Config.rearmButton, CAUI.Config.skinnButton)
     CAUIGumpRun_processUIInteractions(CAUI.Run.enableButton, CAUI.Run.enableLabel)                     --- Run
-    ---cauigheal.processUIInteractions(CAUI.Run.enableButton, CAUI.Run.enableLabel)                    --- Heal
-    CAUIGumpBuffs_processUIInteractions(CAUI.Buffs.enableButton, CAUI.Buffs.enableLabel)               --- Buffs
     CAUIGumpCommands_processUIInteractions(CAUI.Commands.enableButton, CAUI.Commands.enableLabel)      --- Commands
     CAUIGumpAttack_processUIInteractions(CAUI.Attack.enableButton, CAUI.Attack.enableLabel)            --- Attack
-    CAUIGumpScavenge_processUIInteractions(CAUI.Scavenge.enableButton, CAUI.Scavenge.enableLabel, CAUI.Scavenge.configButton, CAUI.Scavenge.Config.window, CAUI.Scavenge.Config.activateGoldButton, CAUI.Scavenge.Config.activateBonesButton, CAUI.Scavenge.Config.activateGrimoireButton, CAUI.Scavenge.Config.activateRibsButton)              --- Scavenge
+    CAUIGumpHeal_processUIInteractions(CAUI.Heal.enableButton, CAUI.Heal.enableLabel, CAUI.Heal.configButton, CAUI.Heal.Config.window, CAUI.Heal.Config.bandageSelfButton, CAUI.Heal.Config.bandageOtherButton, CAUI.Heal.Config.healPotionsModeButton, CAUI.Heal.Config.healPotionAfterStrengthPotionButton, CAUI.Heal.Config.curePotionsButton)      --- Heal
+    CAUIGumpBuffs_processUIInteractions(CAUI.Buffs.enableButton, CAUI.Buffs.enableLabel, CAUI.Buffs.configButton, CAUI.Buffs.Config.window, CAUI.Buffs.Config.enableNightsight, CAUI.Buffs.Config.enableStrength, CAUI.Buffs.Config.enableAgility, CAUI.Buffs.Config.refreshAfterAgility, CAUI.Buffs.Config.staminaPotionsModeButton)                                                         --- Buffs
+    CAUIGumpScavenge_processUIInteractions(CAUI.Scavenge.enableButton, CAUI.Scavenge.enableLabel, CAUI.Scavenge.configButton, CAUI.Scavenge.Config.window, CAUI.Scavenge.Config.activateGoldButton, CAUI.Scavenge.Config.activateBonesButton, CAUI.Scavenge.Config.activateGrimoireButton, CAUI.Scavenge.Config.activateRibsButton)                    --- Scavenge
 end
 
 function CAUIGump_updateCombatAssistantConfig(CAConfig)
 
     --- Override UI values to CA Config
     CAUIGumpMainRow_updateCAConfigToCurrentUIConfig(CAConfig.modules.ArmDisarm, CAConfig.modules.Skinning)     --- Main
-    ---cauigheal.updateCAConfigToCurrentUIConfig(CAConfig.modules.Buffs)                                    --- Heal
-    CAUIGumpBuffs_updateCAConfigToCurrentUIConfig(CAConfig.modules.Buffs)                                      --- Buffs
     CAUIGumpCommands_updateCAConfigToCurrentUIConfig(CAConfig.userCommands)                                    --- Commands
     CAUIGumpAttack_updateCAConfigToCurrentUIConfig(CAConfig.modules.Attack)                                    --- Attack
+    CAUIGumpHeal_updateCAConfigToCurrentUIConfig(CAConfig.modules.Bandages, CAConfig.modules.CurePotions, CAConfig.modules.HealingPotions, CAConfig.modules.Buffs.Strength)    --- Heal
+    CAUIGumpBuffs_updateCAConfigToCurrentUIConfig(CAConfig.modules.Buffs)                                      --- Buffs
     CAUIGumpScavenge_updateCAConfigToCurrentUIConfig(CAConfig.modules.Scavenging)                              --- Scavenge
 
     --- Because of internal error, nightsight may disable itself (don't override that part)
@@ -3826,11 +4100,11 @@ end
 function CAUIGump_initModules()
     CAUI.titleLabel, CAUI.configButton, CAUI.Config.window, CAUI.Config.rearmButton, CAUI.Config.skinnButton = CAUIGumpMainRow_initUI(CAUI.mainWindow)
     CAUI.Run.enableButton , CAUI.Run.enableLabel = CAUIGumpRun_initUI(CAUI.mainWindow, 1)                      --- Run
-    ---CAUI.Run.enableButton , CAUI.Run.enableLabel = cauigheal.initUI(CAUI.mainWindow, 1)                  --- Heal
-    CAUI.Buffs.enableButton , CAUI.Buffs.enableLabel = CAUIGumpBuffs_initUI(CAUI.mainWindow, 2)                --- Buffs
-    CAUI.Commands.enableButton , CAUI.Commands.enableLabel = CAUIGumpCommands_initUI(CAUI.mainWindow, 3)       --- Commands
-    CAUI.Attack.enableButton , CAUI.Attack.enableLabel = CAUIGumpAttack_initUI(CAUI.mainWindow, 4)             --- Attack
-    CAUI.Scavenge.enableButton, CAUI.Scavenge.enableLabel, CAUI.Scavenge.configButton, CAUI.Scavenge.Config.window, CAUI.Scavenge.Config.activateGoldButton, CAUI.Scavenge.Config.activateBonesButton, CAUI.Scavenge.Config.activateGrimoireButton, CAUI.Scavenge.Config.activateRibsButton = CAUIGumpScavenge_initUI(CAUI.mainWindow, 5)        --- Scavenge
+    CAUI.Commands.enableButton , CAUI.Commands.enableLabel = CAUIGumpCommands_initUI(CAUI.mainWindow, 2)       --- Commands
+    CAUI.Attack.enableButton , CAUI.Attack.enableLabel = CAUIGumpAttack_initUI(CAUI.mainWindow, 3)             --- Attack
+    CAUI.Heal.enableButton, CAUI.Heal.enableLabel, CAUI.Heal.configButton, CAUI.Heal.Config.window, CAUI.Heal.Config.bandageSelfButton, CAUI.Heal.Config.bandageOtherButton, CAUI.Heal.Config.healPotionsModeButton, CAUI.Heal.Config.healPotionAfterStrengthPotionButton, CAUI.Heal.Config.curePotionsButton = CAUIGumpHeal_initUI(CAUI.mainWindow, 4)    --- Heal
+    CAUI.Buffs.enableButton, CAUI.Buffs.enableLabel, CAUI.Buffs.configButton, CAUI.Buffs.Config.window, CAUI.Buffs.Config.enableNightsight, CAUI.Buffs.Config.enableStrength, CAUI.Buffs.Config.enableAgility, CAUI.Buffs.Config.refreshAfterAgility, CAUI.Buffs.Config.staminaPotionsModeButton = CAUIGumpBuffs_initUI(CAUI.mainWindow, 5)                                                       --- Buffs
+    CAUI.Scavenge.enableButton, CAUI.Scavenge.enableLabel, CAUI.Scavenge.configButton, CAUI.Scavenge.Config.window, CAUI.Scavenge.Config.activateGoldButton, CAUI.Scavenge.Config.activateBonesButton, CAUI.Scavenge.Config.activateGrimoireButton, CAUI.Scavenge.Config.activateRibsButton = CAUIGumpScavenge_initUI(CAUI.mainWindow, 6)                  --- Scavenge
 end
 
 function CAUIGump_initMainGump()

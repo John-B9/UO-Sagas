@@ -13,7 +13,7 @@ local caml = Import('CAMainLoop')
 local cauiglayout = Import('CAUIGumpLayout')
 local cauigmainrow = Import('CAUIGumpMainRow')
 local cauigrun = Import('CAUIGumpRun')
----local cauigheal = Import('CAUIGumpHeal')
+local cauigheal = Import('CAUIGumpHeal')
 local cauigbuffs = Import('CAUIGumpBuffs')
 local cauigcommands = Import('CAUIGumpCommands')
 local cauigattack = Import('CAUIGumpAttack')
@@ -37,14 +37,6 @@ local CAUI = {
         enableButton = nil,
         enableLabel = nil
     },
-    ---Heal = {
-    ---    enableButton = nil,
-    ---    enableLabel = nil
-    ---},
-    Buffs = {
-        enableButton = nil,
-        enableLabel = nil
-    },
     Commands = {
         enableButton = nil,
         enableLabel = nil
@@ -52,6 +44,32 @@ local CAUI = {
     Attack = {
         enableButton = nil,
         enableLabel = nil
+    },
+    Heal = {
+        enableButton = nil,
+        enableLabel = nil,
+        configButton = nil,
+        Config = {
+            window = nil,
+            bandageSelfButton = nil,
+            bandageOtherButton = nil,
+            healPotionsModeButton = nil,
+            healPotionAfterStrengthPotionButton = nil,
+            curePotionsButton = nil
+        }
+    },
+    Buffs = {
+        enableButton = nil,
+        enableLabel = nil,
+        configButton = nil,
+        Config = {
+            window = nil,
+            enableNightsight = nil,
+            enableStrength = nil,
+            enableAgility = nil,
+            refreshAfterAgility = nil,
+            staminaPotionsModeButton = nil
+        }
     },
     Scavenge = {
         enableButton = nil,
@@ -72,7 +90,7 @@ local CAUIMainWindowLayout = {
     StartPosY = 200,
     SizeXOffset = 20,
     SizeYOffset = 20,
-    NumberOfModules = 5     --- Must match the current #modules
+    NumberOfModules = 6     --- Must match the current #modules
 }
 
 -----------------
@@ -82,21 +100,21 @@ local CAUIMainWindowLayout = {
 local function processUIGumpInteractions_()
     cauigmainrow.processUIInteractions(CAUI.configButton, CAUI.Config.window, CAUI.Config.rearmButton, CAUI.Config.skinnButton)
     cauigrun.processUIInteractions(CAUI.Run.enableButton, CAUI.Run.enableLabel)                     --- Run
-    ---cauigheal.processUIInteractions(CAUI.Run.enableButton, CAUI.Run.enableLabel)                    --- Heal
-    cauigbuffs.processUIInteractions(CAUI.Buffs.enableButton, CAUI.Buffs.enableLabel)               --- Buffs
     cauigcommands.processUIInteractions(CAUI.Commands.enableButton, CAUI.Commands.enableLabel)      --- Commands
     cauigattack.processUIInteractions(CAUI.Attack.enableButton, CAUI.Attack.enableLabel)            --- Attack
-    cauigscavenge.processUIInteractions(CAUI.Scavenge.enableButton, CAUI.Scavenge.enableLabel, CAUI.Scavenge.configButton, CAUI.Scavenge.Config.window, CAUI.Scavenge.Config.activateGoldButton, CAUI.Scavenge.Config.activateBonesButton, CAUI.Scavenge.Config.activateGrimoireButton, CAUI.Scavenge.Config.activateRibsButton)              --- Scavenge
+    cauigheal.processUIInteractions(CAUI.Heal.enableButton, CAUI.Heal.enableLabel, CAUI.Heal.configButton, CAUI.Heal.Config.window, CAUI.Heal.Config.bandageSelfButton, CAUI.Heal.Config.bandageOtherButton, CAUI.Heal.Config.healPotionsModeButton, CAUI.Heal.Config.healPotionAfterStrengthPotionButton, CAUI.Heal.Config.curePotionsButton)      --- Heal
+    cauigbuffs.processUIInteractions(CAUI.Buffs.enableButton, CAUI.Buffs.enableLabel, CAUI.Buffs.configButton, CAUI.Buffs.Config.window, CAUI.Buffs.Config.enableNightsight, CAUI.Buffs.Config.enableStrength, CAUI.Buffs.Config.enableAgility, CAUI.Buffs.Config.refreshAfterAgility, CAUI.Buffs.Config.staminaPotionsModeButton)                                                         --- Buffs
+    cauigscavenge.processUIInteractions(CAUI.Scavenge.enableButton, CAUI.Scavenge.enableLabel, CAUI.Scavenge.configButton, CAUI.Scavenge.Config.window, CAUI.Scavenge.Config.activateGoldButton, CAUI.Scavenge.Config.activateBonesButton, CAUI.Scavenge.Config.activateGrimoireButton, CAUI.Scavenge.Config.activateRibsButton)                    --- Scavenge
 end
 
 local function updateCombatAssistantConfig_(CAConfig)
 
     --- Override UI values to CA Config
     cauigmainrow.updateCAConfigToCurrentUIConfig(CAConfig.modules.ArmDisarm, CAConfig.modules.Skinning)     --- Main
-    ---cauigheal.updateCAConfigToCurrentUIConfig(CAConfig.modules.Buffs)                                    --- Heal
-    cauigbuffs.updateCAConfigToCurrentUIConfig(CAConfig.modules.Buffs)                                      --- Buffs
     cauigcommands.updateCAConfigToCurrentUIConfig(CAConfig.userCommands)                                    --- Commands
     cauigattack.updateCAConfigToCurrentUIConfig(CAConfig.modules.Attack)                                    --- Attack
+    cauigheal.updateCAConfigToCurrentUIConfig(CAConfig.modules.Bandages, CAConfig.modules.CurePotions, CAConfig.modules.HealingPotions, CAConfig.modules.Buffs.Strength)    --- Heal
+    cauigbuffs.updateCAConfigToCurrentUIConfig(CAConfig.modules.Buffs)                                      --- Buffs
     cauigscavenge.updateCAConfigToCurrentUIConfig(CAConfig.modules.Scavenging)                              --- Scavenge
 
     --- Because of internal error, nightsight may disable itself (don't override that part)
@@ -135,11 +153,11 @@ end
 local function initModules_()
     CAUI.titleLabel, CAUI.configButton, CAUI.Config.window, CAUI.Config.rearmButton, CAUI.Config.skinnButton = cauigmainrow.initUI(CAUI.mainWindow)
     CAUI.Run.enableButton , CAUI.Run.enableLabel = cauigrun.initUI(CAUI.mainWindow, 1)                      --- Run
-    ---CAUI.Run.enableButton , CAUI.Run.enableLabel = cauigheal.initUI(CAUI.mainWindow, 1)                  --- Heal
-    CAUI.Buffs.enableButton , CAUI.Buffs.enableLabel = cauigbuffs.initUI(CAUI.mainWindow, 2)                --- Buffs
-    CAUI.Commands.enableButton , CAUI.Commands.enableLabel = cauigcommands.initUI(CAUI.mainWindow, 3)       --- Commands
-    CAUI.Attack.enableButton , CAUI.Attack.enableLabel = cauigattack.initUI(CAUI.mainWindow, 4)             --- Attack
-    CAUI.Scavenge.enableButton, CAUI.Scavenge.enableLabel, CAUI.Scavenge.configButton, CAUI.Scavenge.Config.window, CAUI.Scavenge.Config.activateGoldButton, CAUI.Scavenge.Config.activateBonesButton, CAUI.Scavenge.Config.activateGrimoireButton, CAUI.Scavenge.Config.activateRibsButton = cauigscavenge.initUI(CAUI.mainWindow, 5)        --- Scavenge
+    CAUI.Commands.enableButton , CAUI.Commands.enableLabel = cauigcommands.initUI(CAUI.mainWindow, 2)       --- Commands
+    CAUI.Attack.enableButton , CAUI.Attack.enableLabel = cauigattack.initUI(CAUI.mainWindow, 3)             --- Attack
+    CAUI.Heal.enableButton, CAUI.Heal.enableLabel, CAUI.Heal.configButton, CAUI.Heal.Config.window, CAUI.Heal.Config.bandageSelfButton, CAUI.Heal.Config.bandageOtherButton, CAUI.Heal.Config.healPotionsModeButton, CAUI.Heal.Config.healPotionAfterStrengthPotionButton, CAUI.Heal.Config.curePotionsButton = cauigheal.initUI(CAUI.mainWindow, 4)    --- Heal
+    CAUI.Buffs.enableButton, CAUI.Buffs.enableLabel, CAUI.Buffs.configButton, CAUI.Buffs.Config.window, CAUI.Buffs.Config.enableNightsight, CAUI.Buffs.Config.enableStrength, CAUI.Buffs.Config.enableAgility, CAUI.Buffs.Config.refreshAfterAgility, CAUI.Buffs.Config.staminaPotionsModeButton = cauigbuffs.initUI(CAUI.mainWindow, 5)                                                       --- Buffs
+    CAUI.Scavenge.enableButton, CAUI.Scavenge.enableLabel, CAUI.Scavenge.configButton, CAUI.Scavenge.Config.window, CAUI.Scavenge.Config.activateGoldButton, CAUI.Scavenge.Config.activateBonesButton, CAUI.Scavenge.Config.activateGrimoireButton, CAUI.Scavenge.Config.activateRibsButton = cauigscavenge.initUI(CAUI.mainWindow, 6)                  --- Scavenge
 end
 
 local function initMainGump_()

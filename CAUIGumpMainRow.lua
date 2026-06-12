@@ -17,9 +17,9 @@ local cauiglayout = Import('CAUIGumpLayout')
 local CAUIGumpMainRowLayout = {
     TitleLabelPosX = 10,
     TitleLabelPosY = 40,
-    ConfigButtonPosX = 200,
+    ConfigButtonPosX = 175,
     ConfigButtonPosY = 35,
-    ConfigButtonSizeX = 60,
+    ConfigButtonSizeX = 85,
     ConfigButtonSizeY = 25
 }
 
@@ -132,10 +132,10 @@ function onconfigButtonPressed_(isChecked, button, window)
     cal.debug('Main config button changed: '..tostring(isChecked))
     CAUIGumpMainRowState.MainConfigOpen = isChecked
     if isChecked then
-        button:SetText('CONFIG')
+        button:SetText('CONFIG (+)')
         window:Hide()
     else
-        button:SetText('-')
+        button:SetText('CONFIG (-)')
         window:Show()
     end
 end
@@ -179,7 +179,7 @@ local function initUI_(mainWindow)
     local titleLabel = mainWindow:AddLabel(CAUIGumpMainRowLayout.TitleLabelPosX, CAUIGumpMainRowLayout.TitleLabelPosY, 'SAGAS Combat Assistant')
     titleLabel:SetColor(0.2, 0.8, 1, 1)
 
-    local configButton = mainWindow:AddButton(CAUIGumpMainRowLayout.ConfigButtonPosX, CAUIGumpMainRowLayout.ConfigButtonPosY, 'CONFIG', CAUIGumpMainRowLayout.ConfigButtonSizeX, CAUIGumpMainRowLayout.ConfigButtonSizeY)
+    local configButton = mainWindow:AddButton(CAUIGumpMainRowLayout.ConfigButtonPosX, CAUIGumpMainRowLayout.ConfigButtonPosY, 'CONFIG (+)', CAUIGumpMainRowLayout.ConfigButtonSizeX, CAUIGumpMainRowLayout.ConfigButtonSizeY)
 
     local configW = cauiglayout.createModuleConfigWindow('MainConfigWindow', 'Main Config', 2)
     local rearmB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 1, RearmModeStrings[CAUIGumpMainRowState.RearmMode], 180, cauiglayout.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
