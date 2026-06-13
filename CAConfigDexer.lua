@@ -124,12 +124,15 @@ local DexerMainLoopConfig = {
             DisallowRibs = false        --- Toggle scavenging ribs
         },
         Attack = {
-            Enable = false,                     --- Attacks nearby enemies automatically
-            Rangemax = 10,                      --- Attack search range
-            MobilesExceptionsSerials = {},      --- Mobiles Serials to ignore (add friends so to not attack should they become grey)
-            MobilesExceptionsGraphicIDs = {},   --- Mobiles GraphicIDs to ignore (don't kill: cows, dogs...)
-            MobilesExceptionsNames = {},        --- Mobiles Names to ignore (use if don't have serial or graphic available)
-            CheckFrequency = 500                --- in milliseconds, how often to check for new targets, adjust if needed
+            Enable = false,                             --- Attacks nearby enemies automatically
+            Rangemax = 10,                              --- Attack search range
+            AllowMobilesExceptionsSerials = true,       --- Allow Mobiles Serials to ignore
+            MobilesExceptionsSerials = {},              --- Mobiles Serials to ignore (add friends so to not attack should they become grey)
+            AllowMobilesExceptionsGraphicIDs = true,    --- Allow Mobiles Mobiles GraphicIDs to ignore
+            MobilesExceptionsGraphicIDs = {},           --- Mobiles GraphicIDs to ignore (don't kill: cows, dogs...)
+            AllowMobilesExceptionsNames = true,         --- Allow Mobiles Mobiles Names to ignore
+            MobilesExceptionsNames = {},                --- Mobiles Names to ignore (use if don't have serial or graphic available)
+            CheckFrequency = 500                        --- in milliseconds, how often to check for new targets, adjust if needed
         }
     },
     userCommands = {

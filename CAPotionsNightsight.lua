@@ -71,7 +71,8 @@ local function nightsight_(forced)
     if potionDrinkState == DrinkAtemptResult.DRINK_ATTEMPTED_BUT_FAILED then
         cal.error("Must already have the nightsight buff...")
         cal.error("We have no way to check when to reapply unless by drinking continuously (which makes no sense)")
-        cal.error("We'll disable the auto nightsight buff... Just relaunch the Combat Assistant once the current night sight expires")
+        cal.error("We'll disable the auto nightsight buff...")
+        cal.error("Just relaunch the Combat Assistant (or re-enable the buff via the UI), once the current night sight expires")
         cal.debug("Already under nightsight effect, disabling auto-buff")
         setEnable_(false)
     end

@@ -20,8 +20,11 @@ local cat = Import('CATime')
 AttackConfig = {
     Enable = false,
     Rangemax = 10,
+    AllowMobilesExceptionsSerials = true,
     MobilesExceptionsSerials = nil,
+    AllowMobilesExceptionsGraphicIDs = true,
     MobilesExceptionsGraphicIDs = nil,
+    AllowMobilesExceptionsNames = true,
     MobilesExceptionsNames = nil,
     CheckFrequency = 3000
 }
@@ -61,8 +64,11 @@ end
 local function setConfig_(config)
     setEnable_(config.Enable)
     setRangemax_(config.Rangemax)
+    AttackConfig.AllowMobilesExceptionsSerials = config.AllowMobilesExceptionsSerials
     setMobilesExceptionSerialsList_(config.MobilesExceptionsSerials)
+    AttackConfig.AllowMobilesExceptionsGraphicIDs = config.AllowMobilesExceptionsGraphicIDs
     setMobilesExceptionGraphicIDsList_(config.MobilesExceptionsGraphicIDs)
+    AttackConfig.AllowMobilesExceptionsNames = config.AllowMobilesExceptionsNames
     setMobilesExceptionNamesList_(config.MobilesExceptionsNames)
     setCheckFrequency_(config.CheckFrequency)
 end
@@ -95,15 +101,15 @@ local function targetAcceptPredicate_(mobile)
         return false
     end
 
-    if bl.equalsAnyInTable(mobile.Serial, AttackConfig.MobilesExceptionsSerials) then
+    if AttackConfig.AllowMobilesExceptionsSerials and bl.equalsAnyInTable(mobile.Serial, AttackConfig.MobilesExceptionsSerials) then
         return false
     end
 
-    if bl.equalsAnyInTable(mobile.Graphic, AttackConfig.MobilesExceptionsGraphicIDs) then
+    if AttackConfig.AllowMobilesExceptionsGraphicIDs and bl.equalsAnyInTable(mobile.Graphic, AttackConfig.MobilesExceptionsGraphicIDs) then
         return false
     end
 
-    if bl.equalsAnyInTable(mobile.Name, AttackConfig.MobilesExceptionsNames) then
+    if AttackConfig.AllowMobilesExceptionsNames and bl.equalsAnyInTable(mobile.Name, AttackConfig.MobilesExceptionsNames) then
         return false
     end
 

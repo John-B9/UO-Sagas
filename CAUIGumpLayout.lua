@@ -24,8 +24,8 @@ local CAUIGumpLayoutConstants = {
     ModuleConfigButtonPosX = 220,
     ModuleConfigButtonSizeX = 30,
     ModuleConfigButtonSizeY = 30,
-    ModuleConfigWindowStartPosX = 200,
-    ModuleConfigWindowStartPosY = 200,
+    ModuleConfigWindowStartPosX = 500,
+    ModuleConfigWindowStartBasePosY = 200,
     ModuleConfigWindowSizeX = 90,
     ModuleConfigWindowFeatureEnableButtonPosX = 10,
     ModuleConfigWindowFeatureEnableButtonPosYStart = 40,
@@ -71,7 +71,7 @@ local function createModuleConfigButtonAtRow_(mainWindow, row)
     return button
 end
 
-local function createModuleConfigWindow_(windowIDString, windowHeader, numRows)
+local function createModuleConfigWindow_(windowIDString, windowHeader, numRows, row)
     cal.debug('Creating Module Config window '..windowIDString..'...')
     local moduleConfigWindow = UI.CreateWindow(windowIDString, windowHeader)
     if not moduleConfigWindow then
@@ -79,7 +79,9 @@ local function createModuleConfigWindow_(windowIDString, windowHeader, numRows)
         return nil
     end
     cal.debug('Initializing Module Config window '..windowIDString..'...')
-    moduleConfigWindow:SetPosition(CAUIGumpLayoutConstants.ModuleConfigWindowStartPosX, CAUIGumpLayoutConstants.ModuleConfigWindowStartPosY)
+    local posX = CAUIGumpLayoutConstants.ModuleConfigWindowStartPosX
+    local posY = CAUIGumpLayoutConstants.ModuleConfigWindowStartBasePosY + ((numRows - 1) * CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYIncrement)
+    moduleConfigWindow:SetPosition(posX, posY)
     local moduleConfigWindowSizeY = CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYStart + ((numRows - 1) * CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYIncrement) + 50
     moduleConfigWindow:SetSize(CAUIGumpLayoutConstants.ModuleConfigWindowSizeX, moduleConfigWindowSizeY)
     moduleConfigWindow:Hide()

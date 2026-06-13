@@ -136,7 +136,7 @@ local function disarmPlayerIfWeaponDurabilityIsLow_(replaceImmediately)
                 cal.debug("Replace weapon: "..((replaceWeapon~=nil and ("found ("..replaceWeapon.Name..")")) or " not found..."))
                 cal.debug("Replace weapon durability: "..((replaceWeapon~=nil and replaceWeaponDurability~=nil and replaceWeaponDurability[1]) or " not found..."))
                 if replaceWeapon and replaceWeaponDurability and replaceWeaponDurability[1] > ArmDisarmStaticConfig.durabilityDisarmThreshould then
-                    Pause(cat.getActionWaitTime())
+                    Pause(2*cat.getActionWaitTime())
                     equipWeaponIfDurabilityIsOk_(replaceWeapon)
                     ArmDisarmState.lastRightHand = replaceWeapon
                     clearState = false
@@ -173,7 +173,7 @@ local function disarmPlayerIfWeaponDurabilityIsLow_(replaceImmediately)
                 cal.debug("Replace weapon: "..((replaceWeapon~=nil and ("found ("..replaceWeapon.Name..")")) or " not found..."))
                 cal.debug("Replace weapon durability: "..((replaceWeapon~=nil and replaceWeaponDurability~=nil and replaceWeaponDurability[1]) or " not found..."))
                 if replaceWeapon and replaceWeaponDurability and replaceWeaponDurability[1] > ArmDisarmStaticConfig.durabilityDisarmThreshould then
-                    Pause(cat.getActionWaitTime())
+                    Pause(2*cat.getActionWaitTime())
                     equipWeaponIfDurabilityIsOk_(replaceWeapon)
                     ArmDisarmState.lastLeftHand = replaceWeapon
                     clearState = false
@@ -329,7 +329,7 @@ local function disarmed_()
         local currentTickTime = cat.getCurrentTickTime()
         ---cal.mainInfo("Equipping right hand")
         if ArmDisarmState.lastDisarmedTime == 0 then
-            cal.info("Rearming in "..ArmDisarmStaticConfig.rearmAtemptDelay.."ms")
+            cal.info("Rearming in "..(ArmDisarmStaticConfig.rearmAtemptDelay / 1000).."s")
             ArmDisarmState.lastDisarmedTime = currentTickTime
         end
     end

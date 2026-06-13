@@ -181,7 +181,7 @@ local function initUI_(mainWindow)
 
     local configButton = mainWindow:AddButton(CAUIGumpMainRowLayout.ConfigButtonPosX, CAUIGumpMainRowLayout.ConfigButtonPosY, 'CONFIG (+)', CAUIGumpMainRowLayout.ConfigButtonSizeX, CAUIGumpMainRowLayout.ConfigButtonSizeY)
 
-    local configW = cauiglayout.createModuleConfigWindow('MainConfigWindow', 'Main Config', 2)
+    local configW = cauiglayout.createModuleConfigWindow('MainConfigWindow', 'Main Config', 2, 1)
     local rearmB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 1, RearmModeStrings[CAUIGumpMainRowState.RearmMode], 180, cauiglayout.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
     local skinnB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 2, SkinnModeStrings[CAUIGumpMainRowState.SkinnMode], 180, cauiglayout.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
 

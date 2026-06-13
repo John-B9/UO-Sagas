@@ -33,10 +33,10 @@ local function onRunCombatAssistantButtonPressed_(isChecked, label)
     cal.debug('Run Button changed: '..tostring(isChecked))
     CAUIGumpRunConfig.IterateCAMainLoop = isChecked
     if isChecked then
-        label:SetText('Enabled')
+        label:SetText('Running...')
         label:SetColor(0, 1, 0, 1)
     else
-        label:SetText('Disabled')
+        label:SetText('Stopped')
         label:SetColor(1, 0, 0, 1)
     end
 end

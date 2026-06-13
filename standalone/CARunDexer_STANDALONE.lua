@@ -598,7 +598,7 @@ function CAArmDisarm_disarmPlayerIfWeaponDurabilityIsLow(replaceImmediately)
                 CALog_debug("Replace weapon: "..((replaceWeapon~=nil and ("found ("..replaceWeapon.Name..")")) or " not found..."))
                 CALog_debug("Replace weapon durability: "..((replaceWeapon~=nil and replaceWeaponDurability~=nil and replaceWeaponDurability[1]) or " not found..."))
                 if replaceWeapon and replaceWeaponDurability and replaceWeaponDurability[1] > ArmDisarmStaticConfig.durabilityDisarmThreshould then
-                    Pause(CATime_getActionWaitTime())
+                    Pause(2*CATime_getActionWaitTime())
                     CAArmDisarm_equipWeaponIfDurabilityIsOk(replaceWeapon)
                     ArmDisarmState.lastRightHand = replaceWeapon
                     clearState = false
@@ -635,7 +635,7 @@ function CAArmDisarm_disarmPlayerIfWeaponDurabilityIsLow(replaceImmediately)
                 CALog_debug("Replace weapon: "..((replaceWeapon~=nil and ("found ("..replaceWeapon.Name..")")) or " not found..."))
                 CALog_debug("Replace weapon durability: "..((replaceWeapon~=nil and replaceWeaponDurability~=nil and replaceWeaponDurability[1]) or " not found..."))
                 if replaceWeapon and replaceWeaponDurability and replaceWeaponDurability[1] > ArmDisarmStaticConfig.durabilityDisarmThreshould then
-                    Pause(CATime_getActionWaitTime())
+                    Pause(2*CATime_getActionWaitTime())
                     CAArmDisarm_equipWeaponIfDurabilityIsOk(replaceWeapon)
                     ArmDisarmState.lastLeftHand = replaceWeapon
                     clearState = false
@@ -774,7 +774,7 @@ function CAArmDisarm_disarmed()
         currentTickTime = CATime_getCurrentTickTime()
 
         if ArmDisarmState.lastDisarmedTime == 0 then
-            CALog_info("Rearming in "..ArmDisarmStaticConfig.rearmAtemptDelay.."ms")
+            CALog_info("Rearming in "..(ArmDisarmStaticConfig.rearmAtemptDelay / 1000).."s")
             ArmDisarmState.lastDisarmedTime = currentTickTime
         end
     end
@@ -1743,7 +1743,8 @@ function CAPotionsNightsight_nightsight(forced)
     if potionDrinkState == DrinkAtemptResult.DRINK_ATTEMPTED_BUT_FAILED then
         CALog_error("Must already have the nightsight buff...")
         CALog_error("We have no way to check when to reapply unless by drinking continuously (which makes no sense)")
-        CALog_error("We'll disable the auto nightsight buff... Just relaunch the Combat Assistant once the current night sight expires")
+        CALog_error("We'll disable the auto nightsight buff...")
+        CALog_error("Just relaunch the Combat Assistant (or re-enable the buff via the UI), once the current night sight expires")
         CALog_debug("Already under nightsight effect, disabling auto-buff")
         CAPotionsNightsight_setEnable(false)
     end
@@ -2966,8 +2967,11 @@ end
 AttackConfig = {
     Enable = false,
     Rangemax = 10,
+    AllowMobilesExceptionsSerials = true,
     MobilesExceptionsSerials = nil,
+    AllowMobilesExceptionsGraphicIDs = true,
     MobilesExceptionsGraphicIDs = nil,
+    AllowMobilesExceptionsNames = true,
     MobilesExceptionsNames = nil,
     CheckFrequency = 3000
 }
@@ -3003,8 +3007,11 @@ end
 function CAAttack_setConfig(config)
     CAAttack_setEnable(config.Enable)
     CAAttack_setRangemax(config.Rangemax)
+    AttackConfig.AllowMobilesExceptionsSerials = config.AllowMobilesExceptionsSerials
     CAAttack_setMobilesExceptionSerialsList(config.MobilesExceptionsSerials)
+    AttackConfig.AllowMobilesExceptionsGraphicIDs = config.AllowMobilesExceptionsGraphicIDs
     CAAttack_setMobilesExceptionGraphicIDsList(config.MobilesExceptionsGraphicIDs)
+    AttackConfig.AllowMobilesExceptionsNames = config.AllowMobilesExceptionsNames
     CAAttack_setMobilesExceptionNamesList(config.MobilesExceptionsNames)
     CAAttack_setCheckFrequency(config.CheckFrequency)
 end
@@ -3033,15 +3040,15 @@ function CAAttack_targetAcceptPredicate(mobile)
         return false
     end
 
-    if BaseLib_equalsAnyInTable(mobile.Serial, AttackConfig.MobilesExceptionsSerials) then
+    if AttackConfig.AllowMobilesExceptionsSerials and BaseLib_equalsAnyInTable(mobile.Serial, AttackConfig.MobilesExceptionsSerials) then
         return false
     end
 
-    if BaseLib_equalsAnyInTable(mobile.Graphic, AttackConfig.MobilesExceptionsGraphicIDs) then
+    if AttackConfig.AllowMobilesExceptionsGraphicIDs and BaseLib_equalsAnyInTable(mobile.Graphic, AttackConfig.MobilesExceptionsGraphicIDs) then
         return false
     end
 
-    if BaseLib_equalsAnyInTable(mobile.Name, AttackConfig.MobilesExceptionsNames) then
+    if AttackConfig.AllowMobilesExceptionsNames and BaseLib_equalsAnyInTable(mobile.Name, AttackConfig.MobilesExceptionsNames) then
         return false
     end
 
@@ -3211,8 +3218,8 @@ CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants = {
     ModuleConfigButtonPosX = 220,
     ModuleConfigButtonSizeX = 30,
     ModuleConfigButtonSizeY = 30,
-    ModuleConfigWindowStartPosX = 200,
-    ModuleConfigWindowStartPosY = 200,
+    ModuleConfigWindowStartPosX = 500,
+    ModuleConfigWindowStartBasePosY = 200,
     ModuleConfigWindowSizeX = 90,
     ModuleConfigWindowFeatureEnableButtonPosX = 10,
     ModuleConfigWindowFeatureEnableButtonPosYStart = 40,
@@ -3254,7 +3261,7 @@ function CAUIGumpLayout_createModuleConfigButtonAtRow(mainWindow, row)
     return button
 end
 
-function CAUIGumpLayout_createModuleConfigWindow(windowIDString, windowHeader, numRows)
+function CAUIGumpLayout_createModuleConfigWindow(windowIDString, windowHeader, numRows, row)
     CALog_debug('Creating Module Config window '..windowIDString..'...')
     local moduleConfigWindow = UI.CreateWindow(windowIDString, windowHeader)
     if not moduleConfigWindow then
@@ -3262,7 +3269,9 @@ function CAUIGumpLayout_createModuleConfigWindow(windowIDString, windowHeader, n
         return nil
     end
     CALog_debug('Initializing Module Config window '..windowIDString..'...')
-    moduleConfigWindow:SetPosition(CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowStartPosX, CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowStartPosY)
+    posX = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowStartPosX
+    posY = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowStartBasePosY + ((numRows - 1) * CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYIncrement)
+    moduleConfigWindow:SetPosition(posX, posY)
     moduleConfigWindowSizeY = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYStart + ((numRows - 1) * CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYIncrement) + 50
     moduleConfigWindow:SetSize(CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowSizeX, moduleConfigWindowSizeY)
     moduleConfigWindow:Hide()
@@ -3434,7 +3443,7 @@ function CAUIGumpMainRow_initUI(mainWindow)
 
     local configButton = mainWindow:AddButton(CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonPosX, CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonPosY, 'CONFIG (+)', CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonSizeX, CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonSizeY)
 
-    local configW = CAUIGumpLayout_createModuleConfigWindow('MainConfigWindow', 'Main Config', 2)
+    local configW = CAUIGumpLayout_createModuleConfigWindow('MainConfigWindow', 'Main Config', 2, 1)
     local rearmB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 1, CAUIGumpMainRow_RearmModeStrings[CAUIGumpMainRowState.RearmMode], 180, CAUIGumpLayout_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
     local skinnB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 2, CAUIGumpMainRow_SkinnModeStrings[CAUIGumpMainRowState.SkinnMode], 180, CAUIGumpLayout_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
 
@@ -3456,10 +3465,10 @@ function CAUIGumpRun_onRunCombatAssistantButtonPressed(isChecked, label)
     CALog_debug('Run Button changed: '..tostring(isChecked))
     CAUIGumpRunConfig.IterateCAMainLoop = isChecked
     if isChecked then
-        label:SetText('Enabled')
+        label:SetText('Running...')
         label:SetColor(0, 1, 0, 1)
     else
-        label:SetText('Disabled')
+        label:SetText('Stopped')
         label:SetColor(1, 0, 0, 1)
     end
 end
@@ -3631,7 +3640,7 @@ function CAUIGumpHeal_initUI(mainWindow, row)
     local enableL = CAUIGumpLayout_createModuleEnableLabelAtRow(mainWindow, row, 'Enabled')
     ---enableL:SetColor(1, 0, 0, 1)
     local configB = CAUIGumpLayout_createModuleConfigButtonAtRow(mainWindow, row)
-    local configW = CAUIGumpLayout_createModuleConfigWindow('healConfigWindow', 'Heal Config', 5)
+    local configW = CAUIGumpLayout_createModuleConfigWindow('healConfigWindow', 'Heal Config', 5, row)
     local bandageSB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 1, 'Bandage Self (Y)', 140, CAUIGumpLayout_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
     local bandageOB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 2, 'Bandage Others (Y)', 140, CAUIGumpLayout_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
     local healPMB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 3, CAUIGumpHeal_HealPotsModeStrings[CAUIGumpHealConfig.HealPotsMode], 180, CAUIGumpLayout_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
@@ -3665,7 +3674,7 @@ CAUIGumpBuffs_StaminaPotsModeStrings = {
 }
 
 CAUIGumpBuffsState = {
-    OverrideWithNoBuffs = false,
+    OverrideWithNoBuffs = true,
     ConfigWindowOpen = true,
     EnableNightsight = true,
     EnableStrength = true,
@@ -3780,9 +3789,10 @@ end
 function CAUIGumpBuffs_initUI(mainWindow, row)
     CALog_debug('Creating Buffs UI...')
     local enableB = CAUIGumpLayout_createModuleEnableButtonAtRow(mainWindow, row, 'Buffs')
-    local enableL = CAUIGumpLayout_createModuleEnableLabelAtRow(mainWindow, row, 'Enabled')
+    local enableL = CAUIGumpLayout_createModuleEnableLabelAtRow(mainWindow, row, 'Disabled')
+    enableL:SetColor(1, 0, 0, 1)
     local configB = CAUIGumpLayout_createModuleConfigButtonAtRow(mainWindow, row)
-    local configW = CAUIGumpLayout_createModuleConfigWindow('buffsConfigWindow', 'Buffs Config', 5)
+    local configW = CAUIGumpLayout_createModuleConfigWindow('buffsConfigWindow', 'Buffs Config', 5, row)
     local nightsightB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 1, 'Nightsight (Y)')
     local strengthB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 2, 'Strength (Y)')
     local agilityB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 3, 'Agility (Y)')
@@ -3825,7 +3835,10 @@ function CAUIGumpCommands_initUI(mainWindow, row)
 end
 
 CAUIGumpAttackConfig = {
-    OverrideWithNoAttacks = true
+    OverrideWithNoAttacks = true,
+    ConfigWindowOpen = true,
+    AttackRangeMax = 5,
+    AttackExceptionsMode = true
 }
 
 function CAUIGumpAttack_onAttackButtonPressed(isChecked, label)
@@ -3840,22 +3853,66 @@ function CAUIGumpAttack_onAttackButtonPressed(isChecked, label)
     end
 end
 
-function CAUIGumpAttack_processUIInteractions(button, label)
-    if button:WasClicked() then
-        CAUIGumpAttack_onAttackButtonPressed(CAUIGumpAttackConfig.OverrideWithNoAttacks, label)
+function onAttackConfigButtonPressed_(isChecked, button, window)
+    CALog_debug('Attack config button pressed: '..tostring(isChecked))
+    CAUIGumpAttackConfig.ConfigWindowOpen = isChecked
+    if isChecked then
+        button:SetText('+')
+        window:Hide()
+    else
+        button:SetText('-')
+        window:Show()
+    end
+end
+
+function onAttackRangeMaxButtonPressed_(button)
+    CALog_debug('Attack Range Max button pressed: '..tostring(isChecked))
+    CAUIGumpAttackConfig.AttackRangeMax = (CAUIGumpAttackConfig.AttackRangeMax == 11 and 1) or CAUIGumpAttackConfig.AttackRangeMax+2
+    button:SetText('Range ('..CAUIGumpAttackConfig.AttackRangeMax..')')
+end
+
+function onAttackExceptionsModeButtonPressed_(isChecked, button)
+    CALog_debug('Attack Mode button pressed: '..tostring(isChecked))
+    CAUIGumpAttackConfig.AttackExceptionsMode = isChecked
+    if isChecked then
+        button:SetText('Exceptions (ID + Names)')
+    else
+        button:SetText('Exceptions (None)')
+    end
+end
+
+function CAUIGumpAttack_processUIInteractions(enableB, enableL, configB, configW, rangeMB, attackEB)
+    if enableB:WasClicked() then
+        CAUIGumpAttack_onAttackButtonPressed(CAUIGumpAttackConfig.OverrideWithNoAttacks, enableL)
+    end
+    if configB:WasClicked() then
+        onAttackConfigButtonPressed_(not CAUIGumpAttackConfig.ConfigWindowOpen, configB, configW)
+    end
+    if rangeMB:WasClicked() then
+        onAttackRangeMaxButtonPressed_(rangeMB)
+    end
+    if attackEB:WasClicked() then
+        onAttackExceptionsModeButtonPressed_(not CAUIGumpAttackConfig.AttackExceptionsMode, attackEB)
     end
 end
 
 function CAUIGumpAttack_updateCAConfigToCurrentUIConfig(CAConfigAttack)
     CAConfigAttack.Enable = not CAUIGumpAttackConfig.OverrideWithNoAttacks
+    CAConfigAttack.Rangemax = CAUIGumpAttackConfig.AttackRangeMax
+    CAConfigAttack.AllowMobilesExceptionsGraphicIDs = CAUIGumpAttackConfig.AttackExceptionsMode
+    CAConfigAttack.AllowMobilesExceptionsNames = CAUIGumpAttackConfig.AttackExceptionsMode
 end
 
 function CAUIGumpAttack_initUI(mainWindow, row)
     CALog_debug('Creating Attack UI...')
-    local button = CAUIGumpLayout_createModuleEnableButtonAtRow(mainWindow, row, 'Attack')
-    local label = CAUIGumpLayout_createModuleEnableLabelAtRow(mainWindow, row, 'Disabled')
-    label:SetColor(1, 0, 0, 1)
-    return button, label
+    local enableB = CAUIGumpLayout_createModuleEnableButtonAtRow(mainWindow, row, 'Attack')
+    local enableL = CAUIGumpLayout_createModuleEnableLabelAtRow(mainWindow, row, 'Disabled')
+    enableL:SetColor(1, 0, 0, 1)
+    local configB = CAUIGumpLayout_createModuleConfigButtonAtRow(mainWindow, row)
+    local configW = CAUIGumpLayout_createModuleConfigWindow('attackConfigWindow', 'Attack Config', 2, row)
+    local rangeMB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 1, 'Range ('..CAUIGumpAttackConfig.AttackRangeMax..')')
+    local attackEB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 2, 'Exceptions (ID + Names)', 180, CAUIGumpLayout_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    return enableB, enableL, configB, configW, rangeMB, attackEB
 end
 
 CAUIGumpScavengeConfig = {
@@ -3966,7 +4023,7 @@ function CAUIGumpScavenge_initUI(mainWindow, row)
     local enableL = CAUIGumpLayout_createModuleEnableLabelAtRow(mainWindow, row, 'Disabled')
     enableL:SetColor(1, 0, 0, 1)
     local configB = CAUIGumpLayout_createModuleConfigButtonAtRow(mainWindow, row)
-    local configW = CAUIGumpLayout_createModuleConfigWindow('scavengerConfigWindow', 'Scavenge Config', 4)
+    local configW = CAUIGumpLayout_createModuleConfigWindow('scavengerConfigWindow', 'Scavenge Config', 4, row)
     local goldB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 1, 'Gold (Y)')
     local bonesB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 2, 'Bones (Y)')
     local grimoireB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 3, 'Grimoires (Y)')
@@ -3993,7 +4050,13 @@ CAUI = {
     },
     Attack = {
         enableButton = nil,
-        enableLabel = nil
+        enableLabel = nil,
+        configButton = nil,
+        Config = {
+            window = nil,
+            rangeMaxButton = nil,
+            exceptionModeButton = nil
+        }
     },
     Heal = {
         enableButton = nil,
@@ -4043,14 +4106,21 @@ CAUIMainWindowLayout = {
     NumberOfModules = 6     --- Must match the current #modules
 }
 
+CAUIMainWindowState = {
+    nightsightUIChanged = false
+}
+
 function CAUIGump_processUIGumpInteractions()
+    local nightsightUIEnabled = CAUIGumpBuffsState.EnableNightsight
     CAUIGumpMainRow_processUIInteractions(CAUI.configButton, CAUI.Config.window, CAUI.Config.rearmButton, CAUI.Config.skinnButton)
     CAUIGumpRun_processUIInteractions(CAUI.Run.enableButton, CAUI.Run.enableLabel)                     --- Run
     CAUIGumpCommands_processUIInteractions(CAUI.Commands.enableButton, CAUI.Commands.enableLabel)      --- Commands
-    CAUIGumpAttack_processUIInteractions(CAUI.Attack.enableButton, CAUI.Attack.enableLabel)            --- Attack
+    CAUIGumpAttack_processUIInteractions(CAUI.Attack.enableButton, CAUI.Attack.enableLabel, CAUI.Attack.configButton, CAUI.Attack.Config.window, CAUI.Attack.Config.rangeMaxButton, CAUI.Attack.Config.exceptionModeButton)                                                                                                                            --- Attack
     CAUIGumpHeal_processUIInteractions(CAUI.Heal.enableButton, CAUI.Heal.enableLabel, CAUI.Heal.configButton, CAUI.Heal.Config.window, CAUI.Heal.Config.bandageSelfButton, CAUI.Heal.Config.bandageOtherButton, CAUI.Heal.Config.healPotionsModeButton, CAUI.Heal.Config.healPotionAfterStrengthPotionButton, CAUI.Heal.Config.curePotionsButton)      --- Heal
-    CAUIGumpBuffs_processUIInteractions(CAUI.Buffs.enableButton, CAUI.Buffs.enableLabel, CAUI.Buffs.configButton, CAUI.Buffs.Config.window, CAUI.Buffs.Config.enableNightsight, CAUI.Buffs.Config.enableStrength, CAUI.Buffs.Config.enableAgility, CAUI.Buffs.Config.refreshAfterAgility, CAUI.Buffs.Config.staminaPotionsModeButton)                                                         --- Buffs
+    CAUIGumpBuffs_processUIInteractions(CAUI.Buffs.enableButton, CAUI.Buffs.enableLabel, CAUI.Buffs.configButton, CAUI.Buffs.Config.window, CAUI.Buffs.Config.enableNightsight, CAUI.Buffs.Config.enableStrength, CAUI.Buffs.Config.enableAgility, CAUI.Buffs.Config.refreshAfterAgility, CAUI.Buffs.Config.staminaPotionsModeButton)                  --- Buffs
     CAUIGumpScavenge_processUIInteractions(CAUI.Scavenge.enableButton, CAUI.Scavenge.enableLabel, CAUI.Scavenge.configButton, CAUI.Scavenge.Config.window, CAUI.Scavenge.Config.activateGoldButton, CAUI.Scavenge.Config.activateBonesButton, CAUI.Scavenge.Config.activateGrimoireButton, CAUI.Scavenge.Config.activateRibsButton)                    --- Scavenge
+    nightsightUIChanged = nightsightUIEnabled ~= CAUIGumpBuffsState.EnableNightsight
+
 end
 
 function CAUIGump_updateCombatAssistantConfig(CAConfig)
@@ -4063,10 +4133,12 @@ function CAUIGump_updateCombatAssistantConfig(CAConfig)
     CAUIGumpBuffs_updateCAConfigToCurrentUIConfig(CAConfig.modules.Buffs)                                      --- Buffs
     CAUIGumpScavenge_updateCAConfigToCurrentUIConfig(CAConfig.modules.Scavenging)                              --- Scavenge
 
-    --- Because of internal error, nightsight may disable itself (don't override that part)
-    CAConfig.modules.Buffs.Nightsight.Enable = CAPotionsNightsight_getEnable()
+    --- Because of internal error, nightsight may disable itself (don't override that part, unless there is a user interaction)
+    if not nightsightUIChanged then
+        CAConfig.modules.Buffs.Nightsight.Enable = CAPotionsNightsight_getEnable()
+        onNightsightButtonPressed_(CAPotionsNightsight_getEnable(), CAUI.Buffs.Config.enableNightsight)
+    end
 
-    --- Configure again to save information
     CAMainLoop_configure(CAConfig)
 
     CALog_debug(''
@@ -4100,9 +4172,9 @@ function CAUIGump_initModules()
     CAUI.titleLabel, CAUI.configButton, CAUI.Config.window, CAUI.Config.rearmButton, CAUI.Config.skinnButton = CAUIGumpMainRow_initUI(CAUI.mainWindow)
     CAUI.Run.enableButton , CAUI.Run.enableLabel = CAUIGumpRun_initUI(CAUI.mainWindow, 1)                      --- Run
     CAUI.Commands.enableButton , CAUI.Commands.enableLabel = CAUIGumpCommands_initUI(CAUI.mainWindow, 2)       --- Commands
-    CAUI.Attack.enableButton , CAUI.Attack.enableLabel = CAUIGumpAttack_initUI(CAUI.mainWindow, 3)             --- Attack
+    CAUI.Attack.enableButton, CAUI.Attack.enableLabel, CAUI.Attack.configButton, CAUI.Attack.Config.window, CAUI.Attack.Config.rangeMaxButton, CAUI.Attack.Config.exceptionModeButton = CAUIGumpAttack_initUI(CAUI.mainWindow, 3)                                                                                                                          --- Attack
     CAUI.Heal.enableButton, CAUI.Heal.enableLabel, CAUI.Heal.configButton, CAUI.Heal.Config.window, CAUI.Heal.Config.bandageSelfButton, CAUI.Heal.Config.bandageOtherButton, CAUI.Heal.Config.healPotionsModeButton, CAUI.Heal.Config.healPotionAfterStrengthPotionButton, CAUI.Heal.Config.curePotionsButton = CAUIGumpHeal_initUI(CAUI.mainWindow, 4)    --- Heal
-    CAUI.Buffs.enableButton, CAUI.Buffs.enableLabel, CAUI.Buffs.configButton, CAUI.Buffs.Config.window, CAUI.Buffs.Config.enableNightsight, CAUI.Buffs.Config.enableStrength, CAUI.Buffs.Config.enableAgility, CAUI.Buffs.Config.refreshAfterAgility, CAUI.Buffs.Config.staminaPotionsModeButton = CAUIGumpBuffs_initUI(CAUI.mainWindow, 5)                                                       --- Buffs
+    CAUI.Buffs.enableButton, CAUI.Buffs.enableLabel, CAUI.Buffs.configButton, CAUI.Buffs.Config.window, CAUI.Buffs.Config.enableNightsight, CAUI.Buffs.Config.enableStrength, CAUI.Buffs.Config.enableAgility, CAUI.Buffs.Config.refreshAfterAgility, CAUI.Buffs.Config.staminaPotionsModeButton = CAUIGumpBuffs_initUI(CAUI.mainWindow, 5)                --- Buffs
     CAUI.Scavenge.enableButton, CAUI.Scavenge.enableLabel, CAUI.Scavenge.configButton, CAUI.Scavenge.Config.window, CAUI.Scavenge.Config.activateGoldButton, CAUI.Scavenge.Config.activateBonesButton, CAUI.Scavenge.Config.activateGrimoireButton, CAUI.Scavenge.Config.activateRibsButton = CAUIGumpScavenge_initUI(CAUI.mainWindow, 6)                  --- Scavenge
 end
 
@@ -4249,12 +4321,15 @@ DexerMainLoopConfig = {
             DisallowRibs = false        --- Toggle scavenging ribs
         },
         Attack = {
-            Enable = false,                     --- Attacks nearby enemies automatically
-            Rangemax = 10,                      --- Attack search range
-            MobilesExceptionsSerials = {},      --- Mobiles Serials to ignore (add friends so to not attack should they become grey)
-            MobilesExceptionsGraphicIDs = {},   --- Mobiles GraphicIDs to ignore (don't kill: cows, dogs...)
-            MobilesExceptionsNames = {},        --- Mobiles Names to ignore (use if don't have serial or graphic available)
-            CheckFrequency = 500                --- in milliseconds, how often to check for new targets, adjust if needed
+            Enable = false,                             --- Attacks nearby enemies automatically
+            Rangemax = 10,                              --- Attack search range
+            AllowMobilesExceptionsSerials = true,       --- Allow Mobiles Serials to ignore
+            MobilesExceptionsSerials = {},              --- Mobiles Serials to ignore (add friends so to not attack should they become grey)
+            AllowMobilesExceptionsGraphicIDs = true,    --- Allow Mobiles Mobiles GraphicIDs to ignore
+            MobilesExceptionsGraphicIDs = {},           --- Mobiles GraphicIDs to ignore (don't kill: cows, dogs...)
+            AllowMobilesExceptionsNames = true,         --- Allow Mobiles Mobiles Names to ignore
+            MobilesExceptionsNames = {},                --- Mobiles Names to ignore (use if don't have serial or graphic available)
+            CheckFrequency = 500                        --- in milliseconds, how often to check for new targets, adjust if needed
         }
     },
     userCommands = {

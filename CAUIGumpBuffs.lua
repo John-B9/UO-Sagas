@@ -39,7 +39,7 @@ local StaminaPotsModeStrings = {
 }
 
 CAUIGumpBuffsState = {
-    OverrideWithNoBuffs = false,
+    OverrideWithNoBuffs = true,
     ConfigWindowOpen = true,
     EnableNightsight = true,
     EnableStrength = true,
@@ -158,9 +158,10 @@ end
 local function initUI_(mainWindow, row)
     cal.debug('Creating Buffs UI...')
     local enableB = cauiglayout.createModuleEnableButtonAtRow(mainWindow, row, 'Buffs')
-    local enableL = cauiglayout.createModuleEnableLabelAtRow(mainWindow, row, 'Enabled')
+    local enableL = cauiglayout.createModuleEnableLabelAtRow(mainWindow, row, 'Disabled')
+    enableL:SetColor(1, 0, 0, 1)
     local configB = cauiglayout.createModuleConfigButtonAtRow(mainWindow, row)
-    local configW = cauiglayout.createModuleConfigWindow('buffsConfigWindow', 'Buffs Config', 5)
+    local configW = cauiglayout.createModuleConfigWindow('buffsConfigWindow', 'Buffs Config', 5, row)
     local nightsightB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 1, 'Nightsight (Y)')
     local strengthB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 2, 'Strength (Y)')
     local agilityB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 3, 'Agility (Y)')
@@ -174,6 +175,7 @@ end
 --------------
 
 local Obj = {
+    onNightsightButtonPressed = onNightsightButtonPressed_,
     updateCAConfigToCurrentUIConfig = updateCAConfigToCurrentUIConfig_,
     processUIInteractions = processUIInteractions_,
     initUI = initUI_

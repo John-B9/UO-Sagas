@@ -6,7 +6,7 @@
 ----------------------------------------------------------------------
 
 local bl = Import('BaseLib')
-local il = Import('IPLib')
+local ipl = Import('IPLib')
 
 -----------------
 --- CONSTANTS ---
@@ -20,7 +20,7 @@ local inventory_fill_drop_disposal_container_threshold = 5
 
 local function getFreeBackpackItemsSlots_()
     --- In some cases we may end +1 above max item capacity due to having item picked up
-    local backpackContents = il.getContents(Player.Backpack)
+    local backpackContents = ipl.getContents(Player.Backpack)
     ---Messages.Print("Free Backpack space ("..backpackContents[2] - backpackContents[1]..")", 55)
     return math.max(backpackContents[2] - backpackContents[1], 0)
 end
@@ -43,7 +43,7 @@ end
 
 local function getMostFilledContainerDropIfFull_(containerGraphicID)
     local dropedContainer = false
-    local mostFilledContainer = il.getItemWithMostContent(containerGraphicID)
+    local mostFilledContainer = ipl.getItemWithMostContent(containerGraphicID)
     if mostFilledContainer ~= nil then
         if checkThreshouldDropDisposalContainer_(mostFilledContainer) then
             mostFilledContainer = nil
