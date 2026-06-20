@@ -8,10 +8,29 @@
 ----------------------------------------------------------------------
 
 local cal = Import('CALog')
-local cauiglayout = Import('CAUIGumpLayout')
+local cauiglayoutb = Import('CAUIGumpLayoutBase')
+local cauiglogicb = Import('CAUIGumpLogicBase')
+
+--------------
+--- Layout ---
+--------------
+
+local CAUIGB = {
+    enableButton = nil,
+    enableLabel = nil,
+    configButton = nil,
+    Config = {
+        window = nil,
+        enableNightsight = nil,
+        enableStrength = nil,
+        enableAgility = nil,
+        refreshAfterAgility = nil,
+        staminaPotionsModeButton = nil
+    }
+}
 
 -----------------
---- Variables ---
+--- Constants ---
 -----------------
 
 local StaminaPotsModeValues = {
@@ -38,8 +57,12 @@ local StaminaPotsModeStrings = {
     'Stamina Pots (80% STA)'
 }
 
+-------------
+--- State ---
+-------------
+
 CAUIGumpBuffsState = {
-    OverrideWithNoBuffs = true,
+    BuffsEnabled = false,
     ConfigWindowOpen = true,
     EnableNightsight = true,
     EnableStrength = true,
@@ -52,122 +75,89 @@ CAUIGumpBuffsState = {
 --- Functions ---
 -----------------
 
-local function onOverrideWithNoBuffsButtonPressed_(isChecked, label)
-    cal.debug('Buffs disabled checkbox changed: '..tostring(isChecked))
-    CAUIGumpBuffsState.OverrideWithNoBuffs = not isChecked
-    if isChecked then
-        label:SetText('Enabled')
-        label:SetColor(0, 1, 0, 1)
-    else
-        label:SetText('Disabled')
-        label:SetColor(1, 0, 0, 1)
+local function processBuffsButtonInteractions_()
+    if CAUIGB.enableButton:WasClicked() then
+        CAUIGumpBuffsState.BuffsEnabled = cauiglogicb.onEnabledDisabledButtonPressed(CAUIGumpBuffsState.BuffsEnabled, CAUIGB.enableLabel, 'Buffs')
     end
 end
 
-function onBuffsConfigButtonPressed_(isChecked, button, window)
-    cal.debug('Buffs config button pressed: '..tostring(isChecked))
-    CAUIGumpBuffsState.ConfigWindowOpen = isChecked
-    if isChecked then
-        button:SetText('+')
-        window:Hide()
-    else
-        button:SetText('-')
-        window:Show()
+local function processBuffsConfigButtonInteractions_()
+    if CAUIGB.configButton:WasClicked() then
+        CAUIGumpBuffsState.ConfigWindowOpen = cauiglogicb.onConfigMenuButtonPressed(CAUIGumpBuffsState.ConfigWindowOpen, CAUIGB.configButton, CAUIGB.Config.window, 'Buffs Config')
     end
 end
 
-function onNightsightButtonPressed_(isChecked, button)
-    cal.debug('Nightsight button pressed: '..tostring(isChecked))
-    CAUIGumpBuffsState.EnableNightsight = isChecked
-    if isChecked then
-        button:SetText('Nightsight (Y)')
-    else
-        button:SetText('Nightsight (N)')
+local function processNightsightButtonInteractions_(force)
+    if force or CAUIGB.Config.enableNightsight:WasClicked() then
+        CAUIGumpBuffsState.EnableNightsight = cauiglogicb.onBooleanButtonPressed(CAUIGumpBuffsState.EnableNightsight, CAUIGB.Config.enableNightsight, 'Nightsight')
     end
 end
 
-function onStrengthButtonPressed_(isChecked, button)
-    cal.debug('Strength button pressed: '..tostring(isChecked))
-    CAUIGumpBuffsState.EnableStrength = isChecked
-    if isChecked then
-        button:SetText('Strength (Y)')
-    else
-        button:SetText('Strength (N)')
+local function processStrengthButtonInteractions_()
+    if CAUIGB.Config.enableStrength:WasClicked() then
+        CAUIGumpBuffsState.EnableStrength = cauiglogicb.onBooleanButtonPressed(CAUIGumpBuffsState.EnableStrength, CAUIGB.Config.enableStrength, 'Strength')
     end
 end
 
-function onAgilityButtonPressed_(isChecked, button)
-    cal.debug('Agility button pressed: '..tostring(isChecked))
-    CAUIGumpBuffsState.EnableAgility = isChecked
-    if isChecked then
-        button:SetText('Agility (Y)')
-    else
-        button:SetText('Agility (N)')
+local function processAgilityButtonInteractions_()
+    if CAUIGB.Config.enableAgility:WasClicked() then
+        CAUIGumpBuffsState.EnableAgility = cauiglogicb.onBooleanButtonPressed(CAUIGumpBuffsState.EnableAgility, CAUIGB.Config.enableAgility, 'Agility')
     end
 end
 
-function onStaminaPotAfterStrenghPotButtonPressed_(isChecked, button)
-    cal.debug('Use Stamina Pot after Agility Pot button pressed: '..tostring(isChecked))
-    CAUIGumpHealConfig.HealPotsAfterStrPot = isChecked
-    if isChecked then
-        button:SetText('Refresh On Agi (Y)')
-    else
-        button:SetText('Refresh On Agi (N)')
+local function processRefreshOnAgilityButtonInteractions_()
+    if CAUIGB.Config.refreshAfterAgility:WasClicked() then
+        CAUIGumpBuffsState.HealPotsAfterStrPot = cauiglogicb.onBooleanButtonPressed(CAUIGumpBuffsState.HealPotsAfterStrPot, CAUIGB.Config.refreshAfterAgility, 'Refresh On Agi')
     end
 end
 
-function onStaminaPotsModeButtonPressed_(button)
-    cal.debug('Stamina Pots Mode button pressed...')
-    CAUIGumpBuffsState.StaminaPotsMode = (CAUIGumpBuffsState.StaminaPotsMode == StaminaPotsModeValues.EightyPercent and StaminaPotsModeValues.None) or CAUIGumpBuffsState.StaminaPotsMode+1
-    button:SetText(StaminaPotsModeStrings[CAUIGumpBuffsState.StaminaPotsMode])
-end
-
-local function processUIInteractions_(enableB, enableL, configB, configW, nightsightB, strengthB, agilityB, staminaPAAPB, staminaPMB)
-    if enableB:WasClicked() then
-        onOverrideWithNoBuffsButtonPressed_(CAUIGumpBuffsState.OverrideWithNoBuffs, enableL)
-    end
-    if configB:WasClicked() then
-        onBuffsConfigButtonPressed_(not CAUIGumpBuffsState.ConfigWindowOpen, configB, configW)
-    end
-    if nightsightB:WasClicked() then
-        onNightsightButtonPressed_(not CAUIGumpBuffsState.EnableNightsight, nightsightB)
-    end
-    if strengthB:WasClicked() then
-        onStrengthButtonPressed_(not CAUIGumpBuffsState.EnableStrength, strengthB)
-    end
-    if agilityB:WasClicked() then
-        onAgilityButtonPressed_(not CAUIGumpBuffsState.EnableAgility, agilityB)
-    end
-    if staminaPAAPB:WasClicked() then
-        onStaminaPotAfterStrenghPotButtonPressed_(not CAUIGumpBuffsState.HealPotsAfterStrPot, staminaPAAPB)
-    end
-    if staminaPMB:WasClicked() then
-        onStaminaPotsModeButtonPressed_(staminaPMB)
+local function processStaminaPotionsModeButtonInteractions_()
+    if CAUIGB.Config.staminaPotionsModeButton:WasClicked() then
+        CAUIGumpBuffsState.StaminaPotsMode = cauiglogicb.onEnumStateButtonPressed(CAUIGumpBuffsState.StaminaPotsMode, StaminaPotsModeValues.EightyPercent, StaminaPotsModeStrings, CAUIGB.Config.staminaPotionsModeButton, 'Stamina Potions Mode')
     end
 end
 
-local function updateCAConfigToCurrentUIConfig_(CAConfigBuffs)
-    CAConfigBuffs.Enable = not CAUIGumpBuffsState.OverrideWithNoBuffs
-    CAConfigBuffs.Nightsight.Enable = CAUIGumpBuffsState.EnableNightsight
-    CAConfigBuffs.Strength.Enable = CAUIGumpBuffsState.EnableStrength
-    CAConfigBuffs.Agility.Enable = CAUIGumpBuffsState.EnableAgility
-    CAConfigBuffs.Stamina.Enable = CAUIGumpBuffsState.StaminaPotsMode ~= StaminaPotsModeValues.None
-    CAConfigBuffs.Stamina.DrinkThreshould = StaminaPotsModeThreshoulds[CAUIGumpBuffsState.StaminaPotsMode]
+local function processUIInteractions_()
+    processBuffsButtonInteractions_()
+    processBuffsConfigButtonInteractions_()
+    processNightsightButtonInteractions_()
+    processStrengthButtonInteractions_()
+    processAgilityButtonInteractions_()
+    processRefreshOnAgilityButtonInteractions_()
+    processStaminaPotionsModeButtonInteractions_()
+end
+
+local function updateCAConfigToCurrentUIConfig_(CAConfig)
+    local buffsConfig = CAConfig.modules.Buffs
+    buffsConfig.Enable = CAUIGumpBuffsState.BuffsEnabled
+    buffsConfig.Nightsight.Enable = CAUIGumpBuffsState.EnableNightsight
+    buffsConfig.Strength.Enable = CAUIGumpBuffsState.EnableStrength
+    buffsConfig.Agility.Enable = CAUIGumpBuffsState.EnableAgility
+    buffsConfig.Stamina.Enable = CAUIGumpBuffsState.StaminaPotsMode ~= StaminaPotsModeValues.None
+    buffsConfig.Stamina.DrinkThreshould = StaminaPotsModeThreshoulds[CAUIGumpBuffsState.StaminaPotsMode]
 end
 
 local function initUI_(mainWindow, row)
     cal.debug('Creating Buffs UI...')
-    local enableB = cauiglayout.createModuleEnableButtonAtRow(mainWindow, row, 'Buffs')
-    local enableL = cauiglayout.createModuleEnableLabelAtRow(mainWindow, row, 'Disabled')
-    enableL:SetColor(1, 0, 0, 1)
-    local configB = cauiglayout.createModuleConfigButtonAtRow(mainWindow, row)
-    local configW = cauiglayout.createModuleConfigWindow('buffsConfigWindow', 'Buffs Config', 5, row)
-    local nightsightB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 1, 'Nightsight (Y)')
-    local strengthB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 2, 'Strength (Y)')
-    local agilityB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 3, 'Agility (Y)')
-    local staminaPAAPB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 4, 'Refresh On Agi (Y)', 140, cauiglayout.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    local staminaPMB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 5, StaminaPotsModeStrings[CAUIGumpBuffsState.StaminaPotsMode], 180, cauiglayout.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    return enableB, enableL, configB, configW, nightsightB, strengthB, agilityB, staminaPAAPB, staminaPMB
+    CAUIGB.enableButton = cauiglayoutb.createModuleEnableButtonAtRow(mainWindow, row, 'Buffs')
+    CAUIGB.enableLabel = cauiglayoutb.createModuleEnableLabelAtRow(mainWindow, row, 'Disabled')
+    CAUIGB.enableLabel:SetColor(1, 0, 0, 1)
+    CAUIGB.configButton = cauiglayoutb.createModuleConfigButtonAtRow(mainWindow, row)
+    CAUIGB.Config.window = cauiglayoutb.createModuleConfigWindow('buffsConfigWindow', 'Buffs Config', 5, row)
+    CAUIGB.Config.enableNightsight = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGB.Config.window, 1, cauiglogicb.getBoonleanButtonStateDisplayStr(CAUIGumpBuffsState.EnableNightsight, 'Nightsight'))
+    CAUIGB.Config.enableStrength = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGB.Config.window, 2, cauiglogicb.getBoonleanButtonStateDisplayStr(CAUIGumpBuffsState.EnableStrength, 'Strength'))
+    CAUIGB.Config.enableAgility = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGB.Config.window, 3, cauiglogicb.getBoonleanButtonStateDisplayStr(CAUIGumpBuffsState.EnableAgility, 'Agility'))
+    CAUIGB.Config.refreshAfterAgility = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGB.Config.window, 4, cauiglogicb.getBoonleanButtonStateDisplayStr(CAUIGumpBuffsState.HealPotsAfterStrPot, 'Refresh On Agi'), 140, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGB.Config.staminaPotionsModeButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGB.Config.window, 5, StaminaPotsModeStrings[CAUIGumpBuffsState.StaminaPotsMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+end
+
+local function getEnableNightsight_()
+    return CAUIGumpBuffsState.EnableNightsight
+end
+
+local function setEnableNightsight_(isChecked)
+    CAUIGumpBuffsState.EnableNightsight = not isChecked
+    processNightsightButtonInteractions_(true)
 end
 
 --------------
@@ -175,10 +165,11 @@ end
 --------------
 
 local Obj = {
-    onNightsightButtonPressed = onNightsightButtonPressed_,
     updateCAConfigToCurrentUIConfig = updateCAConfigToCurrentUIConfig_,
     processUIInteractions = processUIInteractions_,
-    initUI = initUI_
+    initUI = initUI_,
+    getEnableNightsight = getEnableNightsight_,
+    setEnableNightsight = setEnableNightsight_
 }
 
 return Obj

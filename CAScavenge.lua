@@ -26,7 +26,7 @@ ScavengeConfig = {
     },
     LootItemsNames = {},
     DisallowGold = false,
-    DisallowCleanBandage = false,
+    DisallowCleanBandages = false,
     DisallowBones = false,
     DisallowGrimoire = false,
     DisallowRibs = false
@@ -73,7 +73,7 @@ local function setConfig_(config)
     setLootItemsSerials_(config.LootItemsSerials)
     setLootItemsNames_(config.LootItemsNames)
     ScavengeConfig.DisallowGold = config.DisallowGold
-    ScavengeConfig.DisallowCleanBandage = config.DisallowCleanBandage
+    ScavengeConfig.DisallowCleanBandages = config.DisallowCleanBandages
     ScavengeConfig.DisallowBones = config.DisallowBones
     ScavengeConfig.DisallowGrimoire = config.DisallowGrimoire
     ScavengeConfig.DisallowRibs = config.DisallowRibs
@@ -96,7 +96,7 @@ local function setConfig_(config)
 
         if graphic == GraphicIDs.CleanBandage then
             haveCleanBandage = true
-            if ScavengeConfig.DisallowCleanBandage then
+            if ScavengeConfig.DisallowCleanBandages then
                 goto continue
             end
         end
@@ -134,7 +134,7 @@ local function setConfig_(config)
         graphicIdToPriority[GraphicIDs.Gold] = #ScavengeConfig.LootItemsSerials + 1
     end
 
-    if not haveCleanBandage and not ScavengeConfig.DisallowCleanBandage then
+    if not haveCleanBandage and not ScavengeConfig.DisallowCleanBandages then
         cal.debug("Manually adding clean bandage to Scavenging list...")
         graphicIdLootableSet[GraphicIDs.CleanBandage] = true
         graphicIdToPriority[GraphicIDs.CleanBandage] = #ScavengeConfig.LootItemsSerials + 2

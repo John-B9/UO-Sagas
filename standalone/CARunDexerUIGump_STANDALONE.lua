@@ -2202,7 +2202,7 @@ ScavengeConfig = {
     },
     LootItemsNames = {},
     DisallowGold = false,
-    DisallowCleanBandage = false,
+    DisallowCleanBandages = false,
     DisallowBones = false,
     DisallowGrimoire = false,
     DisallowRibs = false
@@ -2245,7 +2245,7 @@ function CAScavenge_setConfig(config)
     CAScavenge_setLootItemsSerials(config.LootItemsSerials)
     CAScavenge_setLootItemsNames(config.LootItemsNames)
     ScavengeConfig.DisallowGold = config.DisallowGold
-    ScavengeConfig.DisallowCleanBandage = config.DisallowCleanBandage
+    ScavengeConfig.DisallowCleanBandages = config.DisallowCleanBandages
     ScavengeConfig.DisallowBones = config.DisallowBones
     ScavengeConfig.DisallowGrimoire = config.DisallowGrimoire
     ScavengeConfig.DisallowRibs = config.DisallowRibs
@@ -2268,7 +2268,7 @@ function CAScavenge_setConfig(config)
 
         if graphic == CAScavenge_GraphicIDs.CleanBandage then
             haveCleanBandage = true
-            if ScavengeConfig.DisallowCleanBandage then
+            if ScavengeConfig.DisallowCleanBandages then
                 goto continue
             end
         end
@@ -2306,7 +2306,7 @@ function CAScavenge_setConfig(config)
         CAScavenge_graphicIdToPriority[CAScavenge_GraphicIDs.Gold] = #ScavengeConfig.LootItemsSerials + 1
     end
 
-    if not haveCleanBandage and not ScavengeConfig.DisallowCleanBandage then
+    if not haveCleanBandage and not ScavengeConfig.DisallowCleanBandages then
         CALog_debug("Manually adding clean bandage to Scavenging list...")
         CAScavenge_graphicIdLootableSet[CAScavenge_GraphicIDs.CleanBandage] = true
         CAScavenge_graphicIdToPriority[CAScavenge_GraphicIDs.CleanBandage] = #ScavengeConfig.LootItemsSerials + 2
@@ -3237,7 +3237,7 @@ function CAMainLoop_mainLoop(config)
     end
 end
 
-CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants = {
+CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants = {
     ModuleEnableButtonPosX = 10,
     ModuleEnableButtonSizeX = 100,
     ModuleEnableButtonSizeY = 30,
@@ -3258,40 +3258,40 @@ CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants = {
     ModuleConfigWindowFeatureEnableButtonSizeY = 30
 }
 
-function CAUIGumpLayout_getLayoutConstants()
-    return CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants
+function CAUIGumpLayoutBase_getLayoutConstants()
+    return CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants
 end
 
-function CAUIGumpLayout_createModuleEnableButtonAtRow(mainWindow, row, buttonText, sizeX, sizeY)
+function CAUIGumpLayoutBase_createModuleEnableButtonAtRow(mainWindow, row, buttonText, sizeX, sizeY)
     CALog_debug('Initializing Module Enable "..buttonText.." Button (At Row: "..row..")...')
-    local buttonPosX = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleEnableButtonPosX
-    local buttonPosY = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleRowPosYStart + ((row -1) * CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleRowPosYIncrement)
-    local buttonSizeX = (sizeX ~= nil and sizeX) or CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleEnableButtonSizeX
-    local buttonSizeY = (sizeY ~= nil and sizeY) or CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleEnableButtonSizeY
+    local buttonPosX = CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleEnableButtonPosX
+    local buttonPosY = CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleRowPosYStart + ((row -1) * CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleRowPosYIncrement)
+    local buttonSizeX = (sizeX ~= nil and sizeX) or CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleEnableButtonSizeX
+    local buttonSizeY = (sizeY ~= nil and sizeY) or CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleEnableButtonSizeY
     local button = mainWindow:AddButton(buttonPosX, buttonPosY, buttonText, buttonSizeX, buttonSizeY)
     return button
 end
 
-function CAUIGumpLayout_createModuleEnableLabelAtRow(mainWindow, row, labelText)
+function CAUIGumpLayoutBase_createModuleEnableLabelAtRow(mainWindow, row, labelText)
     CALog_debug('Initializing Module Enable Label (At Row: "..row..")...')
-    local labelPosX = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleEnableLabelPosX
-    local labelPosY = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleRowPosYStart + ((row -1) * CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleRowPosYIncrement) + CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleRowPosYLabelAlignIncrement
+    local labelPosX = CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleEnableLabelPosX
+    local labelPosY = CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleRowPosYStart + ((row -1) * CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleRowPosYIncrement) + CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleRowPosYLabelAlignIncrement
     local label = mainWindow:AddLabel(labelPosX, labelPosY, labelText)
     label:SetColor(0, 1, 0, 1)
     return label
 end
 
-function CAUIGumpLayout_createModuleConfigButtonAtRow(mainWindow, row)
+function CAUIGumpLayoutBase_createModuleConfigButtonAtRow(mainWindow, row)
     CALog_debug('Initializing Module Config Button (At Row: "..row..")...')
-    local buttonPosX = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigButtonPosX
-    local buttonPosY = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleRowPosYStart + ((row -1) * CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleRowPosYIncrement)
-    local buttonSizeX = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigButtonSizeX
-    local buttonSizeY = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigButtonSizeY
+    local buttonPosX = CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleConfigButtonPosX
+    local buttonPosY = CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleRowPosYStart + ((row -1) * CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleRowPosYIncrement)
+    local buttonSizeX = CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleConfigButtonSizeX
+    local buttonSizeY = CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleConfigButtonSizeY
     local button = mainWindow:AddButton(buttonPosX, buttonPosY, '+', buttonSizeX, buttonSizeY)
     return button
 end
 
-function CAUIGumpLayout_createModuleConfigWindow(windowIDString, windowHeader, numRows, row)
+function CAUIGumpLayoutBase_createModuleConfigWindow(windowIDString, windowHeader, numRows, row)
     CALog_debug('Creating Module Config window '..windowIDString..'...')
     local moduleConfigWindow = UI.CreateWindow(windowIDString, windowHeader)
     if not moduleConfigWindow then
@@ -3299,23 +3299,94 @@ function CAUIGumpLayout_createModuleConfigWindow(windowIDString, windowHeader, n
         return nil
     end
     CALog_debug('Initializing Module Config window '..windowIDString..'...')
-    posX = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowStartPosX
-    posY = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowStartBasePosY + ((numRows - 1) * CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYIncrement)
+    posX = CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleConfigWindowStartPosX
+    posY = CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleConfigWindowStartBasePosY + ((numRows - 1) * CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYIncrement)
     moduleConfigWindow:SetPosition(posX, posY)
-    moduleConfigWindowSizeY = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYStart + ((numRows - 1) * CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYIncrement) + 50
-    moduleConfigWindow:SetSize(CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowSizeX, moduleConfigWindowSizeY)
+    moduleConfigWindowSizeY = CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYStart + ((numRows - 1) * CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYIncrement) + 50
+    moduleConfigWindow:SetSize(CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleConfigWindowSizeX, moduleConfigWindowSizeY)
     moduleConfigWindow:Hide()
     return moduleConfigWindow
 end
 
-function CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configWindow, row, buttonText, sizeX, sizeY)
+function CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(configWindow, row, buttonText, sizeX, sizeY)
     CALog_debug('Initializing Module Config Window "..buttonText.." Button (At Row: "..row..")...')
-    local buttonPosX = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosX
-    local buttonPosY = CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYStart + ((row -1) * CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYIncrement)
-    local buttonSizeX = (sizeX ~= nil and sizeX) or CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonSizeX
-    local buttonSizeY = (sizeY ~= nil and sizeY) or CAUIGump_CAUIGumpLayout_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonSizeY
+    local buttonPosX = CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosX
+    local buttonPosY = CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYStart + ((row -1) * CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYIncrement)
+    local buttonSizeX = (sizeX ~= nil and sizeX) or CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonSizeX
+    local buttonSizeY = (sizeY ~= nil and sizeY) or CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonSizeY
     local button = configWindow:AddButton(buttonPosX, buttonPosY, buttonText, buttonSizeX, buttonSizeY)
     return button
+end
+
+CAUIGumpMainRow_CAUIGumpLogicBase_ColorOptions = {
+    Green = 1,
+    Orange = 2,
+    Red = 3
+}
+
+CAUIGumpMainRow_CAUIGumpLogicBase_ColorValues = {
+    { 0,   1, 0, 1 },
+    { 1, 0.5, 0, 1 },
+    { 1,   0, 0, 1 }
+}
+
+function CAUIGumpLogicBase_getColorOptions()
+    return CAUIGumpMainRow_CAUIGumpLogicBase_ColorOptions
+end
+
+function CAUIGumpLogicBase_setLabelColor(label, colorOption)
+    local colorValues = CAUIGumpMainRow_CAUIGumpLogicBase_ColorValues[colorOption]
+    label:SetColor(colorValues[1], colorValues[2], colorValues[3], colorValues[4])
+end
+
+function CAUIGumpLogicBase_logButtonPressEvent(buttonEventLogStr, currentStateStr, newStateStr)
+    CALog_debug(buttonEventLogStr..' button pressed: '..currentStateStr..' -> '..newStateStr)
+end
+
+function CAUIGumpLogicBase_onConfigMenuButtonPressed(currentState, configB, configW, buttonEventLogStr, configBClosedStr, configBOpenStr)
+    local newState = not currentState
+    CAUIGumpLogicBase_logButtonPressEvent(buttonEventLogStr, tostring(currentState), tostring(newState))
+    if newState then
+        configB:SetText(configBClosedStr or '+')
+        configW:Hide()
+    else
+        configB:SetText(configBOpenStr or '-')
+        configW:Show()
+    end
+    return newState
+end
+
+function CAUIGumpLogicBase_onEnumStateButtonPressed(currentState, lastValue, enumStrings, button, buttonEventLogStr)
+    local newState  = (currentState == lastValue and 1) or currentState+1
+    CAUIGumpLogicBase_logButtonPressEvent(buttonEventLogStr, enumStrings[currentState], enumStrings[newState])
+    button:SetText(enumStrings[newState])
+    return newState
+end
+
+function CAUIGumpLogicBase_onLabeledBooleanButtonPressed(currentState, label, buttonEventLogStr, trueStateVals, falseStateVals)
+    local newState = not currentState
+    CAUIGumpLogicBase_logButtonPressEvent(buttonEventLogStr, tostring(currentState), tostring(newState))
+    local text = (newState and trueStateVals[1]) or falseStateVals[1]
+    local colorOption = (newState and trueStateVals[2]) or falseStateVals[2]
+    label:SetText(text)
+    CAUIGumpLogicBase_setLabelColor(label, colorOption)
+    return newState
+end
+
+function CAUIGumpLogicBase_onEnabledDisabledButtonPressed(currentState, label, buttonEventLogStr)
+    return CAUIGumpLogicBase_onLabeledBooleanButtonPressed(currentState, label, buttonEventLogStr, { 'Enabled', CAUIGumpMainRow_CAUIGumpLogicBase_ColorOptions.Green }, { 'Disabled', CAUIGumpMainRow_CAUIGumpLogicBase_ColorOptions.Red })
+end
+
+function CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(state, buttonDescriptionStr)
+    return buttonDescriptionStr .. ((state and ' (Y)') or ' (N)')
+end
+
+function CAUIGumpLogicBase_onBooleanButtonPressed(currentState, button, buttonDescriptionStr, buttonEventLogStr)
+    local newState = not currentState
+    CAUIGumpLogicBase_logButtonPressEvent(buttonEventLogStr or buttonDescriptionStr, tostring(currentState), tostring(newState))
+    local text = CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(newState, buttonDescriptionStr)
+    button:SetText(text)
+    return newState
 end
 
 CAUIGumpMainRow_CAUIGumpMainRowLayout = {
@@ -3325,6 +3396,17 @@ CAUIGumpMainRow_CAUIGumpMainRowLayout = {
     ConfigButtonPosY = 35,
     ConfigButtonSizeX = 85,
     ConfigButtonSizeY = 25
+}
+
+CAUIGumpMainRow_CAUIGMR = {
+    mainWindow = nil,
+    titleLabel = nil,
+    configButton = nil,
+    Config = {
+        window = nil,
+        rearmButton = nil,
+        skinnButton = nil
+    }
 }
 
 CAUIGumpMainRow_RearmModeValues = {
@@ -3422,103 +3504,117 @@ CAUIGumpMainRowState = {
     SkinnMode = CAUIGumpMainRow_SkinnModeValues.None
 }
 
-function onconfigButtonPressed_(isChecked, button, window)
-    CALog_debug('Main config button changed: '..tostring(isChecked))
-    CAUIGumpMainRowState.MainConfigOpen = isChecked
-    if isChecked then
-        button:SetText('CONFIG (+)')
-        window:Hide()
-    else
-        button:SetText('CONFIG (-)')
-        window:Show()
+function CAUIGumpMainRow_processConfigMenuButtonInteractions()
+    if CAUIGumpMainRow_CAUIGMR.configButton:WasClicked() then
+        CAUIGumpMainRowState.MainConfigOpen = CAUIGumpLogicBase_onConfigMenuButtonPressed(CAUIGumpMainRowState.MainConfigOpen, CAUIGumpMainRow_CAUIGMR.configButton, CAUIGumpMainRow_CAUIGMR.Config.window, 'Main Config', 'CONFIG (+)', 'CONFIG (-)')
     end
 end
 
-function onRearmModePressed_(button)
-    CALog_debug('Rearm Mode button pressed...')
-    CAUIGumpMainRowState.RearmMode = (CAUIGumpMainRowState.RearmMode == CAUIGumpMainRow_RearmModeValues.MoveAndTime and CAUIGumpMainRow_RearmModeValues.None) or CAUIGumpMainRowState.RearmMode+1
-    button:SetText(CAUIGumpMainRow_RearmModeStrings[CAUIGumpMainRowState.RearmMode])
-end
-
-function onSkinnModePressed_(button)
-    CALog_debug('Skinn Mode button pressed...')
-    CAUIGumpMainRowState.SkinnMode = (CAUIGumpMainRowState.SkinnMode == CAUIGumpMainRow_SkinnModeValues.ValoritePlus and CAUIGumpMainRow_SkinnModeValues.None) or CAUIGumpMainRowState.SkinnMode+1
-    button:SetText(CAUIGumpMainRow_SkinnModeStrings[CAUIGumpMainRowState.SkinnMode])
-end
-
-function CAUIGumpMainRow_processUIInteractions(configB, configW, rearmB, skinnB)
-    if configB:WasClicked() then
-        onconfigButtonPressed_(not CAUIGumpMainRowState.MainConfigOpen, configB, configW)
-    end
-    if rearmB:WasClicked() then
-        onRearmModePressed_(rearmB)
-    end
-    if skinnB:WasClicked() then
-        onSkinnModePressed_(skinnB)
+function CAUIGumpMainRow_processRearmModeButtonInteractions()
+    if CAUIGumpMainRow_CAUIGMR.Config.rearmButton:WasClicked() then
+        CAUIGumpMainRowState.RearmMode = CAUIGumpLogicBase_onEnumStateButtonPressed(CAUIGumpMainRowState.RearmMode, CAUIGumpMainRow_RearmModeValues.MoveAndTime, CAUIGumpMainRow_RearmModeStrings, CAUIGumpMainRow_CAUIGMR.Config.rearmButton, 'Rearm Mode')
     end
 end
 
-function CAUIGumpMainRow_updateCAConfigToCurrentUIConfig(CAConfigArmDisarm, CAConfigSkinning)
-    CAConfigArmDisarm.Enable = CAUIGumpMainRowState.RearmMode ~= CAUIGumpMainRow_RearmModeValues.None
-    CAConfigArmDisarm.AutoRearmOnMove = CAConfigArmDisarm.Enable and (CAUIGumpMainRowState.RearmMode == CAUIGumpMainRow_RearmModeValues.Move or CAUIGumpMainRowState.RearmMode == CAUIGumpMainRow_RearmModeValues.MoveAndTime)
-    CAConfigArmDisarm.AutoRearmWithDelay = CAConfigArmDisarm.Enable and (CAUIGumpMainRowState.RearmMode == CAUIGumpMainRow_RearmModeValues.Time or CAUIGumpMainRowState.RearmMode == CAUIGumpMainRow_RearmModeValues.MoveAndTime)
+function CAUIGumpMainRow_processSkinnModeButtonInteractions()
+    if CAUIGumpMainRow_CAUIGMR.Config.skinnButton:WasClicked() then
+        CAUIGumpMainRowState.SkinnMode = CAUIGumpLogicBase_onEnumStateButtonPressed(CAUIGumpMainRowState.SkinnMode, CAUIGumpMainRow_SkinnModeValues.ValoritePlus, CAUIGumpMainRow_SkinnModeStrings, CAUIGumpMainRow_CAUIGMR.Config.skinnButton, 'Skinning Mode')
+    end
+end
 
-    CAConfigSkinning.Enable = CAUIGumpMainRowState.SkinnMode ~= CAUIGumpMainRow_SkinnModeValues.None
-    CAConfigSkinning.LeatherHuesToKeep = CAUIGumpMainRow_SkinnModeHueKeepTables[CAUIGumpMainRowState.SkinnMode]
+function CAUIGumpMainRow_processUIInteractions()
+    CAUIGumpMainRow_processConfigMenuButtonInteractions()
+    CAUIGumpMainRow_processRearmModeButtonInteractions()
+    CAUIGumpMainRow_processSkinnModeButtonInteractions()
+end
+
+function CAUIGumpMainRow_updateCAConfigToCurrentUIConfig(CAConfig)
+    local armDisarmConfig = CAConfig.modules.ArmDisarm
+    local armDisarmEnabled = CAUIGumpMainRowState.RearmMode ~= CAUIGumpMainRow_RearmModeValues.None
+    local rearmOnMove = CAUIGumpMainRowState.RearmMode == CAUIGumpMainRow_RearmModeValues.Move or CAUIGumpMainRowState.RearmMode == CAUIGumpMainRow_RearmModeValues.MoveAndTime
+    local rearmOnDelay = CAUIGumpMainRowState.RearmMode == CAUIGumpMainRow_RearmModeValues.Time or CAUIGumpMainRowState.RearmMode == CAUIGumpMainRow_RearmModeValues.MoveAndTime
+    armDisarmConfig.Enable = armDisarmEnabled
+    armDisarmConfig.AutoRearmOnMove = armDisarmEnabled and rearmOnMove
+    armDisarmConfig.AutoRearmWithDelay = armDisarmEnabled and rearmOnDelay
+
+    local skinningConfig = CAConfig.modules.Skinning
+    local skinningEnabled = CAUIGumpMainRowState.SkinnMode ~= CAUIGumpMainRow_SkinnModeValues.None
+    skinningConfig.Enable = skinningEnabled
+    skinningConfig.LeatherHuesToKeep = CAUIGumpMainRow_SkinnModeHueKeepTables[CAUIGumpMainRowState.SkinnMode]
 end
 
 function CAUIGumpMainRow_initUI(mainWindow)
+    CALog_debug('Creating Main Row UI...')
+    CAUIGumpMainRow_CAUIGMR.titleLabel = mainWindow:AddLabel(CAUIGumpMainRow_CAUIGumpMainRowLayout.TitleLabelPosX, CAUIGumpMainRow_CAUIGumpMainRowLayout.TitleLabelPosY, 'SAGAS Combat Assistant')
+    CAUIGumpMainRow_CAUIGMR.titleLabel:SetColor(0.2, 0.8, 1, 1)
 
-    CALog_debug('Creating Scavenge UI...')
+    CAUIGumpMainRow_CAUIGMR.configButton = mainWindow:AddButton(CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonPosX, CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonPosY, 'CONFIG (+)', CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonSizeX, CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonSizeY)
 
-    local titleLabel = mainWindow:AddLabel(CAUIGumpMainRow_CAUIGumpMainRowLayout.TitleLabelPosX, CAUIGumpMainRow_CAUIGumpMainRowLayout.TitleLabelPosY, 'SAGAS Combat Assistant')
-    titleLabel:SetColor(0.2, 0.8, 1, 1)
-
-    local configButton = mainWindow:AddButton(CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonPosX, CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonPosY, 'CONFIG (+)', CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonSizeX, CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonSizeY)
-
-    local configW = CAUIGumpLayout_createModuleConfigWindow('MainConfigWindow', 'Main Config', 2, 1)
-    local rearmB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 1, CAUIGumpMainRow_RearmModeStrings[CAUIGumpMainRowState.RearmMode], 180, CAUIGumpLayout_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    local skinnB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 2, CAUIGumpMainRow_SkinnModeStrings[CAUIGumpMainRowState.SkinnMode], 180, CAUIGumpLayout_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-
-    return titleLabel, configButton, configW, rearmB, skinnB
+    CAUIGumpMainRow_CAUIGMR.Config.window = CAUIGumpLayoutBase_createModuleConfigWindow('MainConfigWindow', 'Main Config', 2, 1)
+    CAUIGumpMainRow_CAUIGMR.Config.rearmButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpMainRow_CAUIGMR.Config.window, 1, CAUIGumpMainRow_RearmModeStrings[CAUIGumpMainRowState.RearmMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGumpMainRow_CAUIGMR.Config.skinnButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpMainRow_CAUIGMR.Config.window, 2, CAUIGumpMainRow_SkinnModeStrings[CAUIGumpMainRowState.SkinnMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
 end
+
+CAUIGumpRun_CAUIGumpRunLayout = {
+    RunButtonSizeX = 80,
+    RunButtonSizeY = 30
+}
+
+CAUIGumpRun_CAUIGR = {
+    enableButton = nil,
+    enableLabel = nil
+}
 
 CAUIGumpRunConfig = {
     IterateCAMainLoop = false
 }
 
-CAUIGumpRun_mainWindowRunButtonSizeX = 80
-CAUIGumpRun_mainWindowRunButtonSizeY = 30
-
 function CAUIGumpRun_getIterateCAMainLoop()
     return CAUIGumpRunConfig.IterateCAMainLoop
 end
 
-function CAUIGumpRun_onRunCombatAssistantButtonPressed(isChecked, label)
-    CALog_debug('Run Button changed: '..tostring(isChecked))
-    CAUIGumpRunConfig.IterateCAMainLoop = isChecked
-    if isChecked then
-        label:SetText('Running...')
-        label:SetColor(0, 1, 0, 1)
-    else
-        label:SetText('Stopped')
-        label:SetColor(1, 0, 0, 1)
+function CAUIGumpRun_processRunButtonInteractions()
+    if CAUIGumpRun_CAUIGR.enableButton:WasClicked() then
+        CAUIGumpRunConfig.IterateCAMainLoop = CAUIGumpLogicBase_onLabeledBooleanButtonPressed(CAUIGumpRunConfig.IterateCAMainLoop, CAUIGumpRun_CAUIGR.enableLabel, 'Run', {'Running...', CAUIGumpLogicBase_getColorOptions().Green}, {'Stopped', CAUIGumpLogicBase_getColorOptions().Red})
     end
 end
 
-function CAUIGumpRun_processUIInteractions(button, label)
-    if button:WasClicked() then
-        CAUIGumpRun_onRunCombatAssistantButtonPressed(not CAUIGumpRunConfig.IterateCAMainLoop, label)
-    end
+function CAUIGumpRun_processUIInteractions()
+    CAUIGumpRun_processRunButtonInteractions()
 end
 
 function CAUIGumpRun_initUI(mainWindow, row)
     CALog_debug('Creating Run Button UI...')
-    local button = CAUIGumpLayout_createModuleEnableButtonAtRow(mainWindow, row, 'Run', CAUIGumpRun_mainWindowRunButtonSizeX, CAUIGumpRun_mainWindowRunButtonSizeY)
-    local label = CAUIGumpLayout_createModuleEnableLabelAtRow(mainWindow, row, 'Stopped')
-    label:SetColor(1, 0, 0, 1)
-    return button, label
+    CAUIGumpRun_CAUIGR.enableButton = CAUIGumpLayoutBase_createModuleEnableButtonAtRow(mainWindow, row, 'Run', CAUIGumpRun_CAUIGumpRunLayout.RunButtonSizeX, CAUIGumpRun_CAUIGumpRunLayout.RunButtonSizeY)
+    CAUIGumpRun_CAUIGR.enableLabel = CAUIGumpLayoutBase_createModuleEnableLabelAtRow(mainWindow, row, 'Stopped')
+    CAUIGumpLogicBase_setLabelColor(CAUIGumpRun_CAUIGR.enableLabel, CAUIGumpLogicBase_getColorOptions().Red)
 end
+
+function CAUIGumpRun_startIteration()
+    CALog_debug('Starting Combat Assistant Iteration!')
+    CAUIGumpRun_CAUIGR.enableLabel:SetText('Running...')                --- Starting Iteration
+    CAUIGumpLogicBase_setLabelColor(CAUIGumpRun_CAUIGR.enableLabel, CAUIGumpLogicBase_getColorOptions().Orange)
+end
+
+function CAUIGumpRun_endIteration()
+    CALog_debug('Combat Assistant Iteration Done!')
+    CAUIGumpRun_CAUIGR.enableLabel:SetText('Running...')                --- Iteration Done
+    CAUIGumpLogicBase_setLabelColor(CAUIGumpRun_CAUIGR.enableLabel, CAUIGumpLogicBase_getColorOptions().Green)
+end
+
+CAUIGumpHeal_CAUIGH = {
+    enableButton = nil,
+    enableLabel = nil,
+    configButton = nil,
+    Config = {
+        window = nil,
+        bandageSelfButton = nil,
+        bandageOtherButton = nil,
+        healPotionsModeButton = nil,
+        healPotionAfterStrengthPotionButton = nil,
+        curePotionsButton = nil
+    }
+}
 
 CAUIGumpHeal_HealPotsModeValues = {
     None = 1,
@@ -3545,7 +3641,7 @@ CAUIGumpHeal_HealPotsModeStrings = {
 }
 
 CAUIGumpHealConfig = {
-    OverrideWithNoHeal = false,
+    HealEnabled = true,
     ConfigWindowOpen = true,
     BandageSelf = true,
     BandageOther = true,
@@ -3554,133 +3650,106 @@ CAUIGumpHealConfig = {
     CurePots = false
 }
 
-function onHealButtonPressed_(isChecked, label)
-    CALog_debug('Heal button pressed: '..tostring(isChecked))
-    CAUIGumpHealConfig.OverrideWithNoHeal = not isChecked
-    if isChecked then
-        label:SetText('Enabled')
-        label:SetColor(0, 1, 0, 1)
+function CAUIGumpHeal_processHealButtonInteractions()
+    if CAUIGumpHeal_CAUIGH.enableButton:WasClicked() then
+        CAUIGumpHealConfig.HealEnabled = CAUIGumpLogicBase_onEnabledDisabledButtonPressed(CAUIGumpHealConfig.HealEnabled, CAUIGumpHeal_CAUIGH.enableLabel, 'Heal')
+    end
+end
+
+function CAUIGumpHeal_processHealConfigButtonInteractions()
+    if CAUIGumpHeal_CAUIGH.configButton:WasClicked() then
+        CAUIGumpHealConfig.ConfigWindowOpen = CAUIGumpLogicBase_onConfigMenuButtonPressed(CAUIGumpHealConfig.ConfigWindowOpen, CAUIGumpHeal_CAUIGH.configButton, CAUIGumpHeal_CAUIGH.Config.window, 'Heal Config')
+    end
+end
+
+function CAUIGumpHeal_processBandageSelfButtonInteractions()
+    if CAUIGumpHeal_CAUIGH.Config.bandageSelfButton:WasClicked() then
+        CAUIGumpHealConfig.BandageSelf = CAUIGumpLogicBase_onBooleanButtonPressed(CAUIGumpHealConfig.BandageSelf, CAUIGumpHeal_CAUIGH.Config.bandageSelfButton, 'Bandage Self')
+    end
+end
+
+function CAUIGumpHeal_processBandageOtherButtonInteractions()
+    if CAUIGumpHeal_CAUIGH.Config.bandageOtherButton:WasClicked() then
+        CAUIGumpHealConfig.BandageOther = CAUIGumpLogicBase_onBooleanButtonPressed(CAUIGumpHealConfig.BandageOther, CAUIGumpHeal_CAUIGH.Config.bandageOtherButton, 'Bandage Other')
+    end
+end
+
+function CAUIGumpHeal_processHealPotionsModeButtonInteractions()
+    if CAUIGumpHeal_CAUIGH.Config.healPotionsModeButton:WasClicked() then
+        CAUIGumpHealConfig.HealPotsMode = CAUIGumpLogicBase_onEnumStateButtonPressed(CAUIGumpHealConfig.HealPotsMode, CAUIGumpHeal_HealPotsModeValues.FiftyPercent, CAUIGumpHeal_HealPotsModeStrings, CAUIGumpHeal_CAUIGH.Config.healPotionsModeButton, 'Healing Potions Mode')
+    end
+end
+
+function CAUIGumpHeal_processHealPotionAfterStrengthPotionButtonInteractions()
+    if CAUIGumpHeal_CAUIGH.Config.healPotionAfterStrengthPotionButton:WasClicked() then
+        CAUIGumpHealConfig.HealPotsAfterStrPot = CAUIGumpLogicBase_onBooleanButtonPressed(CAUIGumpHealConfig.HealPotsAfterStrPot, CAUIGumpHeal_CAUIGH.Config.healPotionAfterStrengthPotionButton, 'Heal On Str')
+    end
+end
+
+function CAUIGumpHeal_processCurePotionsButtonInteractions()
+    if CAUIGumpHeal_CAUIGH.Config.curePotionsButton:WasClicked() then
+        CAUIGumpHealConfig.CurePots = CAUIGumpLogicBase_onBooleanButtonPressed(CAUIGumpHealConfig.CurePots, CAUIGumpHeal_CAUIGH.Config.curePotionsButton, 'Use Cure')
+    end
+end
+
+function CAUIGumpHeal_processUIInteractions()
+    CAUIGumpHeal_processHealButtonInteractions()
+    CAUIGumpHeal_processHealConfigButtonInteractions()
+    CAUIGumpHeal_processBandageSelfButtonInteractions()
+    CAUIGumpHeal_processBandageOtherButtonInteractions()
+    CAUIGumpHeal_processHealPotionsModeButtonInteractions()
+    CAUIGumpHeal_processHealPotionAfterStrengthPotionButtonInteractions()
+    CAUIGumpHeal_processCurePotionsButtonInteractions()
+end
+
+function CAUIGumpHeal_updateCAConfigToCurrentUIConfig(CAConfig)
+    local bandagesConfig = CAConfig.modules.Bandages
+    local healingPotionsConfig = CAConfig.modules.HealingPotions
+    local strengthPotionsConfig = CAConfig.modules.Buffs.Strength
+    local curePotionsConfig = CAConfig.modules.CurePotions
+    if CAUIGumpHealConfig.HealEnabled then
+        bandagesConfig.Enable = CAUIGumpHealConfig.BandageSelf
+        bandagesConfig.BandageAllies = CAUIGumpHealConfig.BandageOther
+        healingPotionsConfig.Enable = CAUIGumpHealConfig.HealPotsMode ~= CAUIGumpHeal_HealPotsModeValues.None
+        healingPotionsConfig.HPDrinkThreshould = CAUIGumpHeal_HealPotsPercentageThreshoulds[CAUIGumpHealConfig.HealPotsMode]
+        strengthPotionsConfig.DrinkHeal = CAUIGumpHealConfig.HealPotsAfterStrPot
+        curePotionsConfig.Enable = CAUIGumpHealConfig.CurePots
     else
-        label:SetText('Disabled')
-        label:SetColor(1, 0, 0, 1)
-    end
-end
-
-function onHealConfigButtonPressed_(isChecked, button, window)
-    CALog_debug('Heal config button pressed: '..tostring(isChecked))
-    CAUIGumpHealConfig.ConfigWindowOpen = isChecked
-    if isChecked then
-        button:SetText('+')
-        window:Hide()
-    else
-        button:SetText('-')
-        window:Show()
-    end
-end
-
-function onBandageSelfButtonPressed_(isChecked, button)
-    CALog_debug('Bandage Self button pressed: '..tostring(isChecked))
-    CAUIGumpHealConfig.BandageSelf = isChecked
-    if isChecked then
-        button:SetText('Bandage Self (Y)')
-    else
-        button:SetText('Bandage Self (N)')
-    end
-end
-
-function onBandageOtherButtonPressed_(isChecked, button)
-    CALog_debug('Bandage Other button pressed: '..tostring(isChecked))
-    CAUIGumpHealConfig.BandageOther = isChecked
-    if isChecked then
-        button:SetText('Bandage Others (Y)')
-    else
-        button:SetText('Bandage Others (N)')
-    end
-end
-
-function onHealPotsModeButtonPressed_(button)
-    CALog_debug('Healing Pots Mode button pressed...')
-    CAUIGumpHealConfig.HealPotsMode = (CAUIGumpHealConfig.HealPotsMode == CAUIGumpHeal_HealPotsModeValues.FiftyPercent and CAUIGumpHeal_HealPotsModeValues.None) or CAUIGumpHealConfig.HealPotsMode+1
-    button:SetText(CAUIGumpHeal_HealPotsModeStrings[CAUIGumpHealConfig.HealPotsMode])
-end
-
-function onHealPotAfterStrenghPotButtonPressed_(isChecked, button)
-    CALog_debug('Use Heal after Strength button pressed: '..tostring(isChecked))
-    CAUIGumpHealConfig.HealPotsAfterStrPot = isChecked
-    if isChecked then
-        button:SetText('Heal On Str (Y)')
-    else
-        button:SetText('Heal On Str (N)')
-    end
-end
-
-function onCurePotsModeButtonPressed_(isChecked, button)
-    CALog_debug('Use Cure button pressed: '..tostring(isChecked))
-    CAUIGumpHealConfig.CurePots = isChecked
-    if isChecked then
-        button:SetText('Use Cure (Y)')
-    else
-        button:SetText('Use Cure (N)')
-    end
-end
-
-function CAUIGumpHeal_processUIInteractions(enableB, enableL, configB, configW, bandageSB, bandageOB, healPMB, healPASPB, curePB)
-    if enableB:WasClicked() then
-        onHealButtonPressed_(CAUIGumpHealConfig.OverrideWithNoHeal, enableL)
-    end
-    if configB:WasClicked() then
-        onHealConfigButtonPressed_(not CAUIGumpHealConfig.ConfigWindowOpen, configB, configW)
-    end
-    if bandageSB:WasClicked() then
-        onBandageSelfButtonPressed_(not CAUIGumpHealConfig.BandageSelf, bandageSB)
-    end
-    if bandageOB:WasClicked() then
-        onBandageOtherButtonPressed_(not CAUIGumpHealConfig.BandageOther, bandageOB)
-    end
-    if healPMB:WasClicked() then
-        onHealPotsModeButtonPressed_(healPMB)
-    end
-    if healPASPB:WasClicked() then
-        onHealPotAfterStrenghPotButtonPressed_(not CAUIGumpHealConfig.HealPotsAfterStrPot, healPASPB)
-    end
-    if curePB:WasClicked() then
-        onCurePotsModeButtonPressed_(not CAUIGumpHealConfig.CurePots, curePB)
-    end
-end
-
-function CAUIGumpHeal_updateCAConfigToCurrentUIConfig(CAConfigBandages, CAConfigCurePotions, CAConfigHealingPotions, CAConfigBuffsStrength)
-
-    if not CAUIGumpHealConfig.OverrideWithNoHeal then
-        CAConfigBandages.Enable = CAUIGumpHealConfig.BandageSelf
-        CAConfigBandages.BandageAllies = CAUIGumpHealConfig.BandageOther
-        CAConfigHealingPotions.Enable = CAUIGumpHealConfig.HealPotsMode ~= CAUIGumpHeal_HealPotsModeValues.None
-        CAConfigHealingPotions.HPDrinkThreshould = CAUIGumpHeal_HealPotsPercentageThreshoulds[CAUIGumpHealConfig.HealPotsMode]
-        CAConfigBuffsStrength.DrinkHeal = CAUIGumpHealConfig.HealPotsAfterStrPot
-        CAConfigCurePotions.Enable = CAUIGumpHealConfig.CurePots
-    else
-        CAConfigBandages.Enable = false
-        CAConfigBandages.BandageAllies = false
-        CAConfigHealingPotions.Enable = false
-        CAConfigHealingPotions.HPDrinkThreshould = 0
-        CAConfigBuffsStrength.DrinkHeal = false
-        CAConfigCurePotions.Enable = false
+        bandagesConfig.Enable = false
+        bandagesConfig.BandageAllies = false
+        healingPotionsConfig.Enable = false
+        healingPotionsConfig.HPDrinkThreshould = 0
+        strengthPotionsConfig.DrinkHeal = false
+        curePotionsConfig.Enable = false
     end
 end
 
 function CAUIGumpHeal_initUI(mainWindow, row)
     CALog_debug('Creating Healing UI...')
-    local enableB = CAUIGumpLayout_createModuleEnableButtonAtRow(mainWindow, row, 'Heal')
-    local enableL = CAUIGumpLayout_createModuleEnableLabelAtRow(mainWindow, row, 'Enabled')
-    ---enableL:SetColor(1, 0, 0, 1)
-    local configB = CAUIGumpLayout_createModuleConfigButtonAtRow(mainWindow, row)
-    local configW = CAUIGumpLayout_createModuleConfigWindow('healConfigWindow', 'Heal Config', 5, row)
-    local bandageSB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 1, 'Bandage Self (Y)', 140, CAUIGumpLayout_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    local bandageOB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 2, 'Bandage Others (Y)', 140, CAUIGumpLayout_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    local healPMB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 3, CAUIGumpHeal_HealPotsModeStrings[CAUIGumpHealConfig.HealPotsMode], 180, CAUIGumpLayout_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    local healPASPB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 4, 'Heal On Str (N)', 140, CAUIGumpLayout_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    local curePB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 5, 'Use Cure (N)', 140, CAUIGumpLayout_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    return enableB, enableL, configB, configW, bandageSB, bandageOB, healPMB, healPASPB, curePB
+    CAUIGumpHeal_CAUIGH.enableButton = CAUIGumpLayoutBase_createModuleEnableButtonAtRow(mainWindow, row, 'Heal')
+    CAUIGumpHeal_CAUIGH.enableLabel = CAUIGumpLayoutBase_createModuleEnableLabelAtRow(mainWindow, row, 'Enabled')
+    CAUIGumpHeal_CAUIGH.configButton = CAUIGumpLayoutBase_createModuleConfigButtonAtRow(mainWindow, row)
+    CAUIGumpHeal_CAUIGH.Config.window = CAUIGumpLayoutBase_createModuleConfigWindow('healConfigWindow', 'Heal Config', 5, row)
+    CAUIGumpHeal_CAUIGH.Config.bandageSelfButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpHeal_CAUIGH.Config.window, 1, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpHealConfig.BandageSelf, 'Bandage Self'), 140, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGumpHeal_CAUIGH.Config.bandageOtherButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpHeal_CAUIGH.Config.window, 2, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpHealConfig.BandageOther, 'Bandage Others'), 140, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGumpHeal_CAUIGH.Config.healPotionsModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpHeal_CAUIGH.Config.window, 3, CAUIGumpHeal_HealPotsModeStrings[CAUIGumpHealConfig.HealPotsMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGumpHeal_CAUIGH.Config.healPotionAfterStrengthPotionButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpHeal_CAUIGH.Config.window, 4, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpHealConfig.HealPotsAfterStrPot, 'Heal On Str'), 140, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGumpHeal_CAUIGH.Config.curePotionsButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpHeal_CAUIGH.Config.window, 5, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpHealConfig.CurePots, 'Use Cure'), 140, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
 end
+
+CAUIGumpBuffs_CAUIGB = {
+    enableButton = nil,
+    enableLabel = nil,
+    configButton = nil,
+    Config = {
+        window = nil,
+        enableNightsight = nil,
+        enableStrength = nil,
+        enableAgility = nil,
+        refreshAfterAgility = nil,
+        staminaPotionsModeButton = nil
+    }
+}
 
 CAUIGumpBuffs_StaminaPotsModeValues = {
     None = 1,
@@ -3707,7 +3776,7 @@ CAUIGumpBuffs_StaminaPotsModeStrings = {
 }
 
 CAUIGumpBuffsState = {
-    OverrideWithNoBuffs = true,
+    BuffsEnabled = false,
     ConfigWindowOpen = true,
     EnableNightsight = true,
     EnableStrength = true,
@@ -3716,436 +3785,328 @@ CAUIGumpBuffsState = {
     StaminaPotsMode = CAUIGumpBuffs_StaminaPotsModeValues.SixtyPercent
 }
 
-function CAUIGumpBuffs_onOverrideWithNoBuffsButtonPressed(isChecked, label)
-    CALog_debug('Buffs disabled checkbox changed: '..tostring(isChecked))
-    CAUIGumpBuffsState.OverrideWithNoBuffs = not isChecked
-    if isChecked then
-        label:SetText('Enabled')
-        label:SetColor(0, 1, 0, 1)
-    else
-        label:SetText('Disabled')
-        label:SetColor(1, 0, 0, 1)
+function CAUIGumpBuffs_processBuffsButtonInteractions()
+    if CAUIGumpBuffs_CAUIGB.enableButton:WasClicked() then
+        CAUIGumpBuffsState.BuffsEnabled = CAUIGumpLogicBase_onEnabledDisabledButtonPressed(CAUIGumpBuffsState.BuffsEnabled, CAUIGumpBuffs_CAUIGB.enableLabel, 'Buffs')
     end
 end
 
-function onBuffsConfigButtonPressed_(isChecked, button, window)
-    CALog_debug('Buffs config button pressed: '..tostring(isChecked))
-    CAUIGumpBuffsState.ConfigWindowOpen = isChecked
-    if isChecked then
-        button:SetText('+')
-        window:Hide()
-    else
-        button:SetText('-')
-        window:Show()
+function CAUIGumpBuffs_processBuffsConfigButtonInteractions()
+    if CAUIGumpBuffs_CAUIGB.configButton:WasClicked() then
+        CAUIGumpBuffsState.ConfigWindowOpen = CAUIGumpLogicBase_onConfigMenuButtonPressed(CAUIGumpBuffsState.ConfigWindowOpen, CAUIGumpBuffs_CAUIGB.configButton, CAUIGumpBuffs_CAUIGB.Config.window, 'Buffs Config')
     end
 end
 
-function onNightsightButtonPressed_(isChecked, button)
-    CALog_debug('Nightsight button pressed: '..tostring(isChecked))
-    CAUIGumpBuffsState.EnableNightsight = isChecked
-    if isChecked then
-        button:SetText('Nightsight (Y)')
-    else
-        button:SetText('Nightsight (N)')
+function CAUIGumpBuffs_processNightsightButtonInteractions(force)
+    if force or CAUIGumpBuffs_CAUIGB.Config.enableNightsight:WasClicked() then
+        CAUIGumpBuffsState.EnableNightsight = CAUIGumpLogicBase_onBooleanButtonPressed(CAUIGumpBuffsState.EnableNightsight, CAUIGumpBuffs_CAUIGB.Config.enableNightsight, 'Nightsight')
     end
 end
 
-function onStrengthButtonPressed_(isChecked, button)
-    CALog_debug('Strength button pressed: '..tostring(isChecked))
-    CAUIGumpBuffsState.EnableStrength = isChecked
-    if isChecked then
-        button:SetText('Strength (Y)')
-    else
-        button:SetText('Strength (N)')
+function CAUIGumpBuffs_processStrengthButtonInteractions()
+    if CAUIGumpBuffs_CAUIGB.Config.enableStrength:WasClicked() then
+        CAUIGumpBuffsState.EnableStrength = CAUIGumpLogicBase_onBooleanButtonPressed(CAUIGumpBuffsState.EnableStrength, CAUIGumpBuffs_CAUIGB.Config.enableStrength, 'Strength')
     end
 end
 
-function onAgilityButtonPressed_(isChecked, button)
-    CALog_debug('Agility button pressed: '..tostring(isChecked))
-    CAUIGumpBuffsState.EnableAgility = isChecked
-    if isChecked then
-        button:SetText('Agility (Y)')
-    else
-        button:SetText('Agility (N)')
+function CAUIGumpBuffs_processAgilityButtonInteractions()
+    if CAUIGumpBuffs_CAUIGB.Config.enableAgility:WasClicked() then
+        CAUIGumpBuffsState.EnableAgility = CAUIGumpLogicBase_onBooleanButtonPressed(CAUIGumpBuffsState.EnableAgility, CAUIGumpBuffs_CAUIGB.Config.enableAgility, 'Agility')
     end
 end
 
-function onStaminaPotAfterStrenghPotButtonPressed_(isChecked, button)
-    CALog_debug('Use Stamina Pot after Agility Pot button pressed: '..tostring(isChecked))
-    CAUIGumpHealConfig.HealPotsAfterStrPot = isChecked
-    if isChecked then
-        button:SetText('Refresh On Agi (Y)')
-    else
-        button:SetText('Refresh On Agi (N)')
+function CAUIGumpBuffs_processRefreshOnAgilityButtonInteractions()
+    if CAUIGumpBuffs_CAUIGB.Config.refreshAfterAgility:WasClicked() then
+        CAUIGumpBuffsState.HealPotsAfterStrPot = CAUIGumpLogicBase_onBooleanButtonPressed(CAUIGumpBuffsState.HealPotsAfterStrPot, CAUIGumpBuffs_CAUIGB.Config.refreshAfterAgility, 'Refresh On Agi')
     end
 end
 
-function onStaminaPotsModeButtonPressed_(button)
-    CALog_debug('Stamina Pots Mode button pressed...')
-    CAUIGumpBuffsState.StaminaPotsMode = (CAUIGumpBuffsState.StaminaPotsMode == CAUIGumpBuffs_StaminaPotsModeValues.EightyPercent and CAUIGumpBuffs_StaminaPotsModeValues.None) or CAUIGumpBuffsState.StaminaPotsMode+1
-    button:SetText(CAUIGumpBuffs_StaminaPotsModeStrings[CAUIGumpBuffsState.StaminaPotsMode])
-end
-
-function CAUIGumpBuffs_processUIInteractions(enableB, enableL, configB, configW, nightsightB, strengthB, agilityB, staminaPAAPB, staminaPMB)
-    if enableB:WasClicked() then
-        CAUIGumpBuffs_onOverrideWithNoBuffsButtonPressed(CAUIGumpBuffsState.OverrideWithNoBuffs, enableL)
-    end
-    if configB:WasClicked() then
-        onBuffsConfigButtonPressed_(not CAUIGumpBuffsState.ConfigWindowOpen, configB, configW)
-    end
-    if nightsightB:WasClicked() then
-        onNightsightButtonPressed_(not CAUIGumpBuffsState.EnableNightsight, nightsightB)
-    end
-    if strengthB:WasClicked() then
-        onStrengthButtonPressed_(not CAUIGumpBuffsState.EnableStrength, strengthB)
-    end
-    if agilityB:WasClicked() then
-        onAgilityButtonPressed_(not CAUIGumpBuffsState.EnableAgility, agilityB)
-    end
-    if staminaPAAPB:WasClicked() then
-        onStaminaPotAfterStrenghPotButtonPressed_(not CAUIGumpBuffsState.HealPotsAfterStrPot, staminaPAAPB)
-    end
-    if staminaPMB:WasClicked() then
-        onStaminaPotsModeButtonPressed_(staminaPMB)
+function CAUIGumpBuffs_processStaminaPotionsModeButtonInteractions()
+    if CAUIGumpBuffs_CAUIGB.Config.staminaPotionsModeButton:WasClicked() then
+        CAUIGumpBuffsState.StaminaPotsMode = CAUIGumpLogicBase_onEnumStateButtonPressed(CAUIGumpBuffsState.StaminaPotsMode, CAUIGumpBuffs_StaminaPotsModeValues.EightyPercent, CAUIGumpBuffs_StaminaPotsModeStrings, CAUIGumpBuffs_CAUIGB.Config.staminaPotionsModeButton, 'Stamina Potions Mode')
     end
 end
 
-function CAUIGumpBuffs_updateCAConfigToCurrentUIConfig(CAConfigBuffs)
-    CAConfigBuffs.Enable = not CAUIGumpBuffsState.OverrideWithNoBuffs
-    CAConfigBuffs.Nightsight.Enable = CAUIGumpBuffsState.EnableNightsight
-    CAConfigBuffs.Strength.Enable = CAUIGumpBuffsState.EnableStrength
-    CAConfigBuffs.Agility.Enable = CAUIGumpBuffsState.EnableAgility
-    CAConfigBuffs.Stamina.Enable = CAUIGumpBuffsState.StaminaPotsMode ~= CAUIGumpBuffs_StaminaPotsModeValues.None
-    CAConfigBuffs.Stamina.DrinkThreshould = CAUIGumpBuffs_StaminaPotsModeThreshoulds[CAUIGumpBuffsState.StaminaPotsMode]
+function CAUIGumpBuffs_processUIInteractions()
+    CAUIGumpBuffs_processBuffsButtonInteractions()
+    CAUIGumpBuffs_processBuffsConfigButtonInteractions()
+    CAUIGumpBuffs_processNightsightButtonInteractions()
+    CAUIGumpBuffs_processStrengthButtonInteractions()
+    CAUIGumpBuffs_processAgilityButtonInteractions()
+    CAUIGumpBuffs_processRefreshOnAgilityButtonInteractions()
+    CAUIGumpBuffs_processStaminaPotionsModeButtonInteractions()
+end
+
+function CAUIGumpBuffs_updateCAConfigToCurrentUIConfig(CAConfig)
+    local buffsConfig = CAConfig.modules.Buffs
+    buffsConfig.Enable = CAUIGumpBuffsState.BuffsEnabled
+    buffsConfig.Nightsight.Enable = CAUIGumpBuffsState.EnableNightsight
+    buffsConfig.Strength.Enable = CAUIGumpBuffsState.EnableStrength
+    buffsConfig.Agility.Enable = CAUIGumpBuffsState.EnableAgility
+    buffsConfig.Stamina.Enable = CAUIGumpBuffsState.StaminaPotsMode ~= CAUIGumpBuffs_StaminaPotsModeValues.None
+    buffsConfig.Stamina.DrinkThreshould = CAUIGumpBuffs_StaminaPotsModeThreshoulds[CAUIGumpBuffsState.StaminaPotsMode]
 end
 
 function CAUIGumpBuffs_initUI(mainWindow, row)
     CALog_debug('Creating Buffs UI...')
-    local enableB = CAUIGumpLayout_createModuleEnableButtonAtRow(mainWindow, row, 'Buffs')
-    local enableL = CAUIGumpLayout_createModuleEnableLabelAtRow(mainWindow, row, 'Disabled')
-    enableL:SetColor(1, 0, 0, 1)
-    local configB = CAUIGumpLayout_createModuleConfigButtonAtRow(mainWindow, row)
-    local configW = CAUIGumpLayout_createModuleConfigWindow('buffsConfigWindow', 'Buffs Config', 5, row)
-    local nightsightB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 1, 'Nightsight (Y)')
-    local strengthB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 2, 'Strength (Y)')
-    local agilityB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 3, 'Agility (Y)')
-    local staminaPAAPB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 4, 'Refresh On Agi (Y)', 140, CAUIGumpLayout_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    local staminaPMB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 5, CAUIGumpBuffs_StaminaPotsModeStrings[CAUIGumpBuffsState.StaminaPotsMode], 180, CAUIGumpLayout_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    return enableB, enableL, configB, configW, nightsightB, strengthB, agilityB, staminaPAAPB, staminaPMB
+    CAUIGumpBuffs_CAUIGB.enableButton = CAUIGumpLayoutBase_createModuleEnableButtonAtRow(mainWindow, row, 'Buffs')
+    CAUIGumpBuffs_CAUIGB.enableLabel = CAUIGumpLayoutBase_createModuleEnableLabelAtRow(mainWindow, row, 'Disabled')
+    CAUIGumpBuffs_CAUIGB.enableLabel:SetColor(1, 0, 0, 1)
+    CAUIGumpBuffs_CAUIGB.configButton = CAUIGumpLayoutBase_createModuleConfigButtonAtRow(mainWindow, row)
+    CAUIGumpBuffs_CAUIGB.Config.window = CAUIGumpLayoutBase_createModuleConfigWindow('buffsConfigWindow', 'Buffs Config', 5, row)
+    CAUIGumpBuffs_CAUIGB.Config.enableNightsight = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpBuffs_CAUIGB.Config.window, 1, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpBuffsState.EnableNightsight, 'Nightsight'))
+    CAUIGumpBuffs_CAUIGB.Config.enableStrength = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpBuffs_CAUIGB.Config.window, 2, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpBuffsState.EnableStrength, 'Strength'))
+    CAUIGumpBuffs_CAUIGB.Config.enableAgility = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpBuffs_CAUIGB.Config.window, 3, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpBuffsState.EnableAgility, 'Agility'))
+    CAUIGumpBuffs_CAUIGB.Config.refreshAfterAgility = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpBuffs_CAUIGB.Config.window, 4, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpBuffsState.HealPotsAfterStrPot, 'Refresh On Agi'), 140, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGumpBuffs_CAUIGB.Config.staminaPotionsModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpBuffs_CAUIGB.Config.window, 5, CAUIGumpBuffs_StaminaPotsModeStrings[CAUIGumpBuffsState.StaminaPotsMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
 end
 
-CAUIGumpCommandsConfig = {
-    OverrideWithNoCommands = false
+function CAUIGumpBuffs_getEnableNightsight()
+    return CAUIGumpBuffsState.EnableNightsight
+end
+
+function CAUIGumpBuffs_setEnableNightsight(isChecked)
+    CAUIGumpBuffsState.EnableNightsight = not isChecked
+    CAUIGumpBuffs_processNightsightButtonInteractions(true)
+end
+
+CAUIGumpCommands_CAUIGC = {
+    enableButton = nil,
+    enableLabel = nil
 }
 
-function CAUIGumpCommands_onOverrideWithNoCommandsButtonPressed(isChecked, label)
-    CALog_debug('Commands disabled checkbox changed: '..tostring(isChecked))
-    CAUIGumpCommandsConfig.OverrideWithNoCommands = not isChecked
-    if isChecked then
-        label:SetText('Enabled')
-        label:SetColor(0, 1, 0, 1)
-    else
-        label:SetText('Disabled')
-        label:SetColor(1, 0, 0, 1)
+CAUIGumpCommandsConfig = {
+    CommandsEnabled = true
+}
+
+function CAUIGumpCommands_processCommandsButtonInteractions()
+    if CAUIGumpCommands_CAUIGC.enableButton:WasClicked() then
+        CAUIGumpCommandsConfig.CommandsEnabled = CAUIGumpLogicBase_onEnabledDisabledButtonPressed(CAUIGumpCommandsConfig.CommandsEnabled, CAUIGumpCommands_CAUIGC.enableLabel, 'Commands')
     end
 end
 
-function CAUIGumpCommands_processUIInteractions(button, label)
-    if button:WasClicked() then
-        CAUIGumpCommands_onOverrideWithNoCommandsButtonPressed(CAUIGumpCommandsConfig.OverrideWithNoCommands, label)
-    end
+function CAUIGumpCommands_processUIInteractions()
+    CAUIGumpCommands_processCommandsButtonInteractions()
 end
 
-function CAUIGumpCommands_updateCAConfigToCurrentUIConfig(CAConfigCommands)
-    CAConfigCommands.Enable = not CAUIGumpCommandsConfig.OverrideWithNoCommands
+function CAUIGumpCommands_updateCAConfigToCurrentUIConfig(CAConfig)
+    local commandsConfig = CAConfig.userCommands
+    commandsConfig.Enable = CAUIGumpCommandsConfig.CommandsEnabled
 end
 
 function CAUIGumpCommands_initUI(mainWindow, row)
     CALog_debug('Creating Commands UI...')
-    local button = CAUIGumpLayout_createModuleEnableButtonAtRow(mainWindow, row, 'Commands')
-    local label = CAUIGumpLayout_createModuleEnableLabelAtRow(mainWindow, row, 'Enabled')
-    return button, label
+    CAUIGumpCommands_CAUIGC.enableButton = CAUIGumpLayoutBase_createModuleEnableButtonAtRow(mainWindow, row, 'Commands')
+    CAUIGumpCommands_CAUIGC.enableLabel = CAUIGumpLayoutBase_createModuleEnableLabelAtRow(mainWindow, row, 'Enabled')
 end
 
-CAUIGumpAttackConfig = {
-    OverrideWithNoAttacks = true,
-    ConfigWindowOpen = true,
-    AttackRangeMax = 5,
-    AttackExceptionsMode = true
+CAUIGumpAttack_CAUIGA = {
+    enableButton = nil,
+    enableLabel = nil,
+    configButton = nil,
+    Config = {
+        window = nil,
+        rangeMaxButton = nil,
+        exceptionModeButton = nil
+    }
 }
 
-function CAUIGumpAttack_onAttackButtonPressed(isChecked, label)
-    CALog_debug('Attack disabled checkbox changed: '..tostring(isChecked))
-    CAUIGumpAttackConfig.OverrideWithNoAttacks = not isChecked
-    if isChecked then
-        label:SetText('Enabled')
-        label:SetColor(0, 1, 0, 1)
-    else
-        label:SetText('Disabled')
-        label:SetColor(1, 0, 0, 1)
+CAUIGumpAttack_AttackRangeValues = {
+    One = 1,
+    Three = 2,
+    Five = 3,
+    Seven = 4,
+    Nine = 5,
+    Eleven = 6
+}
+
+CAUIGumpAttack_AttackRangeStrings = {
+    'Range (1)',
+    'Range (3)',
+    'Range (5)',
+    'Range (7)',
+    'Range (9)',
+    'Range (11)',
+}
+
+CAUIGumpAttack_AttackRangeConfigValues = {
+    1,
+    3,
+    5,
+    7,
+    9,
+    11
+}
+
+CAUIGumpAttack_AttackExceptionModeValues = {
+    None = 1,
+    IDAndNames = 2
+}
+
+CAUIGumpAttack_AttackExceptionModeStrings = {
+    'Exceptions (None)',
+    'Exceptions (ID + Names)'
+}
+
+CAUIGumpAttackConfig = {
+    AttackEnabled = false,
+    ConfigWindowOpen = true,
+    AttackRangeMax = CAUIGumpAttack_AttackRangeValues.Five,
+    AttackExceptionsMode = CAUIGumpAttack_AttackExceptionModeValues.IDAndNames
+}
+
+function CAUIGumpAttack_processAttackButtonInteractions()
+    if CAUIGumpAttack_CAUIGA.enableButton:WasClicked() then
+        CAUIGumpAttackConfig.AttackEnabled = CAUIGumpLogicBase_onEnabledDisabledButtonPressed(CAUIGumpAttackConfig.AttackEnabled, CAUIGumpAttack_CAUIGA.enableLabel, 'Attack')
     end
 end
 
-function onAttackConfigButtonPressed_(isChecked, button, window)
-    CALog_debug('Attack config button pressed: '..tostring(isChecked))
-    CAUIGumpAttackConfig.ConfigWindowOpen = isChecked
-    if isChecked then
-        button:SetText('+')
-        window:Hide()
-    else
-        button:SetText('-')
-        window:Show()
+function CAUIGumpAttack_processAttackConfigButtonInteractions()
+    if CAUIGumpAttack_CAUIGA.configButton:WasClicked() then
+        CAUIGumpAttackConfig.ConfigWindowOpen = CAUIGumpLogicBase_onConfigMenuButtonPressed(CAUIGumpAttackConfig.ConfigWindowOpen, CAUIGumpAttack_CAUIGA.configButton, CAUIGumpAttack_CAUIGA.Config.window, 'Attack Config')
     end
 end
 
-function onAttackRangeMaxButtonPressed_(button)
-    CALog_debug('Attack Range Max button pressed: '..tostring(isChecked))
-    CAUIGumpAttackConfig.AttackRangeMax = (CAUIGumpAttackConfig.AttackRangeMax == 11 and 1) or CAUIGumpAttackConfig.AttackRangeMax+2
-    button:SetText('Range ('..CAUIGumpAttackConfig.AttackRangeMax..')')
-end
-
-function onAttackExceptionsModeButtonPressed_(isChecked, button)
-    CALog_debug('Attack Mode button pressed: '..tostring(isChecked))
-    CAUIGumpAttackConfig.AttackExceptionsMode = isChecked
-    if isChecked then
-        button:SetText('Exceptions (ID + Names)')
-    else
-        button:SetText('Exceptions (None)')
+function CAUIGumpAttack_processAttackRangeMaxButtonInteractions()
+    if CAUIGumpAttack_CAUIGA.Config.rangeMaxButton:WasClicked() then
+        CAUIGumpAttackConfig.AttackRangeMax = CAUIGumpLogicBase_onEnumStateButtonPressed(CAUIGumpAttackConfig.AttackRangeMax, CAUIGumpAttack_AttackRangeValues.Eleven, CAUIGumpAttack_AttackRangeStrings, CAUIGumpAttack_CAUIGA.Config.rangeMaxButton, 'Attack Range')
     end
 end
 
-function CAUIGumpAttack_processUIInteractions(enableB, enableL, configB, configW, rangeMB, attackEB)
-    if enableB:WasClicked() then
-        CAUIGumpAttack_onAttackButtonPressed(CAUIGumpAttackConfig.OverrideWithNoAttacks, enableL)
-    end
-    if configB:WasClicked() then
-        onAttackConfigButtonPressed_(not CAUIGumpAttackConfig.ConfigWindowOpen, configB, configW)
-    end
-    if rangeMB:WasClicked() then
-        onAttackRangeMaxButtonPressed_(rangeMB)
-    end
-    if attackEB:WasClicked() then
-        onAttackExceptionsModeButtonPressed_(not CAUIGumpAttackConfig.AttackExceptionsMode, attackEB)
+function CAUIGumpAttack_processAttackExceptionsModeButtonInteractions()
+    if CAUIGumpAttack_CAUIGA.Config.exceptionModeButton:WasClicked() then
+        CAUIGumpAttackConfig.AttackExceptionsMode = CAUIGumpLogicBase_onEnumStateButtonPressed(CAUIGumpAttackConfig.AttackExceptionsMode, CAUIGumpAttack_AttackExceptionModeValues.IDAndNames, CAUIGumpAttack_AttackExceptionModeStrings, CAUIGumpAttack_CAUIGA.Config.exceptionModeButton, 'Attack Exceptions Mode')
     end
 end
 
-function CAUIGumpAttack_updateCAConfigToCurrentUIConfig(CAConfigAttack)
-    CAConfigAttack.Enable = not CAUIGumpAttackConfig.OverrideWithNoAttacks
-    CAConfigAttack.Rangemax = CAUIGumpAttackConfig.AttackRangeMax
-    CAConfigAttack.AllowMobilesExceptionsGraphicIDs = CAUIGumpAttackConfig.AttackExceptionsMode
-    CAConfigAttack.AllowMobilesExceptionsNames = CAUIGumpAttackConfig.AttackExceptionsMode
+function CAUIGumpAttack_processUIInteractions()
+    CAUIGumpAttack_processAttackButtonInteractions()
+    CAUIGumpAttack_processAttackConfigButtonInteractions()
+    CAUIGumpAttack_processAttackRangeMaxButtonInteractions()
+    CAUIGumpAttack_processAttackExceptionsModeButtonInteractions()
+end
+
+function CAUIGumpAttack_updateCAConfigToCurrentUIConfig(CAConfig)
+    local attackConfig = CAConfig.modules.Attack
+    attackConfig.Enable = CAUIGumpAttackConfig.AttackEnabled
+    attackConfig.Rangemax = CAUIGumpAttack_AttackRangeConfigValues[CAUIGumpAttackConfig.AttackRangeMax]
+    attackConfig.AllowMobilesExceptionsGraphicIDs = CAUIGumpAttackConfig.AttackExceptionsMode == CAUIGumpAttack_AttackExceptionModeValues.IDAndNames
+    attackConfig.AllowMobilesExceptionsNames = CAUIGumpAttackConfig.AttackExceptionsMode == CAUIGumpAttack_AttackExceptionModeValues.IDAndNames
 end
 
 function CAUIGumpAttack_initUI(mainWindow, row)
     CALog_debug('Creating Attack UI...')
-    local enableB = CAUIGumpLayout_createModuleEnableButtonAtRow(mainWindow, row, 'Attack')
-    local enableL = CAUIGumpLayout_createModuleEnableLabelAtRow(mainWindow, row, 'Disabled')
-    enableL:SetColor(1, 0, 0, 1)
-    local configB = CAUIGumpLayout_createModuleConfigButtonAtRow(mainWindow, row)
-    local configW = CAUIGumpLayout_createModuleConfigWindow('attackConfigWindow', 'Attack Config', 2, row)
-    local rangeMB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 1, 'Range ('..CAUIGumpAttackConfig.AttackRangeMax..')')
-    local attackEB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 2, 'Exceptions (ID + Names)', 180, CAUIGumpLayout_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    return enableB, enableL, configB, configW, rangeMB, attackEB
+    CAUIGumpAttack_CAUIGA.enableButton = CAUIGumpLayoutBase_createModuleEnableButtonAtRow(mainWindow, row, 'Attack')
+    CAUIGumpAttack_CAUIGA.enableLabel = CAUIGumpLayoutBase_createModuleEnableLabelAtRow(mainWindow, row, 'Disabled')
+    CAUIGumpAttack_CAUIGA.enableLabel:SetColor(1, 0, 0, 1)
+    CAUIGumpAttack_CAUIGA.configButton = CAUIGumpLayoutBase_createModuleConfigButtonAtRow(mainWindow, row)
+    CAUIGumpAttack_CAUIGA.Config.window = CAUIGumpLayoutBase_createModuleConfigWindow('attackConfigWindow', 'Attack Config', 2, row)
+    CAUIGumpAttack_CAUIGA.Config.rangeMaxButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpAttack_CAUIGA.Config.window, 1, CAUIGumpAttack_AttackRangeStrings[CAUIGumpAttackConfig.AttackRangeMax])
+    CAUIGumpAttack_CAUIGA.Config.exceptionModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpAttack_CAUIGA.Config.window, 2, 'Exceptions (ID + Names)', 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
 end
 
+CAUIGumpScavenge_CAUIGS = {
+    enableButton = nil,
+    enableLabel = nil,
+    configButton = nil,
+    Config = {
+        window = nil,
+        activateGoldButton = nil,
+        activateBandagesButton = nil,
+        activateBonesButton = nil,
+        activateGrimoiresButton = nil,
+        activateRibsButton = nil
+    }
+}
+
 CAUIGumpScavengeConfig = {
-    OverrideWithNoScavenger = true,
+    ScavengerEnabled = false,
     ConfigWindowOpen = true,
     ScavengeGold = true,
     ScavengeCleanBandages = true,
     ScavengeBones = true,
-    ScavengeGrimoire = true,
+    ScavengeGrimoires = true,
     ScavengeRibs = true
 }
 
-function onScavengeButtonPressed_(isChecked, label)
-    CALog_debug('Scavenger disabled checkbox changed: '..tostring(isChecked))
-    CAUIGumpScavengeConfig.OverrideWithNoScavenger = not isChecked
-    if isChecked then
-        label:SetText('Enabled')
-        label:SetColor(0, 1, 0, 1)
-    else
-        label:SetText('Disabled')
-        label:SetColor(1, 0, 0, 1)
+function CAUIGumpScavenge_processScavengerButtonInteractions()
+    if CAUIGumpScavenge_CAUIGS.enableButton:WasClicked() then
+        CAUIGumpScavengeConfig.ScavengerEnabled = CAUIGumpLogicBase_onEnabledDisabledButtonPressed(CAUIGumpScavengeConfig.ScavengerEnabled, CAUIGumpScavenge_CAUIGS.enableLabel, 'Scavenger')
     end
 end
 
-function onScavengerConfigButtonPressed_(isChecked, button, window)
-    CALog_debug('Scavenger config checkbox changed: '..tostring(isChecked))
-    CAUIGumpScavengeConfig.ConfigWindowOpen = isChecked
-    if isChecked then
-        button:SetText('+')
-        window:Hide()
-    else
-        button:SetText('-')
-        window:Show()
+function CAUIGumpScavenge_processScavengerConfigButtonInteractions()
+    if CAUIGumpScavenge_CAUIGS.configButton:WasClicked() then
+        CAUIGumpScavengeConfig.ConfigWindowOpen = CAUIGumpLogicBase_onConfigMenuButtonPressed(CAUIGumpScavengeConfig.ConfigWindowOpen, CAUIGumpScavenge_CAUIGS.configButton, CAUIGumpScavenge_CAUIGS.Config.window, 'Scavenger Config')
     end
 end
 
-function onScavengerGoldButtonPressed_(isChecked, button)
-    CALog_debug('Scavenger allow gold checkbox changed: '..tostring(isChecked))
-    CAUIGumpScavengeConfig.ScavengeGold = isChecked
-    if isChecked then
-        button:SetText('Gold (Y)')
-    else
-        button:SetText('Gold (N)')
+function CAUIGumpScavenge_processScavengeGoldButtonInteractions()
+    if CAUIGumpScavenge_CAUIGS.Config.activateGoldButton:WasClicked() then
+        CAUIGumpScavengeConfig.ScavengeGold = CAUIGumpLogicBase_onBooleanButtonPressed(CAUIGumpScavengeConfig.ScavengeGold, CAUIGumpScavenge_CAUIGS.Config.activateGoldButton, 'Gold')
     end
 end
 
-function onScavengerBandagesButtonPressed_(isChecked, button)
-    CALog_debug('Scavenger allow bandages checkbox changed: '..tostring(isChecked))
-    CAUIGumpScavengeConfig.ScavengeCleanBandages = isChecked
-    if isChecked then
-        button:SetText('Bandages (Y)')
-    else
-        button:SetText('Bandages (N)')
+function CAUIGumpScavenge_processScavengeBandagesButtonInteractions()
+    if CAUIGumpScavenge_CAUIGS.Config.activateBandagesButton:WasClicked() then
+        CAUIGumpScavengeConfig.ScavengeCleanBandages = CAUIGumpLogicBase_onBooleanButtonPressed(CAUIGumpScavengeConfig.ScavengeCleanBandages, CAUIGumpScavenge_CAUIGS.Config.activateBandagesButton, 'Bandages')
     end
 end
 
-function onScavengerBonesButtonPressed_(isChecked, button)
-    CALog_debug('Scavenger allow bones checkbox changed: '..tostring(isChecked))
-    CAUIGumpScavengeConfig.ScavengeBones = isChecked
-    if isChecked then
-        button:SetText('Bones (Y)')
-    else
-        button:SetText('Bones (N)')
+function CAUIGumpScavenge_processScavengeBonesButtonInteractions()
+    if CAUIGumpScavenge_CAUIGS.Config.activateBonesButton:WasClicked() then
+        CAUIGumpScavengeConfig.ScavengeBones = CAUIGumpLogicBase_onBooleanButtonPressed(CAUIGumpScavengeConfig.ScavengeBones, CAUIGumpScavenge_CAUIGS.Config.activateBonesButton, 'Bones')
     end
 end
 
-function onScavengerGrimoireButtonPressed_(isChecked, button)
-    CALog_debug('Scavenger allow grimoire checkbox changed: '..tostring(isChecked))
-    CAUIGumpScavengeConfig.ScavengeGrimoire = isChecked
-    if isChecked then
-        button:SetText('Grimoires (Y)')
-    else
-        button:SetText('Grimoires (N)')
+function CAUIGumpScavenge_processScavengeGrimoiresButtonInteractions()
+    if CAUIGumpScavenge_CAUIGS.Config.activateGrimoiresButton:WasClicked() then
+        CAUIGumpScavengeConfig.ScavengeGrimoires = CAUIGumpLogicBase_onBooleanButtonPressed(CAUIGumpScavengeConfig.ScavengeGrimoires, CAUIGumpScavenge_CAUIGS.Config.activateGrimoiresButton, 'Grimoires')
     end
 end
 
-function onScavengerRibsButtonPressed_(isChecked, button)
-    CALog_debug('Scavenger allow grimoire checkbox changed: '..tostring(isChecked))
-    CAUIGumpScavengeConfig.ScavengeRibs = isChecked
-    if isChecked then
-        button:SetText('Ribs (Y)')
-    else
-        button:SetText('Ribs (N)')
+function CAUIGumpScavenge_processScavengeRibsButtonInteractions()
+    if CAUIGumpScavenge_CAUIGS.Config.activateRibsButton:WasClicked() then
+        CAUIGumpScavengeConfig.ScavengeRibs = CAUIGumpLogicBase_onBooleanButtonPressed(CAUIGumpScavengeConfig.ScavengeRibs, CAUIGumpScavenge_CAUIGS.Config.activateRibsButton, 'Ribs')
     end
 end
 
-function CAUIGumpScavenge_processUIInteractions(enableB, enableL, configB, configW, goldB, bandagesB, bonesB, grimoireB, ribsB)
-    if enableB:WasClicked() then
-        onScavengeButtonPressed_(CAUIGumpScavengeConfig.OverrideWithNoScavenger, enableL)
-    end
-    if configB:WasClicked() then
-        onScavengerConfigButtonPressed_(not CAUIGumpScavengeConfig.ConfigWindowOpen, configB, configW)
-    end
-    if goldB:WasClicked() then
-        onScavengerGoldButtonPressed_(not CAUIGumpScavengeConfig.ScavengeGold, goldB)
-    end
-    if bandagesB:WasClicked() then
-        onScavengerBandagesButtonPressed_(not CAUIGumpScavengeConfig.ScavengeCleanBandages, bandagesB)
-    end
-    if bonesB:WasClicked() then
-        onScavengerBonesButtonPressed_(not CAUIGumpScavengeConfig.ScavengeBones, bonesB)
-    end
-    if grimoireB:WasClicked() then
-        onScavengerGrimoireButtonPressed_(not CAUIGumpScavengeConfig.ScavengeGrimoire, grimoireB)
-    end
-    if ribsB:WasClicked() then
-        onScavengerRibsButtonPressed_(not CAUIGumpScavengeConfig.ScavengeRibs, ribsB)
-    end
+function CAUIGumpScavenge_processUIInteractions()
+    CAUIGumpScavenge_processScavengerButtonInteractions()
+    CAUIGumpScavenge_processScavengerConfigButtonInteractions()
+    CAUIGumpScavenge_processScavengeGoldButtonInteractions()
+    CAUIGumpScavenge_processScavengeBandagesButtonInteractions()
+    CAUIGumpScavenge_processScavengeBonesButtonInteractions()
+    CAUIGumpScavenge_processScavengeGrimoiresButtonInteractions()
+    CAUIGumpScavenge_processScavengeRibsButtonInteractions()
 end
 
-function CAUIGumpScavenge_updateCAConfigToCurrentUIConfig(CAConfigScavenge)
-    CAConfigScavenge.Enable = not CAUIGumpScavengeConfig.OverrideWithNoScavenger
-    CAConfigScavenge.DisallowGold = not CAUIGumpScavengeConfig.ScavengeGold
-    CAConfigScavenge.DisallowCleanBandages = not CAUIGumpScavengeConfig.ScavengeCleanBandages
-    CAConfigScavenge.DisallowBones = not CAUIGumpScavengeConfig.ScavengeBones
-    CAConfigScavenge.DisallowGrimoire = not CAUIGumpScavengeConfig.ScavengeGrimoire
-    CAConfigScavenge.DisallowRibs = not CAUIGumpScavengeConfig.ScavengeRibs
+function CAUIGumpScavenge_updateCAConfigToCurrentUIConfig(CAConfig)
+    local scavengeConfig = CAConfig.modules.Scavenging
+    scavengeConfig.Enable = CAUIGumpScavengeConfig.ScavengerEnabled
+    scavengeConfig.DisallowGold = not CAUIGumpScavengeConfig.ScavengeGold
+    scavengeConfig.DisallowCleanBandages = not CAUIGumpScavengeConfig.ScavengeCleanBandages
+    scavengeConfig.DisallowBones = not CAUIGumpScavengeConfig.ScavengeBones
+    scavengeConfig.DisallowGrimoire = not CAUIGumpScavengeConfig.ScavengeGrimoires
+    scavengeConfig.DisallowRibs = not CAUIGumpScavengeConfig.ScavengeRibs
 end
 
 function CAUIGumpScavenge_initUI(mainWindow, row)
     CALog_debug('Creating Scavenge UI...')
-    local enableB = CAUIGumpLayout_createModuleEnableButtonAtRow(mainWindow, row, 'Scavenge')
-    local enableL = CAUIGumpLayout_createModuleEnableLabelAtRow(mainWindow, row, 'Disabled')
-    enableL:SetColor(1, 0, 0, 1)
-    local configB = CAUIGumpLayout_createModuleConfigButtonAtRow(mainWindow, row)
-    local configW = CAUIGumpLayout_createModuleConfigWindow('scavengerConfigWindow', 'Scavenge Config', 5, row)
-    local goldB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 1, 'Gold (Y)')
-    local bandagesB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 2, 'Bandages (Y)')
-    local bonesB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 3, 'Bones (Y)')
-    local grimoireB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 4, 'Grimoires (Y)')
-    local ribsB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 5, 'Ribs (Y)')
-    return enableB, enableL, configB, configW, goldB, bandagesB, bonesB, grimoireB, ribsB
+    CAUIGumpScavenge_CAUIGS.enableButton = CAUIGumpLayoutBase_createModuleEnableButtonAtRow(mainWindow, row, 'Scavenge')
+    CAUIGumpScavenge_CAUIGS.enableLabel = CAUIGumpLayoutBase_createModuleEnableLabelAtRow(mainWindow, row, 'Disabled')
+    CAUIGumpScavenge_CAUIGS.enableLabel:SetColor(1, 0, 0, 1)
+    CAUIGumpScavenge_CAUIGS.configButton = CAUIGumpLayoutBase_createModuleConfigButtonAtRow(mainWindow, row)
+    CAUIGumpScavenge_CAUIGS.Config.window = CAUIGumpLayoutBase_createModuleConfigWindow('scavengerConfigWindow', 'Scavenge Config', 5, row)
+    CAUIGumpScavenge_CAUIGS.Config.activateGoldButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpScavenge_CAUIGS.Config.window, 1, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpScavengeConfig.ScavengeGold, 'Gold'))
+    CAUIGumpScavenge_CAUIGS.Config.activateBandagesButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpScavenge_CAUIGS.Config.window, 2, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpScavengeConfig.ScavengeCleanBandages, 'Bandages'))
+    CAUIGumpScavenge_CAUIGS.Config.activateBonesButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpScavenge_CAUIGS.Config.window, 3, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpScavengeConfig.ScavengeBones, 'Bones'))
+    CAUIGumpScavenge_CAUIGS.Config.activateGrimoiresButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpScavenge_CAUIGS.Config.window, 4, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpScavengeConfig.ScavengeGrimoires, 'Grimoires'))
+    CAUIGumpScavenge_CAUIGS.Config.activateRibsButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpScavenge_CAUIGS.Config.window, 5, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpScavengeConfig.ScavengeRibs, 'Ribs'))
 end
 
 CAUI = {
-    mainWindow = nil,
-    titleLabel = nil,
-    configButton = nil,
-    Config = {
-        window = nil,
-        rearmButton = nil,
-        skinnButton = nil
-    },
-    Run = {
-        enableButton = nil,
-        enableLabel = nil
-    },
-    Commands = {
-        enableButton = nil,
-        enableLabel = nil
-    },
-    Attack = {
-        enableButton = nil,
-        enableLabel = nil,
-        configButton = nil,
-        Config = {
-            window = nil,
-            rangeMaxButton = nil,
-            exceptionModeButton = nil
-        }
-    },
-    Heal = {
-        enableButton = nil,
-        enableLabel = nil,
-        configButton = nil,
-        Config = {
-            window = nil,
-            bandageSelfButton = nil,
-            bandageOtherButton = nil,
-            healPotionsModeButton = nil,
-            healPotionAfterStrengthPotionButton = nil,
-            curePotionsButton = nil
-        }
-    },
-    Buffs = {
-        enableButton = nil,
-        enableLabel = nil,
-        configButton = nil,
-        Config = {
-            window = nil,
-            enableNightsight = nil,
-            enableStrength = nil,
-            enableAgility = nil,
-            refreshAfterAgility = nil,
-            staminaPotionsModeButton = nil
-        }
-    },
-    Scavenge = {
-        enableButton = nil,
-        enableLabel = nil,
-        configButton = nil,
-        Config = {
-            window = nil,
-            activateGoldButton = nil,
-            activateBandagesButton = nil,
-            activateBonesButton = nil,
-            activateGrimoireButton = nil,
-            activateRibsButton = nil
-        }
-    }
+    mainWindow = nil
 }
 
 CAUIMainWindowLayout = {
@@ -4161,32 +4122,34 @@ CAUIMainWindowState = {
 }
 
 function CAUIGump_processUIGumpInteractions()
-    local nightsightUIEnabled = CAUIGumpBuffsState.EnableNightsight
-    CAUIGumpMainRow_processUIInteractions(CAUI.configButton, CAUI.Config.window, CAUI.Config.rearmButton, CAUI.Config.skinnButton)
-    CAUIGumpRun_processUIInteractions(CAUI.Run.enableButton, CAUI.Run.enableLabel)                     --- Run
-    CAUIGumpCommands_processUIInteractions(CAUI.Commands.enableButton, CAUI.Commands.enableLabel)      --- Commands
-    CAUIGumpAttack_processUIInteractions(CAUI.Attack.enableButton, CAUI.Attack.enableLabel, CAUI.Attack.configButton, CAUI.Attack.Config.window, CAUI.Attack.Config.rangeMaxButton, CAUI.Attack.Config.exceptionModeButton)                                                                                                                            --- Attack
-    CAUIGumpHeal_processUIInteractions(CAUI.Heal.enableButton, CAUI.Heal.enableLabel, CAUI.Heal.configButton, CAUI.Heal.Config.window, CAUI.Heal.Config.bandageSelfButton, CAUI.Heal.Config.bandageOtherButton, CAUI.Heal.Config.healPotionsModeButton, CAUI.Heal.Config.healPotionAfterStrengthPotionButton, CAUI.Heal.Config.curePotionsButton)      --- Heal
-    CAUIGumpBuffs_processUIInteractions(CAUI.Buffs.enableButton, CAUI.Buffs.enableLabel, CAUI.Buffs.configButton, CAUI.Buffs.Config.window, CAUI.Buffs.Config.enableNightsight, CAUI.Buffs.Config.enableStrength, CAUI.Buffs.Config.enableAgility, CAUI.Buffs.Config.refreshAfterAgility, CAUI.Buffs.Config.staminaPotionsModeButton)                  --- Buffs
-    CAUIGumpScavenge_processUIInteractions(CAUI.Scavenge.enableButton, CAUI.Scavenge.enableLabel, CAUI.Scavenge.configButton, CAUI.Scavenge.Config.window, CAUI.Scavenge.Config.activateGoldButton, CAUI.Scavenge.Config.activateBandagesButton, CAUI.Scavenge.Config.activateBonesButton, CAUI.Scavenge.Config.activateGrimoireButton, CAUI.Scavenge.Config.activateRibsButton)                    --- Scavenge
-    nightsightUIChanged = nightsightUIEnabled ~= CAUIGumpBuffsState.EnableNightsight
 
+    local nightsightUIEnabled = CAUIGumpBuffs_getEnableNightsight()
+
+    CAUIGumpMainRow_processUIInteractions()        --- Main Row
+    CAUIGumpRun_processUIInteractions()            --- Run
+    CAUIGumpCommands_processUIInteractions()       --- Commands
+    CAUIGumpAttack_processUIInteractions()         --- Attack
+    CAUIGumpHeal_processUIInteractions()           --- Heal
+    CAUIGumpBuffs_processUIInteractions()          --- Buffs
+    CAUIGumpScavenge_processUIInteractions()       --- Scavenge
+
+    nightsightUIChanged = nightsightUIEnabled ~= CAUIGumpBuffs_getEnableNightsight()
 end
 
 function CAUIGump_updateCombatAssistantConfig(CAConfig)
 
     --- Override UI values to CA Config
-    CAUIGumpMainRow_updateCAConfigToCurrentUIConfig(CAConfig.modules.ArmDisarm, CAConfig.modules.Skinning)     --- Main
-    CAUIGumpCommands_updateCAConfigToCurrentUIConfig(CAConfig.userCommands)                                    --- Commands
-    CAUIGumpAttack_updateCAConfigToCurrentUIConfig(CAConfig.modules.Attack)                                    --- Attack
-    CAUIGumpHeal_updateCAConfigToCurrentUIConfig(CAConfig.modules.Bandages, CAConfig.modules.CurePotions, CAConfig.modules.HealingPotions, CAConfig.modules.Buffs.Strength)    --- Heal
-    CAUIGumpBuffs_updateCAConfigToCurrentUIConfig(CAConfig.modules.Buffs)                                      --- Buffs
-    CAUIGumpScavenge_updateCAConfigToCurrentUIConfig(CAConfig.modules.Scavenging)                              --- Scavenge
+    CAUIGumpMainRow_updateCAConfigToCurrentUIConfig(CAConfig)      --- Main Row
+    CAUIGumpCommands_updateCAConfigToCurrentUIConfig(CAConfig)     --- Commands
+    CAUIGumpAttack_updateCAConfigToCurrentUIConfig(CAConfig)       --- Attack
+    CAUIGumpHeal_updateCAConfigToCurrentUIConfig(CAConfig)         --- Heal
+    CAUIGumpBuffs_updateCAConfigToCurrentUIConfig(CAConfig)        --- Buffs
+    CAUIGumpScavenge_updateCAConfigToCurrentUIConfig(CAConfig)     --- Scavenge
 
     --- Because of internal error, nightsight may disable itself (don't override that part, unless there is a user interaction)
     if not nightsightUIChanged then
         CAConfig.modules.Buffs.Nightsight.Enable = CAPotionsNightsight_getEnable()
-        onNightsightButtonPressed_(CAPotionsNightsight_getEnable(), CAUI.Buffs.Config.enableNightsight)
+        CAUIGumpBuffs_setEnableNightsight(CAPotionsNightsight_getEnable())
     end
 
     CAMainLoop_configure(CAConfig)
@@ -4210,8 +4173,8 @@ function CAUIGump_initMainWindow()
     end
 
     CALog_debug('Initializing Main Window...')
-    furthestElementX = CAUIGumpLayout_getLayoutConstants().ModuleConfigButtonPosX + CAUIGumpLayout_getLayoutConstants().ModuleConfigButtonSizeX
-    furthestElementY = CAUIGumpLayout_getLayoutConstants().ModuleRowPosYStart + CAUIGumpLayout_getLayoutConstants().ModuleRowPosYIncrement * (CAUIMainWindowLayout.NumberOfModules -1) + CAUIGumpLayout_getLayoutConstants().ModuleEnableButtonSizeY
+    furthestElementX = CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigButtonPosX + CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigButtonSizeX
+    furthestElementY = CAUIGumpLayoutBase_getLayoutConstants().ModuleRowPosYStart + CAUIGumpLayoutBase_getLayoutConstants().ModuleRowPosYIncrement * (CAUIMainWindowLayout.NumberOfModules -1) + CAUIGumpLayoutBase_getLayoutConstants().ModuleEnableButtonSizeY
     CAUI.mainWindow:SetPosition(CAUIMainWindowLayout.StartPosX, CAUIMainWindowLayout.StartPosY)
     CAUI.mainWindow:SetSize(furthestElementX + CAUIMainWindowLayout.SizeXOffset, furthestElementY + CAUIMainWindowLayout.SizeYOffset)
 
@@ -4219,13 +4182,13 @@ function CAUIGump_initMainWindow()
 end
 
 function CAUIGump_initModules()
-    CAUI.titleLabel, CAUI.configButton, CAUI.Config.window, CAUI.Config.rearmButton, CAUI.Config.skinnButton = CAUIGumpMainRow_initUI(CAUI.mainWindow)
-    CAUI.Run.enableButton , CAUI.Run.enableLabel = CAUIGumpRun_initUI(CAUI.mainWindow, 1)                      --- Run
-    CAUI.Commands.enableButton , CAUI.Commands.enableLabel = CAUIGumpCommands_initUI(CAUI.mainWindow, 2)       --- Commands
-    CAUI.Attack.enableButton, CAUI.Attack.enableLabel, CAUI.Attack.configButton, CAUI.Attack.Config.window, CAUI.Attack.Config.rangeMaxButton, CAUI.Attack.Config.exceptionModeButton = CAUIGumpAttack_initUI(CAUI.mainWindow, 3)                                                                                                                          --- Attack
-    CAUI.Heal.enableButton, CAUI.Heal.enableLabel, CAUI.Heal.configButton, CAUI.Heal.Config.window, CAUI.Heal.Config.bandageSelfButton, CAUI.Heal.Config.bandageOtherButton, CAUI.Heal.Config.healPotionsModeButton, CAUI.Heal.Config.healPotionAfterStrengthPotionButton, CAUI.Heal.Config.curePotionsButton = CAUIGumpHeal_initUI(CAUI.mainWindow, 4)    --- Heal
-    CAUI.Buffs.enableButton, CAUI.Buffs.enableLabel, CAUI.Buffs.configButton, CAUI.Buffs.Config.window, CAUI.Buffs.Config.enableNightsight, CAUI.Buffs.Config.enableStrength, CAUI.Buffs.Config.enableAgility, CAUI.Buffs.Config.refreshAfterAgility, CAUI.Buffs.Config.staminaPotionsModeButton = CAUIGumpBuffs_initUI(CAUI.mainWindow, 5)                --- Buffs
-    CAUI.Scavenge.enableButton, CAUI.Scavenge.enableLabel, CAUI.Scavenge.configButton, CAUI.Scavenge.Config.window, CAUI.Scavenge.Config.activateGoldButton, CAUI.Scavenge.Config.activateBandagesButton, CAUI.Scavenge.Config.activateBonesButton, CAUI.Scavenge.Config.activateGrimoireButton, CAUI.Scavenge.Config.activateRibsButton = CAUIGumpScavenge_initUI(CAUI.mainWindow, 6)                  --- Scavenge
+    CAUIGumpMainRow_initUI(CAUI.mainWindow)        --- Main Row
+    CAUIGumpRun_initUI(CAUI.mainWindow, 1)         --- Run
+    CAUIGumpCommands_initUI(CAUI.mainWindow, 2)    --- Commands
+    CAUIGumpAttack_initUI(CAUI.mainWindow, 3)      --- Attack
+    CAUIGumpHeal_initUI(CAUI.mainWindow, 4)        --- Heal
+    CAUIGumpBuffs_initUI(CAUI.mainWindow, 5)       --- Buffs
+    CAUIGumpScavenge_initUI(CAUI.mainWindow, 6)    --- Scavenge
 end
 
 function CAUIGump_initMainGump()
@@ -4236,27 +4199,17 @@ end
 function CAUIGump_runGump(CAConfig)
 
     CALog_debug('Starting Combat Assistant Iteration!')
-    UI.DestroyAllWindows()          --- Cleanup
-    CAUIGump_initMainGump()                 --- Init main gump (create UI, set up event handlers, etc)
-    CAMainLoop_mainLoopInit(CAConfig)     --- Initialize main loop (configure modules, etc)
+    UI.DestroyAllWindows()                                  --- Cleanup
+    CAUIGump_initMainGump()                                         --- Init main gump (create UI, set up event handlers, etc...)
+    CAMainLoop_mainLoopInit(CAConfig)                             --- Initialize main loop (configure modules, etc...)
     while true do
 
-        CAUIGump_processUIGumpInteractions()                --- Check for UI changes
-        CAUIGump_updateCombatAssistantConfig(CAConfig)      --- Process Update
-
-        --- Is the Combat Assistant set to run?
-        if CAUIGumpRun_getIterateCAMainLoop() then
-
-            CALog_debug('Starting Combat Assistant Iteration!')
-            CAUI.Run.enableLabel:SetText('Running...')                --- Starting Iteration
-            CAUI.Run.enableLabel:SetColor(1, 0.5, 0, 1)               --- Orange
-
-            CAMainLoop_mainLoopIterate(CAConfig)                      --- Iterate main loop once (process actions, etc)
-
-            CALog_debug('Combat Assistant Iteration Done!')
-            CAUI.Run.enableLabel:SetText('Running...')                --- Iteration Done
-            CAUI.Run.enableLabel:SetColor(0, 1, 0, 1)                 --- Green
-
+        CAUIGump_processUIGumpInteractions()                        --- Check for UI changes
+        CAUIGump_updateCombatAssistantConfig(CAConfig)              --- Process Updates to Combat Assistant Config
+        if CAUIGumpRun_getIterateCAMainLoop() then             --- Is the Combat Assistant set to run in the UI?
+            CAUIGumpRun_startIteration()
+            CAMainLoop_mainLoopIterate(CAConfig)                  --- Iterate main loop once (process actions, etc...)
+            CAUIGumpRun_endIteration()
         else
             CALog_debug('Combat Assistant Disabled!')
         end

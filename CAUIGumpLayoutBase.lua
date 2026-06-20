@@ -1,17 +1,17 @@
 ----------------------------------------------------------------------
---- Combat Assistant (CA) User Interface (UI) Gump Attack
+--- Combat Assistant (CA) User Interface (UI) Gump Layout Base
 --- Author: JohnB9
 ---
 --- Version: 1.0.0  - 
 ---
---- Description: UI for Attack module
+--- Description: Base functions for definning the Layout
 ----------------------------------------------------------------------
 
 local cal = Import('CALog')
 
------------------
---- Variables ---
------------------
+--------------
+--- Layout ---
+--------------
 
 local CAUIGumpLayoutConstants = {
     ModuleEnableButtonPosX = 10,

@@ -8,18 +8,30 @@
 ----------------------------------------------------------------------
 
 local cal = Import('CALog')
-local cauiglayout = Import('CAUIGumpLayout')
+local cauiglayoutb = Import('CAUIGumpLayoutBase')
+local cauiglogicb = Import('CAUIGumpLogicBase')
 
------------------
---- Variables ---
------------------
+--------------
+--- Layout ---
+--------------
+
+local CAUIGumpRunLayout = {
+    RunButtonSizeX = 80,
+    RunButtonSizeY = 30
+}
+
+local CAUIGR = {
+    enableButton = nil,
+    enableLabel = nil
+}
+
+-------------
+--- State ---
+-------------
 
 CAUIGumpRunConfig = {
     IterateCAMainLoop = false
 }
-
-local mainWindowRunButtonSizeX = 80
-local mainWindowRunButtonSizeY = 30
 
 -----------------
 --- Functions ---
@@ -29,30 +41,33 @@ local function getIterateCAMainLoop_()
     return CAUIGumpRunConfig.IterateCAMainLoop
 end
 
-local function onRunCombatAssistantButtonPressed_(isChecked, label)
-    cal.debug('Run Button changed: '..tostring(isChecked))
-    CAUIGumpRunConfig.IterateCAMainLoop = isChecked
-    if isChecked then
-        label:SetText('Running...')
-        label:SetColor(0, 1, 0, 1)
-    else
-        label:SetText('Stopped')
-        label:SetColor(1, 0, 0, 1)
+local function processRunButtonInteractions_()
+    if CAUIGR.enableButton:WasClicked() then
+        CAUIGumpRunConfig.IterateCAMainLoop = cauiglogicb.onLabeledBooleanButtonPressed(CAUIGumpRunConfig.IterateCAMainLoop, CAUIGR.enableLabel, 'Run', {'Running...', cauiglogicb.getColorOptions().Green}, {'Stopped', cauiglogicb.getColorOptions().Red})
     end
 end
 
-local function processUIInteractions_(button, label)
-    if button:WasClicked() then
-        onRunCombatAssistantButtonPressed_(not CAUIGumpRunConfig.IterateCAMainLoop, label)
-    end
+local function processUIInteractions_()
+    processRunButtonInteractions_()
 end
 
 local function initUI_(mainWindow, row)
     cal.debug('Creating Run Button UI...')
-    local button = cauiglayout.createModuleEnableButtonAtRow(mainWindow, row, 'Run', mainWindowRunButtonSizeX, mainWindowRunButtonSizeY)
-    local label = cauiglayout.createModuleEnableLabelAtRow(mainWindow, row, 'Stopped')
-    label:SetColor(1, 0, 0, 1)
-    return button, label
+    CAUIGR.enableButton = cauiglayoutb.createModuleEnableButtonAtRow(mainWindow, row, 'Run', CAUIGumpRunLayout.RunButtonSizeX, CAUIGumpRunLayout.RunButtonSizeY)
+    CAUIGR.enableLabel = cauiglayoutb.createModuleEnableLabelAtRow(mainWindow, row, 'Stopped')
+    cauiglogicb.setLabelColor(CAUIGR.enableLabel, cauiglogicb.getColorOptions().Red)
+end
+
+local function startIteration_()
+    cal.debug('Starting Combat Assistant Iteration!')
+    CAUIGR.enableLabel:SetText('Running...')                --- Starting Iteration
+    cauiglogicb.setLabelColor(CAUIGR.enableLabel, cauiglogicb.getColorOptions().Orange)
+end
+
+local function endIteration_()
+    cal.debug('Combat Assistant Iteration Done!')
+    CAUIGR.enableLabel:SetText('Running...')                --- Iteration Done
+    cauiglogicb.setLabelColor(CAUIGR.enableLabel, cauiglogicb.getColorOptions().Green)
 end
 
 --------------
@@ -62,7 +77,9 @@ end
 local Obj = {
     getIterateCAMainLoop = getIterateCAMainLoop_,
     processUIInteractions = processUIInteractions_,
-    initUI = initUI_
+    initUI = initUI_,
+    startIteration = startIteration_,
+    endIteration = endIteration_
 }
 
 return Obj

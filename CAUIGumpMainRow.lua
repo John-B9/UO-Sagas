@@ -1,14 +1,15 @@
 ----------------------------------------------------------------------
---- Combat Assistant (CA) User Interface (UI) Gump Scavenge
+--- Combat Assistant (CA) User Interface (UI) Gump Main Row
 --- Author: JohnB9
 ---
 --- Version: 1.0.0  - 
 ---
---- Description: UI for Scavenge module
+--- Description: UI for Main Row
 ----------------------------------------------------------------------
 
 local cal = Import('CALog')
-local cauiglayout = Import('CAUIGumpLayout')
+local cauiglayoutb = Import('CAUIGumpLayoutBase')
+local cauiglogicb = Import('CAUIGumpLogicBase')
 
 --------------
 --- Layout ---
@@ -21,6 +22,17 @@ local CAUIGumpMainRowLayout = {
     ConfigButtonPosY = 35,
     ConfigButtonSizeX = 85,
     ConfigButtonSizeY = 25
+}
+
+local CAUIGMR = {
+    mainWindow = nil,
+    titleLabel = nil,
+    configButton = nil,
+    Config = {
+        window = nil,
+        rearmButton = nil,
+        skinnButton = nil
+    }
 }
 
 -----------------
@@ -48,7 +60,7 @@ local SkinnModeValues = {
     CopperPlus = 4,
     BronzePlus = 5,
     VeritePlus = 6,
-    ValoritePlus = 7
+    Valorite = 7
 }
 
 local SkinnModeStrings = {
@@ -58,7 +70,7 @@ local SkinnModeStrings = {
     'Skinn (Copper +)',
     'Skinn (Bronze +)',
     'Skinn (Verite +)',
-    'Skinn (Valorite +)'
+    'Skinn (Valorite)'
 }
 
 local LeatherHuesToKeepNone = {
@@ -102,7 +114,7 @@ local LeatherHuesToKeepVeritePlus = {
     0x08AB              --- Valorite
 }
 
-local LeatherHuesToKeepValoritePlus = {
+local LeatherHuesToKeepValorite = {
     0x08AB              --- Valorite
 }
 
@@ -113,7 +125,7 @@ local SkinnModeHueKeepTables = {
     LeatherHuesToKeepCopperPlus,
     LeatherHuesToKeepBronzePlus,
     LeatherHuesToKeepVeritePlus,
-    LeatherHuesToKeepValoritePlus
+    LeatherHuesToKeepValorite
 }
 
 -------------
@@ -130,65 +142,55 @@ CAUIGumpMainRowState = {
 --- Functions ---
 -----------------
 
-function onconfigButtonPressed_(isChecked, button, window)
-    cal.debug('Main config button changed: '..tostring(isChecked))
-    CAUIGumpMainRowState.MainConfigOpen = isChecked
-    if isChecked then
-        button:SetText('CONFIG (+)')
-        window:Hide()
-    else
-        button:SetText('CONFIG (-)')
-        window:Show()
+local function processConfigMenuButtonInteractions_()
+    if CAUIGMR.configButton:WasClicked() then
+        CAUIGumpMainRowState.MainConfigOpen = cauiglogicb.onConfigMenuButtonPressed(CAUIGumpMainRowState.MainConfigOpen, CAUIGMR.configButton, CAUIGMR.Config.window, 'Main Config', 'CONFIG (+)', 'CONFIG (-)')
     end
 end
 
-function onRearmModePressed_(button)
-    cal.debug('Rearm Mode button pressed...')
-    CAUIGumpMainRowState.RearmMode = (CAUIGumpMainRowState.RearmMode == RearmModeValues.MoveAndTime and RearmModeValues.None) or CAUIGumpMainRowState.RearmMode+1
-    button:SetText(RearmModeStrings[CAUIGumpMainRowState.RearmMode])
-end
-
-function onSkinnModePressed_(button)
-    cal.debug('Skinn Mode button pressed...')
-    CAUIGumpMainRowState.SkinnMode = (CAUIGumpMainRowState.SkinnMode == SkinnModeValues.ValoritePlus and SkinnModeValues.None) or CAUIGumpMainRowState.SkinnMode+1
-    button:SetText(SkinnModeStrings[CAUIGumpMainRowState.SkinnMode])
-end
-
-local function processUIInteractions_(configB, configW, rearmB, skinnB)
-    if configB:WasClicked() then
-        onconfigButtonPressed_(not CAUIGumpMainRowState.MainConfigOpen, configB, configW)
-    end
-    if rearmB:WasClicked() then
-        onRearmModePressed_(rearmB)
-    end
-    if skinnB:WasClicked() then
-        onSkinnModePressed_(skinnB)
+local function processRearmModeButtonInteractions_()
+    if CAUIGMR.Config.rearmButton:WasClicked() then
+        CAUIGumpMainRowState.RearmMode = cauiglogicb.onEnumStateButtonPressed(CAUIGumpMainRowState.RearmMode, RearmModeValues.MoveAndTime, RearmModeStrings, CAUIGMR.Config.rearmButton, 'Rearm Mode')
     end
 end
 
-local function updateCAConfigToCurrentUIConfig_(CAConfigArmDisarm, CAConfigSkinning)
-    CAConfigArmDisarm.Enable = CAUIGumpMainRowState.RearmMode ~= RearmModeValues.None
-    CAConfigArmDisarm.AutoRearmOnMove = CAConfigArmDisarm.Enable and (CAUIGumpMainRowState.RearmMode == RearmModeValues.Move or CAUIGumpMainRowState.RearmMode == RearmModeValues.MoveAndTime)
-    CAConfigArmDisarm.AutoRearmWithDelay = CAConfigArmDisarm.Enable and (CAUIGumpMainRowState.RearmMode == RearmModeValues.Time or CAUIGumpMainRowState.RearmMode == RearmModeValues.MoveAndTime)
+local function processSkinnModeButtonInteractions_()
+    if CAUIGMR.Config.skinnButton:WasClicked() then
+        CAUIGumpMainRowState.SkinnMode = cauiglogicb.onEnumStateButtonPressed(CAUIGumpMainRowState.SkinnMode, SkinnModeValues.Valorite, SkinnModeStrings, CAUIGMR.Config.skinnButton, 'Skinning Mode')
+    end
+end
+
+local function processUIInteractions_()
+    processConfigMenuButtonInteractions_()
+    processRearmModeButtonInteractions_()
+    processSkinnModeButtonInteractions_()
+end
+
+local function updateCAConfigToCurrentUIConfig_(CAConfig)
+    local armDisarmConfig = CAConfig.modules.ArmDisarm
+    local armDisarmEnabled = CAUIGumpMainRowState.RearmMode ~= RearmModeValues.None
+    local rearmOnMove = CAUIGumpMainRowState.RearmMode == RearmModeValues.Move or CAUIGumpMainRowState.RearmMode == RearmModeValues.MoveAndTime
+    local rearmOnDelay = CAUIGumpMainRowState.RearmMode == RearmModeValues.Time or CAUIGumpMainRowState.RearmMode == RearmModeValues.MoveAndTime
+    armDisarmConfig.Enable = armDisarmEnabled
+    armDisarmConfig.AutoRearmOnMove = armDisarmEnabled and rearmOnMove
+    armDisarmConfig.AutoRearmWithDelay = armDisarmEnabled and rearmOnDelay
     
-    CAConfigSkinning.Enable = CAUIGumpMainRowState.SkinnMode ~= SkinnModeValues.None
-    CAConfigSkinning.LeatherHuesToKeep = SkinnModeHueKeepTables[CAUIGumpMainRowState.SkinnMode]
+    local skinningConfig = CAConfig.modules.Skinning
+    local skinningEnabled = CAUIGumpMainRowState.SkinnMode ~= SkinnModeValues.None
+    skinningConfig.Enable = skinningEnabled
+    skinningConfig.LeatherHuesToKeep = SkinnModeHueKeepTables[CAUIGumpMainRowState.SkinnMode]
 end
 
 local function initUI_(mainWindow)
+    cal.debug('Creating Main Row UI...')
+    CAUIGMR.titleLabel = mainWindow:AddLabel(CAUIGumpMainRowLayout.TitleLabelPosX, CAUIGumpMainRowLayout.TitleLabelPosY, 'SAGAS Combat Assistant')
+    CAUIGMR.titleLabel:SetColor(0.2, 0.8, 1, 1)
 
-    cal.debug('Creating Scavenge UI...')
+    CAUIGMR.configButton = mainWindow:AddButton(CAUIGumpMainRowLayout.ConfigButtonPosX, CAUIGumpMainRowLayout.ConfigButtonPosY, 'CONFIG (+)', CAUIGumpMainRowLayout.ConfigButtonSizeX, CAUIGumpMainRowLayout.ConfigButtonSizeY)
 
-    local titleLabel = mainWindow:AddLabel(CAUIGumpMainRowLayout.TitleLabelPosX, CAUIGumpMainRowLayout.TitleLabelPosY, 'SAGAS Combat Assistant')
-    titleLabel:SetColor(0.2, 0.8, 1, 1)
-
-    local configButton = mainWindow:AddButton(CAUIGumpMainRowLayout.ConfigButtonPosX, CAUIGumpMainRowLayout.ConfigButtonPosY, 'CONFIG (+)', CAUIGumpMainRowLayout.ConfigButtonSizeX, CAUIGumpMainRowLayout.ConfigButtonSizeY)
-
-    local configW = cauiglayout.createModuleConfigWindow('MainConfigWindow', 'Main Config', 2, 1)
-    local rearmB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 1, RearmModeStrings[CAUIGumpMainRowState.RearmMode], 180, cauiglayout.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    local skinnB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 2, SkinnModeStrings[CAUIGumpMainRowState.SkinnMode], 180, cauiglayout.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-
-    return titleLabel, configButton, configW, rearmB, skinnB
+    CAUIGMR.Config.window = cauiglayoutb.createModuleConfigWindow('MainConfigWindow', 'Main Config', 2, 1)
+    CAUIGMR.Config.rearmButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 1, RearmModeStrings[CAUIGumpMainRowState.RearmMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGMR.Config.skinnButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 2, SkinnModeStrings[CAUIGumpMainRowState.SkinnMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
 end
 
 --------------

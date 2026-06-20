@@ -8,10 +8,29 @@
 ----------------------------------------------------------------------
 
 local cal = Import('CALog')
-local cauiglayout = Import('CAUIGumpLayout')
+local cauiglayoutb = Import('CAUIGumpLayoutBase')
+local cauiglogicb = Import('CAUIGumpLogicBase')
 
+--------------
+--- Layout ---
+--------------
+
+local CAUIGH = {
+    enableButton = nil,
+    enableLabel = nil,
+    configButton = nil,
+    Config = {
+        window = nil,
+        bandageSelfButton = nil,
+        bandageOtherButton = nil,
+        healPotionsModeButton = nil,
+        healPotionAfterStrengthPotionButton = nil,
+        curePotionsButton = nil
+    }
+}
+    
 -----------------
---- Variables ---
+--- Constants ---
 -----------------
 
 local HealPotsModeValues = {
@@ -38,8 +57,12 @@ local HealPotsModeStrings = {
     'Heal Pots (50% HP)'
 }
 
+-------------
+--- State ---
+-------------
+
 CAUIGumpHealConfig = {
-    OverrideWithNoHeal = false,
+    HealEnabled = true,
     ConfigWindowOpen = true,
     BandageSelf = true,
     BandageOther = true,
@@ -52,132 +75,91 @@ CAUIGumpHealConfig = {
 --- Functions ---
 -----------------
 
-function onHealButtonPressed_(isChecked, label)
-    cal.debug('Heal button pressed: '..tostring(isChecked))
-    CAUIGumpHealConfig.OverrideWithNoHeal = not isChecked
-    if isChecked then
-        label:SetText('Enabled')
-        label:SetColor(0, 1, 0, 1)
+local function processHealButtonInteractions_()
+    if CAUIGH.enableButton:WasClicked() then
+        CAUIGumpHealConfig.HealEnabled = cauiglogicb.onEnabledDisabledButtonPressed(CAUIGumpHealConfig.HealEnabled, CAUIGH.enableLabel, 'Heal')
+    end
+end
+
+local function processHealConfigButtonInteractions_()
+    if CAUIGH.configButton:WasClicked() then
+        CAUIGumpHealConfig.ConfigWindowOpen = cauiglogicb.onConfigMenuButtonPressed(CAUIGumpHealConfig.ConfigWindowOpen, CAUIGH.configButton, CAUIGH.Config.window, 'Heal Config')
+    end
+end
+
+local function processBandageSelfButtonInteractions_()
+    if CAUIGH.Config.bandageSelfButton:WasClicked() then
+        CAUIGumpHealConfig.BandageSelf = cauiglogicb.onBooleanButtonPressed(CAUIGumpHealConfig.BandageSelf, CAUIGH.Config.bandageSelfButton, 'Bandage Self')
+    end
+end
+
+local function processBandageOtherButtonInteractions_()
+    if CAUIGH.Config.bandageOtherButton:WasClicked() then
+        CAUIGumpHealConfig.BandageOther = cauiglogicb.onBooleanButtonPressed(CAUIGumpHealConfig.BandageOther, CAUIGH.Config.bandageOtherButton, 'Bandage Other')
+    end
+end
+
+local function processHealPotionsModeButtonInteractions_()
+    if CAUIGH.Config.healPotionsModeButton:WasClicked() then
+        CAUIGumpHealConfig.HealPotsMode = cauiglogicb.onEnumStateButtonPressed(CAUIGumpHealConfig.HealPotsMode, HealPotsModeValues.FiftyPercent, HealPotsModeStrings, CAUIGH.Config.healPotionsModeButton, 'Healing Potions Mode')
+    end
+end
+
+local function processHealPotionAfterStrengthPotionButtonInteractions_()
+    if CAUIGH.Config.healPotionAfterStrengthPotionButton:WasClicked() then
+        CAUIGumpHealConfig.HealPotsAfterStrPot = cauiglogicb.onBooleanButtonPressed(CAUIGumpHealConfig.HealPotsAfterStrPot, CAUIGH.Config.healPotionAfterStrengthPotionButton, 'Heal On Str')
+    end
+end
+
+local function processCurePotionsButtonInteractions_()
+    if CAUIGH.Config.curePotionsButton:WasClicked() then
+        CAUIGumpHealConfig.CurePots = cauiglogicb.onBooleanButtonPressed(CAUIGumpHealConfig.CurePots, CAUIGH.Config.curePotionsButton, 'Use Cure')
+    end
+end
+
+local function processUIInteractions_()
+    processHealButtonInteractions_()
+    processHealConfigButtonInteractions_()
+    processBandageSelfButtonInteractions_()
+    processBandageOtherButtonInteractions_()
+    processHealPotionsModeButtonInteractions_()
+    processHealPotionAfterStrengthPotionButtonInteractions_()
+    processCurePotionsButtonInteractions_()
+end
+
+local function updateCAConfigToCurrentUIConfig_(CAConfig)
+    local bandagesConfig = CAConfig.modules.Bandages
+    local healingPotionsConfig = CAConfig.modules.HealingPotions
+    local strengthPotionsConfig = CAConfig.modules.Buffs.Strength
+    local curePotionsConfig = CAConfig.modules.CurePotions
+    if CAUIGumpHealConfig.HealEnabled then
+        bandagesConfig.Enable = CAUIGumpHealConfig.BandageSelf
+        bandagesConfig.BandageAllies = CAUIGumpHealConfig.BandageOther
+        healingPotionsConfig.Enable = CAUIGumpHealConfig.HealPotsMode ~= HealPotsModeValues.None
+        healingPotionsConfig.HPDrinkThreshould = HealPotsPercentageThreshoulds[CAUIGumpHealConfig.HealPotsMode]
+        strengthPotionsConfig.DrinkHeal = CAUIGumpHealConfig.HealPotsAfterStrPot
+        curePotionsConfig.Enable = CAUIGumpHealConfig.CurePots
     else
-        label:SetText('Disabled')
-        label:SetColor(1, 0, 0, 1)
-    end
-end
-
-function onHealConfigButtonPressed_(isChecked, button, window)
-    cal.debug('Heal config button pressed: '..tostring(isChecked))
-    CAUIGumpHealConfig.ConfigWindowOpen = isChecked
-    if isChecked then
-        button:SetText('+')
-        window:Hide()
-    else
-        button:SetText('-')
-        window:Show()
-    end
-end
-
-function onBandageSelfButtonPressed_(isChecked, button)
-    cal.debug('Bandage Self button pressed: '..tostring(isChecked))
-    CAUIGumpHealConfig.BandageSelf = isChecked
-    if isChecked then
-        button:SetText('Bandage Self (Y)')
-    else
-        button:SetText('Bandage Self (N)')
-    end
-end
-
-function onBandageOtherButtonPressed_(isChecked, button)
-    cal.debug('Bandage Other button pressed: '..tostring(isChecked))
-    CAUIGumpHealConfig.BandageOther = isChecked
-    if isChecked then
-        button:SetText('Bandage Others (Y)')
-    else
-        button:SetText('Bandage Others (N)')
-    end
-end
-
-function onHealPotsModeButtonPressed_(button)
-    cal.debug('Healing Pots Mode button pressed...')
-    CAUIGumpHealConfig.HealPotsMode = (CAUIGumpHealConfig.HealPotsMode == HealPotsModeValues.FiftyPercent and HealPotsModeValues.None) or CAUIGumpHealConfig.HealPotsMode+1
-    button:SetText(HealPotsModeStrings[CAUIGumpHealConfig.HealPotsMode])
-end
-
-function onHealPotAfterStrenghPotButtonPressed_(isChecked, button)
-    cal.debug('Use Heal after Strength button pressed: '..tostring(isChecked))
-    CAUIGumpHealConfig.HealPotsAfterStrPot = isChecked
-    if isChecked then
-        button:SetText('Heal On Str (Y)')
-    else
-        button:SetText('Heal On Str (N)')
-    end
-end
-
-function onCurePotsModeButtonPressed_(isChecked, button)
-    cal.debug('Use Cure button pressed: '..tostring(isChecked))
-    CAUIGumpHealConfig.CurePots = isChecked
-    if isChecked then
-        button:SetText('Use Cure (Y)')
-    else
-        button:SetText('Use Cure (N)')
-    end
-end
-
-local function processUIInteractions_(enableB, enableL, configB, configW, bandageSB, bandageOB, healPMB, healPASPB, curePB)
-    if enableB:WasClicked() then
-        onHealButtonPressed_(CAUIGumpHealConfig.OverrideWithNoHeal, enableL)
-    end
-    if configB:WasClicked() then
-        onHealConfigButtonPressed_(not CAUIGumpHealConfig.ConfigWindowOpen, configB, configW)
-    end
-    if bandageSB:WasClicked() then
-        onBandageSelfButtonPressed_(not CAUIGumpHealConfig.BandageSelf, bandageSB)
-    end
-    if bandageOB:WasClicked() then
-        onBandageOtherButtonPressed_(not CAUIGumpHealConfig.BandageOther, bandageOB)
-    end
-    if healPMB:WasClicked() then
-        onHealPotsModeButtonPressed_(healPMB)
-    end
-    if healPASPB:WasClicked() then
-        onHealPotAfterStrenghPotButtonPressed_(not CAUIGumpHealConfig.HealPotsAfterStrPot, healPASPB)
-    end
-    if curePB:WasClicked() then
-        onCurePotsModeButtonPressed_(not CAUIGumpHealConfig.CurePots, curePB)
-    end
-end
-
-local function updateCAConfigToCurrentUIConfig_(CAConfigBandages, CAConfigCurePotions, CAConfigHealingPotions, CAConfigBuffsStrength)
-
-    if not CAUIGumpHealConfig.OverrideWithNoHeal then
-        CAConfigBandages.Enable = CAUIGumpHealConfig.BandageSelf
-        CAConfigBandages.BandageAllies = CAUIGumpHealConfig.BandageOther
-        CAConfigHealingPotions.Enable = CAUIGumpHealConfig.HealPotsMode ~= HealPotsModeValues.None
-        CAConfigHealingPotions.HPDrinkThreshould = HealPotsPercentageThreshoulds[CAUIGumpHealConfig.HealPotsMode]
-        CAConfigBuffsStrength.DrinkHeal = CAUIGumpHealConfig.HealPotsAfterStrPot
-        CAConfigCurePotions.Enable = CAUIGumpHealConfig.CurePots
-    else
-        CAConfigBandages.Enable = false
-        CAConfigBandages.BandageAllies = false
-        CAConfigHealingPotions.Enable = false
-        CAConfigHealingPotions.HPDrinkThreshould = 0
-        CAConfigBuffsStrength.DrinkHeal = false
-        CAConfigCurePotions.Enable = false
+        bandagesConfig.Enable = false
+        bandagesConfig.BandageAllies = false
+        healingPotionsConfig.Enable = false
+        healingPotionsConfig.HPDrinkThreshould = 0
+        strengthPotionsConfig.DrinkHeal = false
+        curePotionsConfig.Enable = false
     end
 end
 
 local function initUI_(mainWindow, row)
     cal.debug('Creating Healing UI...')
-    local enableB = cauiglayout.createModuleEnableButtonAtRow(mainWindow, row, 'Heal')
-    local enableL = cauiglayout.createModuleEnableLabelAtRow(mainWindow, row, 'Enabled')
-    ---enableL:SetColor(1, 0, 0, 1)
-    local configB = cauiglayout.createModuleConfigButtonAtRow(mainWindow, row)
-    local configW = cauiglayout.createModuleConfigWindow('healConfigWindow', 'Heal Config', 5, row)
-    local bandageSB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 1, 'Bandage Self (Y)', 140, cauiglayout.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    local bandageOB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 2, 'Bandage Others (Y)', 140, cauiglayout.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    local healPMB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 3, HealPotsModeStrings[CAUIGumpHealConfig.HealPotsMode], 180, cauiglayout.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    local healPASPB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 4, 'Heal On Str (N)', 140, cauiglayout.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    local curePB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 5, 'Use Cure (N)', 140, cauiglayout.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    return enableB, enableL, configB, configW, bandageSB, bandageOB, healPMB, healPASPB, curePB
+    CAUIGH.enableButton = cauiglayoutb.createModuleEnableButtonAtRow(mainWindow, row, 'Heal')
+    CAUIGH.enableLabel = cauiglayoutb.createModuleEnableLabelAtRow(mainWindow, row, 'Enabled')
+    CAUIGH.configButton = cauiglayoutb.createModuleConfigButtonAtRow(mainWindow, row)
+    CAUIGH.Config.window = cauiglayoutb.createModuleConfigWindow('healConfigWindow', 'Heal Config', 5, row)
+    CAUIGH.Config.bandageSelfButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGH.Config.window, 1, cauiglogicb.getBoonleanButtonStateDisplayStr(CAUIGumpHealConfig.BandageSelf, 'Bandage Self'), 140, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGH.Config.bandageOtherButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGH.Config.window, 2, cauiglogicb.getBoonleanButtonStateDisplayStr(CAUIGumpHealConfig.BandageOther, 'Bandage Others'), 140, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGH.Config.healPotionsModeButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGH.Config.window, 3, HealPotsModeStrings[CAUIGumpHealConfig.HealPotsMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGH.Config.healPotionAfterStrengthPotionButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGH.Config.window, 4, cauiglogicb.getBoonleanButtonStateDisplayStr(CAUIGumpHealConfig.HealPotsAfterStrPot, 'Heal On Str'), 140, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGH.Config.curePotionsButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGH.Config.window, 5, cauiglogicb.getBoonleanButtonStateDisplayStr(CAUIGumpHealConfig.CurePots, 'Use Cure'), 140, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
 end
 
 --------------

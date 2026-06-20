@@ -8,95 +8,128 @@
 ----------------------------------------------------------------------
 
 local cal = Import('CALog')
-local cauiglayout = Import('CAUIGumpLayout')
+local cauiglayoutb = Import('CAUIGumpLayoutBase')
+local cauiglogicb = Import('CAUIGumpLogicBase')
+
+--------------
+--- Layout ---
+--------------
+
+local CAUIGA = {
+    enableButton = nil,
+    enableLabel = nil,
+    configButton = nil,
+    Config = {
+        window = nil,
+        rangeMaxButton = nil,
+        exceptionModeButton = nil
+    }
+}
 
 -----------------
---- Variables ---
+--- Constants ---
 -----------------
+
+local AttackRangeValues = {
+    One = 1,
+    Three = 2,
+    Five = 3,
+    Seven = 4,
+    Nine = 5,
+    Eleven = 6
+}
+
+local AttackRangeStrings = {
+    'Range (1)',
+    'Range (3)',
+    'Range (5)',
+    'Range (7)',
+    'Range (9)',
+    'Range (11)',
+}
+
+local AttackRangeConfigValues = {
+    1,
+    3,
+    5,
+    7,
+    9,
+    11
+}
+
+local AttackExceptionModeValues = {
+    None = 1,
+    IDAndNames = 2
+}
+
+local AttackExceptionModeStrings = {
+    'Exceptions (None)',
+    'Exceptions (ID + Names)'
+}
+
+-------------
+--- State ---
+-------------
 
 CAUIGumpAttackConfig = {
-    OverrideWithNoAttacks = true,
+    AttackEnabled = false,
     ConfigWindowOpen = true,
-    AttackRangeMax = 5,
-    AttackExceptionsMode = true
+    AttackRangeMax = AttackRangeValues.Five,
+    AttackExceptionsMode = AttackExceptionModeValues.IDAndNames
 }
 
 -----------------
 --- Functions ---
 -----------------
 
-local function onAttackButtonPressed_(isChecked, label)
-    cal.debug('Attack disabled checkbox changed: '..tostring(isChecked))
-    CAUIGumpAttackConfig.OverrideWithNoAttacks = not isChecked
-    if isChecked then
-        label:SetText('Enabled')
-        label:SetColor(0, 1, 0, 1)
-    else
-        label:SetText('Disabled')
-        label:SetColor(1, 0, 0, 1)
+local function processAttackButtonInteractions_()
+    if CAUIGA.enableButton:WasClicked() then
+        CAUIGumpAttackConfig.AttackEnabled = cauiglogicb.onEnabledDisabledButtonPressed(CAUIGumpAttackConfig.AttackEnabled, CAUIGA.enableLabel, 'Attack')
     end
 end
 
-function onAttackConfigButtonPressed_(isChecked, button, window)
-    cal.debug('Attack config button pressed: '..tostring(isChecked))
-    CAUIGumpAttackConfig.ConfigWindowOpen = isChecked
-    if isChecked then
-        button:SetText('+')
-        window:Hide()
-    else
-        button:SetText('-')
-        window:Show()
+local function processAttackConfigButtonInteractions_()
+    if CAUIGA.configButton:WasClicked() then
+        CAUIGumpAttackConfig.ConfigWindowOpen = cauiglogicb.onConfigMenuButtonPressed(CAUIGumpAttackConfig.ConfigWindowOpen, CAUIGA.configButton, CAUIGA.Config.window, 'Attack Config')
     end
 end
 
-function onAttackRangeMaxButtonPressed_(button)
-    cal.debug('Attack Range Max button pressed: '..tostring(isChecked))
-    CAUIGumpAttackConfig.AttackRangeMax = (CAUIGumpAttackConfig.AttackRangeMax == 11 and 1) or CAUIGumpAttackConfig.AttackRangeMax+2
-    button:SetText('Range ('..CAUIGumpAttackConfig.AttackRangeMax..')')
-end
-
-function onAttackExceptionsModeButtonPressed_(isChecked, button)
-    cal.debug('Attack Mode button pressed: '..tostring(isChecked))
-    CAUIGumpAttackConfig.AttackExceptionsMode = isChecked
-    if isChecked then
-        button:SetText('Exceptions (ID + Names)')
-    else
-        button:SetText('Exceptions (None)')
+local function processAttackRangeMaxButtonInteractions_()
+    if CAUIGA.Config.rangeMaxButton:WasClicked() then
+        CAUIGumpAttackConfig.AttackRangeMax = cauiglogicb.onEnumStateButtonPressed(CAUIGumpAttackConfig.AttackRangeMax, AttackRangeValues.Eleven, AttackRangeStrings, CAUIGA.Config.rangeMaxButton, 'Attack Range')
     end
 end
 
-local function processUIInteractions_(enableB, enableL, configB, configW, rangeMB, attackEB)
-    if enableB:WasClicked() then
-        onAttackButtonPressed_(CAUIGumpAttackConfig.OverrideWithNoAttacks, enableL)
-    end
-    if configB:WasClicked() then
-        onAttackConfigButtonPressed_(not CAUIGumpAttackConfig.ConfigWindowOpen, configB, configW)
-    end
-    if rangeMB:WasClicked() then
-        onAttackRangeMaxButtonPressed_(rangeMB)
-    end
-    if attackEB:WasClicked() then
-        onAttackExceptionsModeButtonPressed_(not CAUIGumpAttackConfig.AttackExceptionsMode, attackEB)
+local function processAttackExceptionsModeButtonInteractions_()
+    if CAUIGA.Config.exceptionModeButton:WasClicked() then
+        CAUIGumpAttackConfig.AttackExceptionsMode = cauiglogicb.onEnumStateButtonPressed(CAUIGumpAttackConfig.AttackExceptionsMode, AttackExceptionModeValues.IDAndNames, AttackExceptionModeStrings, CAUIGA.Config.exceptionModeButton, 'Attack Exceptions Mode')
     end
 end
 
-local function updateCAConfigToCurrentUIConfig_(CAConfigAttack)
-    CAConfigAttack.Enable = not CAUIGumpAttackConfig.OverrideWithNoAttacks
-    CAConfigAttack.Rangemax = CAUIGumpAttackConfig.AttackRangeMax
-    CAConfigAttack.AllowMobilesExceptionsGraphicIDs = CAUIGumpAttackConfig.AttackExceptionsMode
-    CAConfigAttack.AllowMobilesExceptionsNames = CAUIGumpAttackConfig.AttackExceptionsMode
+local function processUIInteractions_()
+    processAttackButtonInteractions_()
+    processAttackConfigButtonInteractions_()
+    processAttackRangeMaxButtonInteractions_()
+    processAttackExceptionsModeButtonInteractions_()
+end
+
+local function updateCAConfigToCurrentUIConfig_(CAConfig)
+    local attackConfig = CAConfig.modules.Attack
+    attackConfig.Enable = CAUIGumpAttackConfig.AttackEnabled
+    attackConfig.Rangemax = AttackRangeConfigValues[CAUIGumpAttackConfig.AttackRangeMax]
+    attackConfig.AllowMobilesExceptionsGraphicIDs = CAUIGumpAttackConfig.AttackExceptionsMode == AttackExceptionModeValues.IDAndNames
+    attackConfig.AllowMobilesExceptionsNames = CAUIGumpAttackConfig.AttackExceptionsMode == AttackExceptionModeValues.IDAndNames
 end
 
 local function initUI_(mainWindow, row)
     cal.debug('Creating Attack UI...')
-    local enableB = cauiglayout.createModuleEnableButtonAtRow(mainWindow, row, 'Attack')
-    local enableL = cauiglayout.createModuleEnableLabelAtRow(mainWindow, row, 'Disabled')
-    enableL:SetColor(1, 0, 0, 1)
-    local configB = cauiglayout.createModuleConfigButtonAtRow(mainWindow, row)
-    local configW = cauiglayout.createModuleConfigWindow('attackConfigWindow', 'Attack Config', 2, row)
-    local rangeMB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 1, 'Range ('..CAUIGumpAttackConfig.AttackRangeMax..')')
-    local attackEB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 2, 'Exceptions (ID + Names)', 180, cauiglayout.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    return enableB, enableL, configB, configW, rangeMB, attackEB
+    CAUIGA.enableButton = cauiglayoutb.createModuleEnableButtonAtRow(mainWindow, row, 'Attack')
+    CAUIGA.enableLabel = cauiglayoutb.createModuleEnableLabelAtRow(mainWindow, row, 'Disabled')
+    CAUIGA.enableLabel:SetColor(1, 0, 0, 1)
+    CAUIGA.configButton = cauiglayoutb.createModuleConfigButtonAtRow(mainWindow, row)
+    CAUIGA.Config.window = cauiglayoutb.createModuleConfigWindow('attackConfigWindow', 'Attack Config', 2, row)
+    CAUIGA.Config.rangeMaxButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGA.Config.window, 1, AttackRangeStrings[CAUIGumpAttackConfig.AttackRangeMax])
+    CAUIGA.Config.exceptionModeButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGA.Config.window, 2, 'Exceptions (ID + Names)', 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
 end
 
 --------------

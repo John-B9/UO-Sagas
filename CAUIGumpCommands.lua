@@ -8,47 +8,49 @@
 ----------------------------------------------------------------------
 
 local cal = Import('CALog')
-local cauiglayout = Import('CAUIGumpLayout')
+local cauiglayoutb = Import('CAUIGumpLayoutBase')
+local cauiglogicb = Import('CAUIGumpLogicBase')
 
------------------
---- Variables ---
------------------
+--------------
+--- Layout ---
+--------------
+
+local CAUIGC = {
+    enableButton = nil,
+    enableLabel = nil
+}
+
+-------------
+--- State ---
+-------------
 
 CAUIGumpCommandsConfig = {
-    OverrideWithNoCommands = false
+    CommandsEnabled = true
 }
 
 -----------------
 --- Functions ---
 -----------------
 
-local function onOverrideWithNoCommandsButtonPressed_(isChecked, label)
-    cal.debug('Commands disabled checkbox changed: '..tostring(isChecked))
-    CAUIGumpCommandsConfig.OverrideWithNoCommands = not isChecked
-    if isChecked then
-        label:SetText('Enabled')
-        label:SetColor(0, 1, 0, 1)
-    else
-        label:SetText('Disabled')
-        label:SetColor(1, 0, 0, 1)
+local function processCommandsButtonInteractions_()
+    if CAUIGC.enableButton:WasClicked() then
+        CAUIGumpCommandsConfig.CommandsEnabled = cauiglogicb.onEnabledDisabledButtonPressed(CAUIGumpCommandsConfig.CommandsEnabled, CAUIGC.enableLabel, 'Commands')
     end
 end
 
-local function processUIInteractions_(button, label)
-    if button:WasClicked() then
-        onOverrideWithNoCommandsButtonPressed_(CAUIGumpCommandsConfig.OverrideWithNoCommands, label)
-    end
+local function processUIInteractions_()
+    processCommandsButtonInteractions_()
 end
 
-local function updateCAConfigToCurrentUIConfig_(CAConfigCommands)
-    CAConfigCommands.Enable = not CAUIGumpCommandsConfig.OverrideWithNoCommands
+local function updateCAConfigToCurrentUIConfig_(CAConfig)
+    local commandsConfig = CAConfig.userCommands
+    commandsConfig.Enable = CAUIGumpCommandsConfig.CommandsEnabled
 end
 
 local function initUI_(mainWindow, row)
     cal.debug('Creating Commands UI...')
-    local button = cauiglayout.createModuleEnableButtonAtRow(mainWindow, row, 'Commands')
-    local label = cauiglayout.createModuleEnableLabelAtRow(mainWindow, row, 'Enabled')
-    return button, label
+    CAUIGC.enableButton = cauiglayoutb.createModuleEnableButtonAtRow(mainWindow, row, 'Commands')
+    CAUIGC.enableLabel = cauiglayoutb.createModuleEnableLabelAtRow(mainWindow, row, 'Enabled')
 end
 
 --------------
