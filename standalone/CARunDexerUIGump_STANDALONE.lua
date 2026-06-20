@@ -367,14 +367,19 @@ end
 function IPLib_getItemWithBestPropertyValue_singleID(itemID, propertyGetter, propertyFieldRegexStr, comparePredicate, itemAcceptPredicate)
     local bestItem = nil
     local bestItemProperties = nil
-    local items = Items.FindInContainer(Player.Backpack.Serial, itemID)
-    for i, item in ipairs(items) do
-        BaseLib_printIfDebug(debugEnabled, itemAcceptPredicate)
-        if itemAcceptPredicate == nil or itemAcceptPredicate(item) then
-            local itemProperties = propertyGetter(item, propertyFieldRegexStr)
-            if bestItem == nil or comparePredicate(itemProperties, bestItemProperties) then
-                bestItem = item
-                bestItemProperties = itemProperties
+    local items = BaseLib_findInInventory(itemID)
+    ---local filter = { onground=false, graphics=0x0E21 }
+    ---local items = Items.FindByFilter(filter)
+    ---local items = Items.FindInContainer(Player.Backpack.Serial, itemID)
+    if items then
+        for i, item in ipairs(items) do
+            BaseLib_printIfDebug(debugEnabled, itemAcceptPredicate)
+            if itemAcceptPredicate == nil or itemAcceptPredicate(item) then
+                local itemProperties = propertyGetter(item, propertyFieldRegexStr)
+                if bestItem == nil or comparePredicate(itemProperties, bestItemProperties) then
+                    bestItem = item
+                    bestItemProperties = itemProperties
+                end
             end
         end
     end
@@ -496,6 +501,7 @@ end
 ArmDisarmConfig = {
     Enable  = false, -- Rearms your weapon if you are disarmed
     AlwaysRearm = false, -- rearm without moving, warning will spam messages if you drag from hands
+    AutoRearmOnMove = false,
     AutoRearmWithDelay = false
 }
 
@@ -528,6 +534,7 @@ end
 function CAArmDisarm_setConfig(config)
     CAArmDisarm_setEnable(config.Enable)
     CAArmDisarm_setAlwaysRearm(config.AlwaysRearm)
+    ArmDisarmConfig.AutoRearmOnMove = config.AutoRearmOnMove
     ArmDisarmConfig.AutoRearmWithDelay = config.AutoRearmWithDelay
 end
 
@@ -775,7 +782,7 @@ function CAArmDisarm_disarmed()
         currentTickTime = CATime_getCurrentTickTime()
 
         if ArmDisarmState.lastDisarmedTime == 0 then
-            CALog_info("Rearming in "..(ArmDisarmStaticConfig.rearmAtemptDelay / 1000).."s")
+            CALog_warning("Rearming in "..(ArmDisarmStaticConfig.rearmAtemptDelay / 1000).."s")
             ArmDisarmState.lastDisarmedTime = currentTickTime
         end
     end
@@ -790,7 +797,8 @@ function CAArmDisarm_disarmed()
         end
     end
 
-    if isDisarmed and (ArmDisarmConfig.AlwaysRearm or playerMoved or autoRearmTimerExpired) then
+    atemptRearmPlayer = isDisarmed and (ArmDisarmConfig.AlwaysRearm or (ArmDisarmConfig.AutoRearmOnMove and playerMoved) or autoRearmTimerExpired)
+    if atemptRearmPlayer then
 
         alreadyHasRightHand = Items.FindByLayer(ArmDisarmStaticConfig.layerOneHanded)
         if alreadyHasRightHand then
@@ -855,11 +863,15 @@ function CAArmDisarm_disarmed()
     :: _end_ ::
     if not isDisarmed then
         if ArmDisarmState.lastRightHand and not Items.FindByLayer(ArmDisarmStaticConfig.layerOneHanded) then
-            CALog_warning("Right hand disarmed, move to equip")
+            if ArmDisarmConfig.AutoRearmOnMove then
+                CALog_warning("Right hand disarmed, move to equip")
+            end
             ArmDisarmState.disarm.x = Player.X
             ArmDisarmState.disarm.y = Player.Y
         elseif ArmDisarmState.lastLeftHand and not Items.FindByLayer(ArmDisarmStaticConfig.layerTwoHanded) then
-            CALog_warning("Left hand disarmed, move to equip")
+            if ArmDisarmConfig.AutoRearmOnMove then
+                CALog_warning("Left hand disarmed, move to equip")
+            end
             ArmDisarmState.disarm.x = Player.X
             ArmDisarmState.disarm.y = Player.Y
         end
@@ -2190,6 +2202,7 @@ ScavengeConfig = {
     },
     LootItemsNames = {},
     DisallowGold = false,
+    DisallowCleanBandage = false,
     DisallowBones = false,
     DisallowGrimoire = false,
     DisallowRibs = false
@@ -2197,6 +2210,7 @@ ScavengeConfig = {
 
 CAScavenge_GraphicIDs = {
     Gold = 0x0EED,
+    CleanBandage = 0x0E21,
     Bones = 0x0F7E,
     Grimoire = 0x2D9D,
     Ribs = 0x09F1
@@ -2231,11 +2245,13 @@ function CAScavenge_setConfig(config)
     CAScavenge_setLootItemsSerials(config.LootItemsSerials)
     CAScavenge_setLootItemsNames(config.LootItemsNames)
     ScavengeConfig.DisallowGold = config.DisallowGold
+    ScavengeConfig.DisallowCleanBandage = config.DisallowCleanBandage
     ScavengeConfig.DisallowBones = config.DisallowBones
     ScavengeConfig.DisallowGrimoire = config.DisallowGrimoire
     ScavengeConfig.DisallowRibs = config.DisallowRibs
 
     local haveGold = false
+    local haveCleanBandage = false
     local haveBones = false
     local haveGrimoire = false
     local haveRibs = false
@@ -2246,6 +2262,13 @@ function CAScavenge_setConfig(config)
         if graphic == CAScavenge_GraphicIDs.Gold then
             haveGold = true
             if ScavengeConfig.DisallowGold then
+                goto continue
+            end
+        end
+
+        if graphic == CAScavenge_GraphicIDs.CleanBandage then
+            haveCleanBandage = true
+            if ScavengeConfig.DisallowCleanBandage then
                 goto continue
             end
         end
@@ -2283,22 +2306,28 @@ function CAScavenge_setConfig(config)
         CAScavenge_graphicIdToPriority[CAScavenge_GraphicIDs.Gold] = #ScavengeConfig.LootItemsSerials + 1
     end
 
+    if not haveCleanBandage and not ScavengeConfig.DisallowCleanBandage then
+        CALog_debug("Manually adding clean bandage to Scavenging list...")
+        CAScavenge_graphicIdLootableSet[CAScavenge_GraphicIDs.CleanBandage] = true
+        CAScavenge_graphicIdToPriority[CAScavenge_GraphicIDs.CleanBandage] = #ScavengeConfig.LootItemsSerials + 2
+    end
+
     if not haveBones and not ScavengeConfig.DisallowBones then
         CALog_debug("Manually adding gold to Scavenging list...")
         CAScavenge_graphicIdLootableSet[CAScavenge_GraphicIDs.Bones] = true
-        CAScavenge_graphicIdToPriority[CAScavenge_GraphicIDs.Bones] = #ScavengeConfig.LootItemsSerials + 2
+        CAScavenge_graphicIdToPriority[CAScavenge_GraphicIDs.Bones] = #ScavengeConfig.LootItemsSerials + 3
     end
 
     if not haveGrimoire and not ScavengeConfig.DisallowGrimoire then
         CALog_debug("Manually adding gold to Scavenging list...")
         CAScavenge_graphicIdLootableSet[CAScavenge_GraphicIDs.Grimoire] = true
-        CAScavenge_graphicIdToPriority[CAScavenge_GraphicIDs.Grimoire] = #ScavengeConfig.LootItemsSerials + 3
+        CAScavenge_graphicIdToPriority[CAScavenge_GraphicIDs.Grimoire] = #ScavengeConfig.LootItemsSerials + 4
     end
 
     if not haveRibs and not ScavengeConfig.DisallowRibs then
         CALog_debug("Manually adding gold to Scavenging list...")
         CAScavenge_graphicIdLootableSet[CAScavenge_GraphicIDs.Ribs] = true
-        CAScavenge_graphicIdToPriority[CAScavenge_GraphicIDs.Ribs] = #ScavengeConfig.LootItemsSerials + 3
+        CAScavenge_graphicIdToPriority[CAScavenge_GraphicIDs.Ribs] = #ScavengeConfig.LootItemsSerials + 5
     end
 
 end
@@ -3301,12 +3330,14 @@ CAUIGumpMainRow_CAUIGumpMainRowLayout = {
 CAUIGumpMainRow_RearmModeValues = {
     None = 1,
     Move = 2,
-    Time = 3
+    Time = 3,
+    MoveAndTime = 4
 }
 
 CAUIGumpMainRow_RearmModeStrings = {
     'Rearm (None)',
     'Rearm (On Move)',
+    'Rearm (On Timer)',
     'Rearm (On Move + Timer)'
 }
 
@@ -3405,7 +3436,7 @@ end
 
 function onRearmModePressed_(button)
     CALog_debug('Rearm Mode button pressed...')
-    CAUIGumpMainRowState.RearmMode = (CAUIGumpMainRowState.RearmMode == CAUIGumpMainRow_RearmModeValues.Time and CAUIGumpMainRow_RearmModeValues.None) or CAUIGumpMainRowState.RearmMode+1
+    CAUIGumpMainRowState.RearmMode = (CAUIGumpMainRowState.RearmMode == CAUIGumpMainRow_RearmModeValues.MoveAndTime and CAUIGumpMainRow_RearmModeValues.None) or CAUIGumpMainRowState.RearmMode+1
     button:SetText(CAUIGumpMainRow_RearmModeStrings[CAUIGumpMainRowState.RearmMode])
 end
 
@@ -3429,7 +3460,8 @@ end
 
 function CAUIGumpMainRow_updateCAConfigToCurrentUIConfig(CAConfigArmDisarm, CAConfigSkinning)
     CAConfigArmDisarm.Enable = CAUIGumpMainRowState.RearmMode ~= CAUIGumpMainRow_RearmModeValues.None
-    CAConfigArmDisarm.AutoRearmWithDelay = CAConfigArmDisarm.Enable and CAUIGumpMainRowState.RearmMode == CAUIGumpMainRow_RearmModeValues.Time
+    CAConfigArmDisarm.AutoRearmOnMove = CAConfigArmDisarm.Enable and (CAUIGumpMainRowState.RearmMode == CAUIGumpMainRow_RearmModeValues.Move or CAUIGumpMainRowState.RearmMode == CAUIGumpMainRow_RearmModeValues.MoveAndTime)
+    CAConfigArmDisarm.AutoRearmWithDelay = CAConfigArmDisarm.Enable and (CAUIGumpMainRowState.RearmMode == CAUIGumpMainRow_RearmModeValues.Time or CAUIGumpMainRowState.RearmMode == CAUIGumpMainRow_RearmModeValues.MoveAndTime)
 
     CAConfigSkinning.Enable = CAUIGumpMainRowState.SkinnMode ~= CAUIGumpMainRow_SkinnModeValues.None
     CAConfigSkinning.LeatherHuesToKeep = CAUIGumpMainRow_SkinnModeHueKeepTables[CAUIGumpMainRowState.SkinnMode]
@@ -3920,6 +3952,7 @@ CAUIGumpScavengeConfig = {
     OverrideWithNoScavenger = true,
     ConfigWindowOpen = true,
     ScavengeGold = true,
+    ScavengeCleanBandages = true,
     ScavengeBones = true,
     ScavengeGrimoire = true,
     ScavengeRibs = true
@@ -3959,6 +3992,16 @@ function onScavengerGoldButtonPressed_(isChecked, button)
     end
 end
 
+function onScavengerBandagesButtonPressed_(isChecked, button)
+    CALog_debug('Scavenger allow bandages checkbox changed: '..tostring(isChecked))
+    CAUIGumpScavengeConfig.ScavengeCleanBandages = isChecked
+    if isChecked then
+        button:SetText('Bandages (Y)')
+    else
+        button:SetText('Bandages (N)')
+    end
+end
+
 function onScavengerBonesButtonPressed_(isChecked, button)
     CALog_debug('Scavenger allow bones checkbox changed: '..tostring(isChecked))
     CAUIGumpScavengeConfig.ScavengeBones = isChecked
@@ -3989,7 +4032,7 @@ function onScavengerRibsButtonPressed_(isChecked, button)
     end
 end
 
-function CAUIGumpScavenge_processUIInteractions(enableB, enableL, configB, configW, goldB, bonesB, grimoireB, ribsB)
+function CAUIGumpScavenge_processUIInteractions(enableB, enableL, configB, configW, goldB, bandagesB, bonesB, grimoireB, ribsB)
     if enableB:WasClicked() then
         onScavengeButtonPressed_(CAUIGumpScavengeConfig.OverrideWithNoScavenger, enableL)
     end
@@ -3998,6 +4041,9 @@ function CAUIGumpScavenge_processUIInteractions(enableB, enableL, configB, confi
     end
     if goldB:WasClicked() then
         onScavengerGoldButtonPressed_(not CAUIGumpScavengeConfig.ScavengeGold, goldB)
+    end
+    if bandagesB:WasClicked() then
+        onScavengerBandagesButtonPressed_(not CAUIGumpScavengeConfig.ScavengeCleanBandages, bandagesB)
     end
     if bonesB:WasClicked() then
         onScavengerBonesButtonPressed_(not CAUIGumpScavengeConfig.ScavengeBones, bonesB)
@@ -4013,6 +4059,7 @@ end
 function CAUIGumpScavenge_updateCAConfigToCurrentUIConfig(CAConfigScavenge)
     CAConfigScavenge.Enable = not CAUIGumpScavengeConfig.OverrideWithNoScavenger
     CAConfigScavenge.DisallowGold = not CAUIGumpScavengeConfig.ScavengeGold
+    CAConfigScavenge.DisallowCleanBandages = not CAUIGumpScavengeConfig.ScavengeCleanBandages
     CAConfigScavenge.DisallowBones = not CAUIGumpScavengeConfig.ScavengeBones
     CAConfigScavenge.DisallowGrimoire = not CAUIGumpScavengeConfig.ScavengeGrimoire
     CAConfigScavenge.DisallowRibs = not CAUIGumpScavengeConfig.ScavengeRibs
@@ -4024,12 +4071,13 @@ function CAUIGumpScavenge_initUI(mainWindow, row)
     local enableL = CAUIGumpLayout_createModuleEnableLabelAtRow(mainWindow, row, 'Disabled')
     enableL:SetColor(1, 0, 0, 1)
     local configB = CAUIGumpLayout_createModuleConfigButtonAtRow(mainWindow, row)
-    local configW = CAUIGumpLayout_createModuleConfigWindow('scavengerConfigWindow', 'Scavenge Config', 4, row)
+    local configW = CAUIGumpLayout_createModuleConfigWindow('scavengerConfigWindow', 'Scavenge Config', 5, row)
     local goldB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 1, 'Gold (Y)')
-    local bonesB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 2, 'Bones (Y)')
-    local grimoireB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 3, 'Grimoires (Y)')
-    local ribsB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 4, 'Ribs (Y)')
-    return enableB, enableL, configB, configW, goldB, bonesB, grimoireB, ribsB
+    local bandagesB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 2, 'Bandages (Y)')
+    local bonesB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 3, 'Bones (Y)')
+    local grimoireB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 4, 'Grimoires (Y)')
+    local ribsB = CAUIGumpLayout_createModuleConfigWindowButtonAtRow(configW, 5, 'Ribs (Y)')
+    return enableB, enableL, configB, configW, goldB, bandagesB, bonesB, grimoireB, ribsB
 end
 
 CAUI = {
@@ -4092,6 +4140,7 @@ CAUI = {
         Config = {
             window = nil,
             activateGoldButton = nil,
+            activateBandagesButton = nil,
             activateBonesButton = nil,
             activateGrimoireButton = nil,
             activateRibsButton = nil
@@ -4119,7 +4168,7 @@ function CAUIGump_processUIGumpInteractions()
     CAUIGumpAttack_processUIInteractions(CAUI.Attack.enableButton, CAUI.Attack.enableLabel, CAUI.Attack.configButton, CAUI.Attack.Config.window, CAUI.Attack.Config.rangeMaxButton, CAUI.Attack.Config.exceptionModeButton)                                                                                                                            --- Attack
     CAUIGumpHeal_processUIInteractions(CAUI.Heal.enableButton, CAUI.Heal.enableLabel, CAUI.Heal.configButton, CAUI.Heal.Config.window, CAUI.Heal.Config.bandageSelfButton, CAUI.Heal.Config.bandageOtherButton, CAUI.Heal.Config.healPotionsModeButton, CAUI.Heal.Config.healPotionAfterStrengthPotionButton, CAUI.Heal.Config.curePotionsButton)      --- Heal
     CAUIGumpBuffs_processUIInteractions(CAUI.Buffs.enableButton, CAUI.Buffs.enableLabel, CAUI.Buffs.configButton, CAUI.Buffs.Config.window, CAUI.Buffs.Config.enableNightsight, CAUI.Buffs.Config.enableStrength, CAUI.Buffs.Config.enableAgility, CAUI.Buffs.Config.refreshAfterAgility, CAUI.Buffs.Config.staminaPotionsModeButton)                  --- Buffs
-    CAUIGumpScavenge_processUIInteractions(CAUI.Scavenge.enableButton, CAUI.Scavenge.enableLabel, CAUI.Scavenge.configButton, CAUI.Scavenge.Config.window, CAUI.Scavenge.Config.activateGoldButton, CAUI.Scavenge.Config.activateBonesButton, CAUI.Scavenge.Config.activateGrimoireButton, CAUI.Scavenge.Config.activateRibsButton)                    --- Scavenge
+    CAUIGumpScavenge_processUIInteractions(CAUI.Scavenge.enableButton, CAUI.Scavenge.enableLabel, CAUI.Scavenge.configButton, CAUI.Scavenge.Config.window, CAUI.Scavenge.Config.activateGoldButton, CAUI.Scavenge.Config.activateBandagesButton, CAUI.Scavenge.Config.activateBonesButton, CAUI.Scavenge.Config.activateGrimoireButton, CAUI.Scavenge.Config.activateRibsButton)                    --- Scavenge
     nightsightUIChanged = nightsightUIEnabled ~= CAUIGumpBuffsState.EnableNightsight
 
 end
@@ -4176,7 +4225,7 @@ function CAUIGump_initModules()
     CAUI.Attack.enableButton, CAUI.Attack.enableLabel, CAUI.Attack.configButton, CAUI.Attack.Config.window, CAUI.Attack.Config.rangeMaxButton, CAUI.Attack.Config.exceptionModeButton = CAUIGumpAttack_initUI(CAUI.mainWindow, 3)                                                                                                                          --- Attack
     CAUI.Heal.enableButton, CAUI.Heal.enableLabel, CAUI.Heal.configButton, CAUI.Heal.Config.window, CAUI.Heal.Config.bandageSelfButton, CAUI.Heal.Config.bandageOtherButton, CAUI.Heal.Config.healPotionsModeButton, CAUI.Heal.Config.healPotionAfterStrengthPotionButton, CAUI.Heal.Config.curePotionsButton = CAUIGumpHeal_initUI(CAUI.mainWindow, 4)    --- Heal
     CAUI.Buffs.enableButton, CAUI.Buffs.enableLabel, CAUI.Buffs.configButton, CAUI.Buffs.Config.window, CAUI.Buffs.Config.enableNightsight, CAUI.Buffs.Config.enableStrength, CAUI.Buffs.Config.enableAgility, CAUI.Buffs.Config.refreshAfterAgility, CAUI.Buffs.Config.staminaPotionsModeButton = CAUIGumpBuffs_initUI(CAUI.mainWindow, 5)                --- Buffs
-    CAUI.Scavenge.enableButton, CAUI.Scavenge.enableLabel, CAUI.Scavenge.configButton, CAUI.Scavenge.Config.window, CAUI.Scavenge.Config.activateGoldButton, CAUI.Scavenge.Config.activateBonesButton, CAUI.Scavenge.Config.activateGrimoireButton, CAUI.Scavenge.Config.activateRibsButton = CAUIGumpScavenge_initUI(CAUI.mainWindow, 6)                  --- Scavenge
+    CAUI.Scavenge.enableButton, CAUI.Scavenge.enableLabel, CAUI.Scavenge.configButton, CAUI.Scavenge.Config.window, CAUI.Scavenge.Config.activateGoldButton, CAUI.Scavenge.Config.activateBandagesButton, CAUI.Scavenge.Config.activateBonesButton, CAUI.Scavenge.Config.activateGrimoireButton, CAUI.Scavenge.Config.activateRibsButton = CAUIGumpScavenge_initUI(CAUI.mainWindow, 6)                  --- Scavenge
 end
 
 function CAUIGump_initMainGump()
@@ -4234,7 +4283,8 @@ DexerMainLoopConfig = {
         ArmDisarm = {
             Enable = true,              --- Re-arms once moved char when disarmed, disarms if weapon durability too low
             AlwaysRearm = false,        --- rearm without moving, warning will spam messages if you drag from hands
-            AutoRearmWithDelay = true   --- Auto-rearm atempt delay
+            AutoRearmOnMove = true,     --- Auto-rearm atempt everytime you move
+            AutoRearmWithDelay = false  --- Auto-rearm atempt with a delay
         },
         Escape = {
             EnablePopPouch = true,  --- Pops pouch if you are paralyzed in PvP mode
@@ -4315,11 +4365,12 @@ DexerMainLoopConfig = {
                 0x0F3F,
                 0x1BFB
             },
-            LootItemsNames = {},        --- Use if serial not available
-            DisallowGold = false,       --- Toggle scavenging gold
-            DisallowBones = false,      --- Toggle scavenging bones
-            DisallowGrimoire = false,   --- Toggle scavenging grimoires
-            DisallowRibs = false        --- Toggle scavenging ribs
+            LootItemsNames = {},            --- Use if serial not available
+            DisallowGold = false,           --- Toggle scavenging gold
+            DisallowCleanBandage = false,   --- Toggle scavenging clean bandages
+            DisallowBones = false,          --- Toggle scavenging bones
+            DisallowGrimoire = false,       --- Toggle scavenging grimoires
+            DisallowRibs = false            --- Toggle scavenging ribs
         },
         Attack = {
             Enable = false,                             --- Attacks nearby enemies automatically

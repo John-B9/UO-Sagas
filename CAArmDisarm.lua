@@ -25,6 +25,7 @@ local cat = Import('CATime')
 ArmDisarmConfig = {
     Enable  = false, -- Rearms your weapon if you are disarmed
     AlwaysRearm = false, -- rearm without moving, warning will spam messages if you drag from hands
+    AutoRearmOnMove = false,
     AutoRearmWithDelay = false
 }
 
@@ -61,6 +62,7 @@ end
 local function setConfig_(config)
     setEnable_(config.Enable)
     setAlwaysRearm_(config.AlwaysRearm)
+    ArmDisarmConfig.AutoRearmOnMove = config.AutoRearmOnMove
     ArmDisarmConfig.AutoRearmWithDelay = config.AutoRearmWithDelay
 end
 
@@ -329,7 +331,7 @@ local function disarmed_()
         local currentTickTime = cat.getCurrentTickTime()
         ---cal.mainInfo("Equipping right hand")
         if ArmDisarmState.lastDisarmedTime == 0 then
-            cal.info("Rearming in "..(ArmDisarmStaticConfig.rearmAtemptDelay / 1000).."s")
+            cal.warning("Rearming in "..(ArmDisarmStaticConfig.rearmAtemptDelay / 1000).."s")
             ArmDisarmState.lastDisarmedTime = currentTickTime
         end
     end
@@ -344,7 +346,8 @@ local function disarmed_()
         end
     end
 
-    if isDisarmed and (ArmDisarmConfig.AlwaysRearm or playerMoved or autoRearmTimerExpired) then
+    local atemptRearmPlayer = isDisarmed and (ArmDisarmConfig.AlwaysRearm or (ArmDisarmConfig.AutoRearmOnMove and playerMoved) or autoRearmTimerExpired)
+    if atemptRearmPlayer then
     ---if isDisarmed and (ArmDisarmConfig.AlwaysRearm or playerMoved) then
 
         --- Right hand
@@ -413,11 +416,15 @@ local function disarmed_()
     :: _end_ ::
     if not isDisarmed then
         if ArmDisarmState.lastRightHand and not Items.FindByLayer(ArmDisarmStaticConfig.layerOneHanded) then
-            cal.warning("Right hand disarmed, move to equip")
+            if ArmDisarmConfig.AutoRearmOnMove then
+                cal.warning("Right hand disarmed, move to equip")
+            end
             ArmDisarmState.disarm.x = Player.X
             ArmDisarmState.disarm.y = Player.Y
         elseif ArmDisarmState.lastLeftHand and not Items.FindByLayer(ArmDisarmStaticConfig.layerTwoHanded) then
-            cal.warning("Left hand disarmed, move to equip")
+            if ArmDisarmConfig.AutoRearmOnMove then
+                cal.warning("Left hand disarmed, move to equip")
+            end
             ArmDisarmState.disarm.x = Player.X
             ArmDisarmState.disarm.y = Player.Y
         end

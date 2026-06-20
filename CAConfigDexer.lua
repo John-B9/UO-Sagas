@@ -36,7 +36,8 @@ local DexerMainLoopConfig = {
         ArmDisarm = {
             Enable = true,              --- Re-arms once moved char when disarmed, disarms if weapon durability too low
             AlwaysRearm = false,        --- rearm without moving, warning will spam messages if you drag from hands
-            AutoRearmWithDelay = true   --- Auto-rearm atempt delay
+            AutoRearmOnMove = true,     --- Auto-rearm atempt everytime you move
+            AutoRearmWithDelay = false  --- Auto-rearm atempt with a delay
         },
         Escape = {
             EnablePopPouch = true,  --- Pops pouch if you are paralyzed in PvP mode
@@ -117,11 +118,12 @@ local DexerMainLoopConfig = {
                 0x0F3F,
                 0x1BFB
             },
-            LootItemsNames = {},        --- Use if serial not available
-            DisallowGold = false,       --- Toggle scavenging gold
-            DisallowBones = false,      --- Toggle scavenging bones
-            DisallowGrimoire = false,   --- Toggle scavenging grimoires
-            DisallowRibs = false        --- Toggle scavenging ribs
+            LootItemsNames = {},            --- Use if serial not available
+            DisallowGold = false,           --- Toggle scavenging gold
+            DisallowCleanBandage = false,   --- Toggle scavenging clean bandages
+            DisallowBones = false,          --- Toggle scavenging bones
+            DisallowGrimoire = false,       --- Toggle scavenging grimoires
+            DisallowRibs = false            --- Toggle scavenging ribs
         },
         Attack = {
             Enable = false,                             --- Attacks nearby enemies automatically

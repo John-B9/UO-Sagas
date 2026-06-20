@@ -93,14 +93,19 @@ end
 local function getItemWithBestPropertyValue_singleID_(itemID, propertyGetter, propertyFieldRegexStr, comparePredicate, itemAcceptPredicate)
     local bestItem = nil
     local bestItemProperties = nil
-    local items = Items.FindInContainer(Player.Backpack.Serial, itemID)
-    for i, item in ipairs(items) do
-        bl.printIfDebug(debugEnabled, itemAcceptPredicate)
-        if itemAcceptPredicate == nil or itemAcceptPredicate(item) then
-            local itemProperties = propertyGetter(item, propertyFieldRegexStr)
-            if bestItem == nil or comparePredicate(itemProperties, bestItemProperties) then
-                bestItem = item
-                bestItemProperties = itemProperties
+    local items = bl.findInInventory(itemID)
+    ---local filter = { onground=false, graphics=0x0E21 }
+    ---local items = Items.FindByFilter(filter)
+    ---local items = Items.FindInContainer(Player.Backpack.Serial, itemID)
+    if items then
+        for i, item in ipairs(items) do
+            bl.printIfDebug(debugEnabled, itemAcceptPredicate)
+            if itemAcceptPredicate == nil or itemAcceptPredicate(item) then
+                local itemProperties = propertyGetter(item, propertyFieldRegexStr)
+                if bestItem == nil or comparePredicate(itemProperties, bestItemProperties) then
+                    bestItem = item
+                    bestItemProperties = itemProperties
+                end
             end
         end
     end

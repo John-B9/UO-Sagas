@@ -18,6 +18,7 @@ CAUIGumpScavengeConfig = {
     OverrideWithNoScavenger = true,
     ConfigWindowOpen = true,
     ScavengeGold = true,
+    ScavengeCleanBandages = true,
     ScavengeBones = true,
     ScavengeGrimoire = true,
     ScavengeRibs = true
@@ -61,6 +62,16 @@ function onScavengerGoldButtonPressed_(isChecked, button)
     end
 end
 
+function onScavengerBandagesButtonPressed_(isChecked, button)
+    cal.debug('Scavenger allow bandages checkbox changed: '..tostring(isChecked))
+    CAUIGumpScavengeConfig.ScavengeCleanBandages = isChecked
+    if isChecked then
+        button:SetText('Bandages (Y)')
+    else
+        button:SetText('Bandages (N)')
+    end
+end
+
 function onScavengerBonesButtonPressed_(isChecked, button)
     cal.debug('Scavenger allow bones checkbox changed: '..tostring(isChecked))
     CAUIGumpScavengeConfig.ScavengeBones = isChecked
@@ -91,7 +102,7 @@ function onScavengerRibsButtonPressed_(isChecked, button)
     end
 end
 
-local function processUIInteractions_(enableB, enableL, configB, configW, goldB, bonesB, grimoireB, ribsB)
+local function processUIInteractions_(enableB, enableL, configB, configW, goldB, bandagesB, bonesB, grimoireB, ribsB)
     if enableB:WasClicked() then
         onScavengeButtonPressed_(CAUIGumpScavengeConfig.OverrideWithNoScavenger, enableL)
     end
@@ -100,6 +111,9 @@ local function processUIInteractions_(enableB, enableL, configB, configW, goldB,
     end
     if goldB:WasClicked() then
         onScavengerGoldButtonPressed_(not CAUIGumpScavengeConfig.ScavengeGold, goldB)
+    end
+    if bandagesB:WasClicked() then
+        onScavengerBandagesButtonPressed_(not CAUIGumpScavengeConfig.ScavengeCleanBandages, bandagesB)
     end
     if bonesB:WasClicked() then
         onScavengerBonesButtonPressed_(not CAUIGumpScavengeConfig.ScavengeBones, bonesB)
@@ -115,6 +129,7 @@ end
 local function updateCAConfigToCurrentUIConfig_(CAConfigScavenge)
     CAConfigScavenge.Enable = not CAUIGumpScavengeConfig.OverrideWithNoScavenger
     CAConfigScavenge.DisallowGold = not CAUIGumpScavengeConfig.ScavengeGold
+    CAConfigScavenge.DisallowCleanBandages = not CAUIGumpScavengeConfig.ScavengeCleanBandages
     CAConfigScavenge.DisallowBones = not CAUIGumpScavengeConfig.ScavengeBones
     CAConfigScavenge.DisallowGrimoire = not CAUIGumpScavengeConfig.ScavengeGrimoire
     CAConfigScavenge.DisallowRibs = not CAUIGumpScavengeConfig.ScavengeRibs
@@ -126,12 +141,13 @@ local function initUI_(mainWindow, row)
     local enableL = cauiglayout.createModuleEnableLabelAtRow(mainWindow, row, 'Disabled')
     enableL:SetColor(1, 0, 0, 1)
     local configB = cauiglayout.createModuleConfigButtonAtRow(mainWindow, row)
-    local configW = cauiglayout.createModuleConfigWindow('scavengerConfigWindow', 'Scavenge Config', 4, row)
+    local configW = cauiglayout.createModuleConfigWindow('scavengerConfigWindow', 'Scavenge Config', 5, row)
     local goldB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 1, 'Gold (Y)')
-    local bonesB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 2, 'Bones (Y)')
-    local grimoireB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 3, 'Grimoires (Y)')
-    local ribsB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 4, 'Ribs (Y)')
-    return enableB, enableL, configB, configW, goldB, bonesB, grimoireB, ribsB
+    local bandagesB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 2, 'Bandages (Y)')
+    local bonesB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 3, 'Bones (Y)')
+    local grimoireB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 4, 'Grimoires (Y)')
+    local ribsB = cauiglayout.createModuleConfigWindowButtonAtRow(configW, 5, 'Ribs (Y)')
+    return enableB, enableL, configB, configW, goldB, bandagesB, bonesB, grimoireB, ribsB
 end
 
 --------------

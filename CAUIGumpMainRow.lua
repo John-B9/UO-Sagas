@@ -30,12 +30,14 @@ local CAUIGumpMainRowLayout = {
 local RearmModeValues = {
     None = 1,
     Move = 2,
-    Time = 3
+    Time = 3,
+    MoveAndTime = 4
 }
 
 local RearmModeStrings = {
     'Rearm (None)',
     'Rearm (On Move)',
+    'Rearm (On Timer)',
     'Rearm (On Move + Timer)'
 }
 
@@ -142,7 +144,7 @@ end
 
 function onRearmModePressed_(button)
     cal.debug('Rearm Mode button pressed...')
-    CAUIGumpMainRowState.RearmMode = (CAUIGumpMainRowState.RearmMode == RearmModeValues.Time and RearmModeValues.None) or CAUIGumpMainRowState.RearmMode+1
+    CAUIGumpMainRowState.RearmMode = (CAUIGumpMainRowState.RearmMode == RearmModeValues.MoveAndTime and RearmModeValues.None) or CAUIGumpMainRowState.RearmMode+1
     button:SetText(RearmModeStrings[CAUIGumpMainRowState.RearmMode])
 end
 
@@ -166,7 +168,8 @@ end
 
 local function updateCAConfigToCurrentUIConfig_(CAConfigArmDisarm, CAConfigSkinning)
     CAConfigArmDisarm.Enable = CAUIGumpMainRowState.RearmMode ~= RearmModeValues.None
-    CAConfigArmDisarm.AutoRearmWithDelay = CAConfigArmDisarm.Enable and CAUIGumpMainRowState.RearmMode == RearmModeValues.Time
+    CAConfigArmDisarm.AutoRearmOnMove = CAConfigArmDisarm.Enable and (CAUIGumpMainRowState.RearmMode == RearmModeValues.Move or CAUIGumpMainRowState.RearmMode == RearmModeValues.MoveAndTime)
+    CAConfigArmDisarm.AutoRearmWithDelay = CAConfigArmDisarm.Enable and (CAUIGumpMainRowState.RearmMode == RearmModeValues.Time or CAUIGumpMainRowState.RearmMode == RearmModeValues.MoveAndTime)
     
     CAConfigSkinning.Enable = CAUIGumpMainRowState.SkinnMode ~= SkinnModeValues.None
     CAConfigSkinning.LeatherHuesToKeep = SkinnModeHueKeepTables[CAUIGumpMainRowState.SkinnMode]
