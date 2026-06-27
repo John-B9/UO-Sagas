@@ -18,6 +18,88 @@
 local caml = Import('CAMainLoop')
 local cauig = Import('CAUIGump')
 
+---------------
+--- Configs ---
+---------------
+
+--- The Combat Assistant will need to be configured before use.
+--- Here is the starting configuration I use, but you can extend and modify it to your liking.
+--- Some of the config values can be changed when running the script Gump, but not all of them.
+
+local FriendsSerialList = {     --- FriendsSerialList: add serials of friends to this list so that:
+                                ---  1) Attack module does not attack them, even when they are grey
+                                ---  2) To cross-heal them if they are damaged
+    0x003306A5  --- Dardez Jum Zir (if you want to attack me, remove me from the list)
+}
+
+local MobilesExceptionsGraphicIDs = {   --- MobilesExceptionsGraphicIDs: add graphic IDs of mobiles you want attack module to ignore
+    0x00ED  --- A Hind
+}
+
+local MobilesExceptionsNames = {    --- MobilesExceptionsNames: add names of mobiles you want attack module to ignore
+    "a cow",            
+    "a horse",
+    "a rat",
+    "a magpie",
+    "a crow",
+    "a towhee",
+    "a dog",
+    "a cat",
+    "a bull",
+    "a sheep",
+    "a gorila",
+    "a forest ostard"
+                        
+}
+
+local ScavengerLootTable = {  --- ScavengerLootTable: add here the graphic IDs of items to auto-loot
+    --- (highest priority)
+    0xFDAD,  --- Eren Coin
+    0x0F91,  --- Fragment
+    0xFD8C,  --- Soul
+    0xFD8F,  --- Mastery Gem
+    0x0E73,  --- Skill Cap Ball
+    0xFF3A,  --- Skill Scroll
+    0x9FF8,  --- Paragon Chest
+    0x9FF9,  --- Paragon Chest
+    0x14EC,  --- Treasure Map
+    0x573B,  --- Pigments
+    ---0x0EB2,  --- Lap Harp
+    ---0x0EB1,  --- Standing Harp
+    ---0x0EB3,  --- Lute
+    ---0x0E9D,  --- Tambourine
+    ---0x0E9E,  --- Tambourine
+    ---0x0E9C,  --- Drum
+    0x0F26,  --- Diamond
+    0x0F10,  --- Emerald
+    0x0F16,  --- Amethyst
+    0x0F10,  --- Emerald
+    0x0F19,  --- Saphire
+    0x0F25,  --- Amber
+    0x0F13,  --- Ruby
+    0x26B4,  --- Daemon Scales
+    0xFCA9,  --- Hardened Resin
+    0x318B,  --- Enchanted Bark
+    0x0E21,  --- Clean Bandage
+    ---0x0F8D,  --- Spider Silk
+    ---0x0F86,  --- Mandrake Root
+    ---0x0F8C,  --- Ash
+    ---0x0F7B,  --- Blood Moss
+    ---0x0F88,  --- Night Shade
+    ---0x0F84,  --- Garlic
+    ---0x0F7A,  --- Black Pearl
+    ---0x0F85,  --- Ginseng
+    ---0x0F3F,  --- Arrows
+    ---0x1BFB,  --- Bolts
+    ---0x09F1,  --- Raw Ribs
+    ---0x0E86,  --- Pickaxe
+    0xFF30,  --- Potato
+    0x0F7E,  --- Bones
+    0x2D9D,  --- Grimoire
+    0x0EED,  --- Gold
+    --- (lowest priority)
+}
+
 local DexerMainLoopConfig = {
     time = {
         ActionWaitTime = 1000,  --- in milliseconds, how long to wait for actions like using items, targeting etc.
@@ -53,11 +135,11 @@ local DexerMainLoopConfig = {
             HPDrinkThreshould = 20  --- in percentage, when to use heal potion
         },
         Bandages = {
-            Enable = true,                  --- Bandages player if HP is below BandageSelfHPThreshould or if poisoned and no cure potions
-            BandageSelfHPThreshould = 99,   --- in percentage, when to use bandage
-            BandageAllies = true,           --- Whether to attempt to bandage allies when player is not in need of bandaging
-            BandageAlliesHPThreshould = 90, --- in percentage, when to use bandage
-            AlliesSerials = {}              --- List of allies serials to bandage, if BandageAllies is true
+            Enable = true,                      --- Bandages player if HP is below BandageSelfHPThreshould or if poisoned and no cure potions
+            BandageSelfHPThreshould = 99,       --- in percentage, when to use bandage
+            BandageAllies = true,               --- Whether to attempt to bandage allies when player is not in need of bandaging
+            BandageAlliesHPThreshould = 90,     --- in percentage, when to use bandage
+            AlliesSerials = FriendsSerialList   --- List of allies serials to bandage, if BandageAllies is true
         },
         Buffs = {
             Enable = true,              --- Enables automatic buffs, see bellow (disable if you prefer to use manually)
@@ -99,42 +181,29 @@ local DexerMainLoopConfig = {
         Skinning = {
             Enable = false,
             NoisyMode = true,       --- To Log XOR Say when dropping or keeping a resource
-            LeatherHuesToKeep = {
-                --- 0x0000,         --- Regular
-                --- 0x0973,         --- Dull Copper
-                --- 0x0966,         --- Shadow Iron
-                --- 0x096D,         --- Copper
-                0x0972,             --- Bronze
-                0x08A5,             --- Gold
-                0x0979,             --- Agapite
-                0x089F,             --- Verite
-                0x08AB              --- Valorite
-            }
+            LeatherHuesToKeep = {}
         },
         Scavenging = {
-            Enable = false,         --- Scavenges items from the ground, only arrows, add more if needed
-            Frequency = 0,          --- milliseconds, zero means immediate
-            LootItemsSerials = {    --- List of items to scavenge
-                0x0F3F,
-                0x1BFB
-            },
-            LootItemsNames = {},            --- Use if serial not available
-            DisallowGold = false,           --- Toggle scavenging gold
-            DisallowCleanBandage = false,   --- Toggle scavenging clean bandages
-            DisallowBones = false,          --- Toggle scavenging bones
-            DisallowGrimoire = false,       --- Toggle scavenging grimoires
-            DisallowRibs = false            --- Toggle scavenging ribs
+            Enable = false,                             --- Scavenges items from the ground, only arrows, add more if needed
+            Frequency = 0,                              --- milliseconds, zero means immediate
+            LootItemsSerials = ScavengerLootTable,      --- List of items to scavenge,
+            LootItemsNames = {},                        --- Use if serial not available
+            DisallowGold = false,                       --- Toggle scavenging gold
+            DisallowCleanBandage = false,               --- Toggle scavenging clean bandages
+            DisallowBones = false,                      --- Toggle scavenging bones
+            DisallowGrimoire = false,                   --- Toggle scavenging grimoires
+            DisallowRibs = false                        --- Toggle scavenging ribs
         },
         Attack = {
-            Enable = false,                             --- Attacks nearby enemies automatically
-            Rangemax = 10,                              --- Attack search range
-            AllowMobilesExceptionsSerials = true,       --- Allow Mobiles Serials to ignore
-            MobilesExceptionsSerials = {},              --- Mobiles Serials to ignore (add friends so to not attack should they become grey)
-            AllowMobilesExceptionsGraphicIDs = true,    --- Allow Mobiles Mobiles GraphicIDs to ignore
-            MobilesExceptionsGraphicIDs = {},           --- Mobiles GraphicIDs to ignore (don't kill: cows, dogs...)
-            AllowMobilesExceptionsNames = true,         --- Allow Mobiles Mobiles Names to ignore
-            MobilesExceptionsNames = {},                --- Mobiles Names to ignore (use if don't have serial or graphic available)
-            CheckFrequency = 500                        --- in milliseconds, how often to check for new targets, adjust if needed
+            Enable = false,                                             --- Attacks nearby enemies automatically
+            Rangemax = 10,                                              --- Attack search range
+            AllowMobilesExceptionsSerials = true,                       --- Allow Mobiles Serials to ignore
+            MobilesExceptionsSerials = FriendsSerialList,               --- Mobiles Serials to ignore (add friends so to not attack should they become grey)
+            AllowMobilesExceptionsGraphicIDs = true,                    --- Allow Mobiles Mobiles GraphicIDs to ignore
+            MobilesExceptionsGraphicIDs = MobilesExceptionsGraphicIDs,  --- Mobiles GraphicIDs to ignore (don't kill: cows, dogs...)
+            AllowMobilesExceptionsNames = true,                         --- Allow Mobiles Mobiles Names to ignore
+            MobilesExceptionsNames = MobilesExceptionsNames,            --- Mobiles Names to ignore (use if don't have serial or graphic available)
+            CheckFrequency = 500                                        --- in milliseconds, how often to check for new targets, adjust if needed
         }
     },
     userCommands = {
@@ -142,6 +211,11 @@ local DexerMainLoopConfig = {
         CommandStringPrefix = "(DEXER)"
     }
 }
+
+-----------------
+--- Functions ---
+-----------------
+
 
 local function run_()
     caml.mainLoop(DexerMainLoopConfig)

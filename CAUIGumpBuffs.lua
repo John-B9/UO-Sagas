@@ -63,7 +63,7 @@ local StaminaPotsModeStrings = {
 
 CAUIGumpBuffsState = {
     BuffsEnabled = false,
-    ConfigWindowOpen = true,
+    ConfigWindowClosed = true,
     EnableNightsight = true,
     EnableStrength = true,
     EnableAgility = true,
@@ -81,9 +81,17 @@ local function processBuffsButtonInteractions_()
     end
 end
 
+local function updateBuffsConfigWindow_(targetValue, closeOtherCWs)
+    CAUIGumpBuffsState.ConfigWindowClosed = cauiglogicb.onConfigMenuButtonPressed(not targetValue, CAUIGB.configButton, CAUIGB.Config.window, 'Buffs Config', closeOtherCWs)
+end
+
+local function closeBuffsConfigWindow_()
+    updateBuffsConfigWindow_(true, false)
+end
+
 local function processBuffsConfigButtonInteractions_()
     if CAUIGB.configButton:WasClicked() then
-        CAUIGumpBuffsState.ConfigWindowOpen = cauiglogicb.onConfigMenuButtonPressed(CAUIGumpBuffsState.ConfigWindowOpen, CAUIGB.configButton, CAUIGB.Config.window, 'Buffs Config')
+        updateBuffsConfigWindow_(not CAUIGumpBuffsState.ConfigWindowClosed, true)
     end
 end
 
@@ -144,6 +152,7 @@ local function initUI_(mainWindow, row)
     CAUIGB.enableLabel:SetColor(1, 0, 0, 1)
     CAUIGB.configButton = cauiglayoutb.createModuleConfigButtonAtRow(mainWindow, row)
     CAUIGB.Config.window = cauiglayoutb.createModuleConfigWindow('buffsConfigWindow', 'Buffs Config', 5, row)
+    cauiglogicb.registerSharedVisibilityConfigWindowsCloseFunction(closeBuffsConfigWindow_)
     CAUIGB.Config.enableNightsight = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGB.Config.window, 1, cauiglogicb.getBoonleanButtonStateDisplayStr(CAUIGumpBuffsState.EnableNightsight, 'Nightsight'))
     CAUIGB.Config.enableStrength = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGB.Config.window, 2, cauiglogicb.getBoonleanButtonStateDisplayStr(CAUIGumpBuffsState.EnableStrength, 'Strength'))
     CAUIGB.Config.enableAgility = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGB.Config.window, 3, cauiglogicb.getBoonleanButtonStateDisplayStr(CAUIGumpBuffsState.EnableAgility, 'Agility'))

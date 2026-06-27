@@ -63,7 +63,7 @@ local HealPotsModeStrings = {
 
 CAUIGumpHealConfig = {
     HealEnabled = true,
-    ConfigWindowOpen = true,
+    ConfigWindowClosed = true,
     BandageSelf = true,
     BandageOther = true,
     HealPotsMode = HealPotsModeValues.TwentyPercent,
@@ -81,9 +81,17 @@ local function processHealButtonInteractions_()
     end
 end
 
+local function updateHealConfigWindow_(targetValue, closeOtherCWs)
+    CAUIGumpHealConfig.ConfigWindowClosed = cauiglogicb.onConfigMenuButtonPressed(not targetValue, CAUIGH.configButton, CAUIGH.Config.window, 'Heal Config', closeOtherCWs)
+end
+
+local function closeHealConfigWindow_()
+    updateHealConfigWindow_(true, false)
+end
+
 local function processHealConfigButtonInteractions_()
     if CAUIGH.configButton:WasClicked() then
-        CAUIGumpHealConfig.ConfigWindowOpen = cauiglogicb.onConfigMenuButtonPressed(CAUIGumpHealConfig.ConfigWindowOpen, CAUIGH.configButton, CAUIGH.Config.window, 'Heal Config')
+        updateHealConfigWindow_(not CAUIGumpHealConfig.ConfigWindowClosed, true)
     end
 end
 
@@ -155,6 +163,7 @@ local function initUI_(mainWindow, row)
     CAUIGH.enableLabel = cauiglayoutb.createModuleEnableLabelAtRow(mainWindow, row, 'Enabled')
     CAUIGH.configButton = cauiglayoutb.createModuleConfigButtonAtRow(mainWindow, row)
     CAUIGH.Config.window = cauiglayoutb.createModuleConfigWindow('healConfigWindow', 'Heal Config', 5, row)
+    cauiglogicb.registerSharedVisibilityConfigWindowsCloseFunction(closeHealConfigWindow_)
     CAUIGH.Config.bandageSelfButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGH.Config.window, 1, cauiglogicb.getBoonleanButtonStateDisplayStr(CAUIGumpHealConfig.BandageSelf, 'Bandage Self'), 140, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
     CAUIGH.Config.bandageOtherButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGH.Config.window, 2, cauiglogicb.getBoonleanButtonStateDisplayStr(CAUIGumpHealConfig.BandageOther, 'Bandage Others'), 140, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
     CAUIGH.Config.healPotionsModeButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGH.Config.window, 3, HealPotsModeStrings[CAUIGumpHealConfig.HealPotsMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)

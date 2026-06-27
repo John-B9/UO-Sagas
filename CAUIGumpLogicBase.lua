@@ -25,12 +25,18 @@ local ColorValues = {
     { 1,   0, 0, 1 }
 }
 
+SharedVisibilityConfigWindowsCloseFunctions = {}
+
 -----------------
 --- Functions ---
 -----------------
 
 local function getColorOptions_()
     return ColorOptions
+end
+
+local function registerSharedVisibilityConfigWindowsCloseFunction_(closeFunction)
+    table.insert(SharedVisibilityConfigWindowsCloseFunctions, closeFunction)
 end
 
 local function setLabelColor_(label, colorOption)
@@ -42,13 +48,18 @@ local function logButtonPressEvent_(buttonEventLogStr, currentStateStr, newState
     cal.debug(buttonEventLogStr..' button pressed: '..currentStateStr..' -> '..newStateStr)
 end
 
-local function onConfigMenuButtonPressed_(currentState, configB, configW, buttonEventLogStr, configBClosedStr, configBOpenStr)
+local function onConfigMenuButtonPressed_(currentState, configB, configW, buttonEventLogStr, closeOtherCWs, configBClosedStr, configBOpenStr)
     local newState = not currentState
     logButtonPressEvent_(buttonEventLogStr, tostring(currentState), tostring(newState))
     if newState then
         configB:SetText(configBClosedStr or '+')
         configW:Hide()
     else
+        if closeOtherCWs then
+            for _, closeFunction in ipairs(SharedVisibilityConfigWindowsCloseFunctions) do
+                closeFunction()
+            end
+        end
         configB:SetText(configBOpenStr or '-')
         configW:Show()
     end
@@ -94,6 +105,7 @@ end
 
 local Obj = {
     getColorOptions = getColorOptions_,
+    registerSharedVisibilityConfigWindowsCloseFunction = registerSharedVisibilityConfigWindowsCloseFunction_,
     setLabelColor = setLabelColor_,
     onConfigMenuButtonPressed = onConfigMenuButtonPressed_,
     onEnumStateButtonPressed = onEnumStateButtonPressed_,

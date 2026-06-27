@@ -73,7 +73,7 @@ local AttackExceptionModeStrings = {
 
 CAUIGumpAttackConfig = {
     AttackEnabled = false,
-    ConfigWindowOpen = true,
+    ConfigWindowClosed = true,
     AttackRangeMax = AttackRangeValues.Five,
     AttackExceptionsMode = AttackExceptionModeValues.IDAndNames
 }
@@ -88,9 +88,17 @@ local function processAttackButtonInteractions_()
     end
 end
 
+local function updateAttackConfigWindow_(targetValue, closeOtherCWs)
+    CAUIGumpAttackConfig.ConfigWindowClosed = cauiglogicb.onConfigMenuButtonPressed(not targetValue, CAUIGA.configButton, CAUIGA.Config.window, 'Attack Config', closeOtherCWs)
+end
+
+local function closeAttackConfigWindow_()
+    updateAttackConfigWindow_(true, false)
+end
+
 local function processAttackConfigButtonInteractions_()
     if CAUIGA.configButton:WasClicked() then
-        CAUIGumpAttackConfig.ConfigWindowOpen = cauiglogicb.onConfigMenuButtonPressed(CAUIGumpAttackConfig.ConfigWindowOpen, CAUIGA.configButton, CAUIGA.Config.window, 'Attack Config')
+        updateAttackConfigWindow_(not CAUIGumpAttackConfig.ConfigWindowClosed, true)
     end
 end
 
@@ -128,6 +136,7 @@ local function initUI_(mainWindow, row)
     CAUIGA.enableLabel:SetColor(1, 0, 0, 1)
     CAUIGA.configButton = cauiglayoutb.createModuleConfigButtonAtRow(mainWindow, row)
     CAUIGA.Config.window = cauiglayoutb.createModuleConfigWindow('attackConfigWindow', 'Attack Config', 2, row)
+    cauiglogicb.registerSharedVisibilityConfigWindowsCloseFunction(closeAttackConfigWindow_)
     CAUIGA.Config.rangeMaxButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGA.Config.window, 1, AttackRangeStrings[CAUIGumpAttackConfig.AttackRangeMax])
     CAUIGA.Config.exceptionModeButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGA.Config.window, 2, 'Exceptions (ID + Names)', 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
 end

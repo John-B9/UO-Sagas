@@ -133,7 +133,7 @@ local SkinnModeHueKeepTables = {
 -------------
 
 CAUIGumpMainRowState = {
-    MainConfigOpen = true,
+    MainConfigClosed = true,
     RearmMode = RearmModeValues.Move,
     SkinnMode = SkinnModeValues.None
 }
@@ -142,9 +142,17 @@ CAUIGumpMainRowState = {
 --- Functions ---
 -----------------
 
+local function updateMainConfigWindow_(targetValue, closeOtherCWs)
+    CAUIGumpMainRowState.MainConfigClosed = cauiglogicb.onConfigMenuButtonPressed(not targetValue, CAUIGMR.configButton, CAUIGMR.Config.window, 'Main Config', closeOtherCWs, 'CONFIG (+)', 'CONFIG (-)')
+end
+
+local function closeMainConfigWindow_()
+    updateMainConfigWindow_(true, false)
+end
+
 local function processConfigMenuButtonInteractions_()
     if CAUIGMR.configButton:WasClicked() then
-        CAUIGumpMainRowState.MainConfigOpen = cauiglogicb.onConfigMenuButtonPressed(CAUIGumpMainRowState.MainConfigOpen, CAUIGMR.configButton, CAUIGMR.Config.window, 'Main Config', 'CONFIG (+)', 'CONFIG (-)')
+        updateMainConfigWindow_(not CAUIGumpMainRowState.MainConfigClosed, true)
     end
 end
 
@@ -185,10 +193,9 @@ local function initUI_(mainWindow)
     cal.debug('Creating Main Row UI...')
     CAUIGMR.titleLabel = mainWindow:AddLabel(CAUIGumpMainRowLayout.TitleLabelPosX, CAUIGumpMainRowLayout.TitleLabelPosY, 'SAGAS Combat Assistant')
     CAUIGMR.titleLabel:SetColor(0.2, 0.8, 1, 1)
-
     CAUIGMR.configButton = mainWindow:AddButton(CAUIGumpMainRowLayout.ConfigButtonPosX, CAUIGumpMainRowLayout.ConfigButtonPosY, 'CONFIG (+)', CAUIGumpMainRowLayout.ConfigButtonSizeX, CAUIGumpMainRowLayout.ConfigButtonSizeY)
-
     CAUIGMR.Config.window = cauiglayoutb.createModuleConfigWindow('MainConfigWindow', 'Main Config', 2, 1)
+    cauiglogicb.registerSharedVisibilityConfigWindowsCloseFunction(closeMainConfigWindow_)
     CAUIGMR.Config.rearmButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 1, RearmModeStrings[CAUIGumpMainRowState.RearmMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
     CAUIGMR.Config.skinnButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 2, SkinnModeStrings[CAUIGumpMainRowState.SkinnMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
 end

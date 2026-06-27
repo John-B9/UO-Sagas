@@ -53,9 +53,17 @@ local function processScavengerButtonInteractions_()
     end
 end
 
+local function updateScavengerConfigWindow_(targetValue, closeOtherCWs)
+    CAUIGumpScavengeConfig.ConfigWindowOpen = cauiglogicb.onConfigMenuButtonPressed(not targetValue, CAUIGS.configButton, CAUIGS.Config.window, 'Scavenger Config', closeOtherCWs)
+end
+
+local function closeScavengerConfigWindow_()
+    updateScavengerConfigWindow_(true, false)
+end
+
 local function processScavengerConfigButtonInteractions_()
     if CAUIGS.configButton:WasClicked() then
-        CAUIGumpScavengeConfig.ConfigWindowOpen = cauiglogicb.onConfigMenuButtonPressed(CAUIGumpScavengeConfig.ConfigWindowOpen, CAUIGS.configButton, CAUIGS.Config.window, 'Scavenger Config')
+        updateScavengerConfigWindow_(not CAUIGumpScavengeConfig.ConfigWindowOpen, true)
     end
 end
 
@@ -116,6 +124,7 @@ local function initUI_(mainWindow, row)
     CAUIGS.enableLabel:SetColor(1, 0, 0, 1)
     CAUIGS.configButton = cauiglayoutb.createModuleConfigButtonAtRow(mainWindow, row)
     CAUIGS.Config.window = cauiglayoutb.createModuleConfigWindow('scavengerConfigWindow', 'Scavenge Config', 5, row)
+    cauiglogicb.registerSharedVisibilityConfigWindowsCloseFunction(closeScavengerConfigWindow_)
     CAUIGS.Config.activateGoldButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGS.Config.window, 1, cauiglogicb.getBoonleanButtonStateDisplayStr(CAUIGumpScavengeConfig.ScavengeGold, 'Gold'))
     CAUIGS.Config.activateBandagesButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGS.Config.window, 2, cauiglogicb.getBoonleanButtonStateDisplayStr(CAUIGumpScavengeConfig.ScavengeCleanBandages, 'Bandages'))
     CAUIGS.Config.activateBonesButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGS.Config.window, 3, cauiglogicb.getBoonleanButtonStateDisplayStr(CAUIGumpScavengeConfig.ScavengeBones, 'Bones'))

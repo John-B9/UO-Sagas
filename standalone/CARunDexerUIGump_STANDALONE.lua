@@ -3330,8 +3330,14 @@ CAUIGumpMainRow_CAUIGumpLogicBase_ColorValues = {
     { 1,   0, 0, 1 }
 }
 
+SharedVisibilityConfigWindowsCloseFunctions = {}
+
 function CAUIGumpLogicBase_getColorOptions()
     return CAUIGumpMainRow_CAUIGumpLogicBase_ColorOptions
+end
+
+function CAUIGumpLogicBase_registerSharedVisibilityConfigWindowsCloseFunction(closeFunction)
+    table.insert(SharedVisibilityConfigWindowsCloseFunctions, closeFunction)
 end
 
 function CAUIGumpLogicBase_setLabelColor(label, colorOption)
@@ -3343,13 +3349,18 @@ function CAUIGumpLogicBase_logButtonPressEvent(buttonEventLogStr, currentStateSt
     CALog_debug(buttonEventLogStr..' button pressed: '..currentStateStr..' -> '..newStateStr)
 end
 
-function CAUIGumpLogicBase_onConfigMenuButtonPressed(currentState, configB, configW, buttonEventLogStr, configBClosedStr, configBOpenStr)
+function CAUIGumpLogicBase_onConfigMenuButtonPressed(currentState, configB, configW, buttonEventLogStr, closeOtherCWs, configBClosedStr, configBOpenStr)
     local newState = not currentState
     CAUIGumpLogicBase_logButtonPressEvent(buttonEventLogStr, tostring(currentState), tostring(newState))
     if newState then
         configB:SetText(configBClosedStr or '+')
         configW:Hide()
     else
+        if closeOtherCWs then
+            for _, closeFunction in ipairs(SharedVisibilityConfigWindowsCloseFunctions) do
+                closeFunction()
+            end
+        end
         configB:SetText(configBOpenStr or '-')
         configW:Show()
     end
@@ -3389,7 +3400,7 @@ function CAUIGumpLogicBase_onBooleanButtonPressed(currentState, button, buttonDe
     return newState
 end
 
-CAUIGumpMainRow_CAUIGumpMainRowLayout = {
+CAUIGumpMainRowLayout = {
     TitleLabelPosX = 10,
     TitleLabelPosY = 40,
     ConfigButtonPosX = 175,
@@ -3398,7 +3409,7 @@ CAUIGumpMainRow_CAUIGumpMainRowLayout = {
     ConfigButtonSizeY = 25
 }
 
-CAUIGumpMainRow_CAUIGMR = {
+CAUIGMR = {
     mainWindow = nil,
     titleLabel = nil,
     configButton = nil,
@@ -3409,44 +3420,44 @@ CAUIGumpMainRow_CAUIGMR = {
     }
 }
 
-CAUIGumpMainRow_RearmModeValues = {
+RearmModeValues = {
     None = 1,
     Move = 2,
     Time = 3,
     MoveAndTime = 4
 }
 
-CAUIGumpMainRow_RearmModeStrings = {
+RearmModeStrings = {
     'Rearm (None)',
     'Rearm (On Move)',
     'Rearm (On Timer)',
     'Rearm (On Move + Timer)'
 }
 
-CAUIGumpMainRow_SkinnModeValues = {
+SkinnModeValues = {
     None = 1,
     All = 2,
     ShaddowPlus = 3,
     CopperPlus = 4,
     BronzePlus = 5,
     VeritePlus = 6,
-    ValoritePlus = 7
+    Valorite = 7
 }
 
-CAUIGumpMainRow_SkinnModeStrings = {
+SkinnModeStrings = {
     'Skinn (None)',
     'Skinn (All)',
     'Skinn (Shaddow +)',
     'Skinn (Copper +)',
     'Skinn (Bronze +)',
     'Skinn (Verite +)',
-    'Skinn (Valorite +)'
+    'Skinn (Valorite)'
 }
 
-CAUIGumpMainRow_LeatherHuesToKeepNone = {
+LeatherHuesToKeepNone = {
 }
 
-CAUIGumpMainRow_LeatherHuesToKeepAll = {
+LeatherHuesToKeepAll = {
     0x0000,             --- Regular
     ---0x0973,             --- Dull Copper
     0x0966,             --- Shadow Iron
@@ -3458,7 +3469,7 @@ CAUIGumpMainRow_LeatherHuesToKeepAll = {
     0x08AB              --- Valorite
 }
 
-CAUIGumpMainRow_LeatherHuesToKeepShadowPlus = {
+LeatherHuesToKeepShadowPlus = {
     0x0966,             --- Shadow Iron
     0x096D,             --- Copper
     0x0972,             --- Bronze
@@ -3466,59 +3477,67 @@ CAUIGumpMainRow_LeatherHuesToKeepShadowPlus = {
     0x08AB              --- Valorite
 }
 
-CAUIGumpMainRow_LeatherHuesToKeepCopperPlus = {
+LeatherHuesToKeepCopperPlus = {
     0x096D,             --- Copper
     0x0972,             --- Bronze
     0x089F,             --- Verite
     0x08AB              --- Valorite
 }
 
-CAUIGumpMainRow_LeatherHuesToKeepBronzePlus = {
+LeatherHuesToKeepBronzePlus = {
     0x0972,             --- Bronze
     0x089F,             --- Verite
     0x08AB              --- Valorite
 }
 
-CAUIGumpMainRow_LeatherHuesToKeepVeritePlus = {
+LeatherHuesToKeepVeritePlus = {
     0x089F,             --- Verite
     0x08AB              --- Valorite
 }
 
-CAUIGumpMainRow_LeatherHuesToKeepValoritePlus = {
+LeatherHuesToKeepValorite = {
     0x08AB              --- Valorite
 }
 
-CAUIGumpMainRow_SkinnModeHueKeepTables = {
-    CAUIGumpMainRow_LeatherHuesToKeepNone,
-    CAUIGumpMainRow_LeatherHuesToKeepAll,
-    CAUIGumpMainRow_LeatherHuesToKeepShadowPlus,
-    CAUIGumpMainRow_LeatherHuesToKeepCopperPlus,
-    CAUIGumpMainRow_LeatherHuesToKeepBronzePlus,
-    CAUIGumpMainRow_LeatherHuesToKeepVeritePlus,
-    CAUIGumpMainRow_LeatherHuesToKeepValoritePlus
+SkinnModeHueKeepTables = {
+    LeatherHuesToKeepNone,
+    LeatherHuesToKeepAll,
+    LeatherHuesToKeepShadowPlus,
+    LeatherHuesToKeepCopperPlus,
+    LeatherHuesToKeepBronzePlus,
+    LeatherHuesToKeepVeritePlus,
+    LeatherHuesToKeepValorite
 }
 
 CAUIGumpMainRowState = {
-    MainConfigOpen = true,
-    RearmMode = CAUIGumpMainRow_RearmModeValues.Move,
-    SkinnMode = CAUIGumpMainRow_SkinnModeValues.None
+    MainConfigClosed = true,
+    RearmMode = RearmModeValues.Move,
+    SkinnMode = SkinnModeValues.None
 }
 
+function CAUIGumpMainRow_updateMainConfigWindow(targetValue, closeOtherCWs)
+    CAUIGumpMainRowState.MainConfigClosed = CAUIGumpLogicBase_onConfigMenuButtonPressed(not targetValue, CAUIGMR.configButton, CAUIGMR.Config.window, 'Main Config', closeOtherCWs, 'CONFIG (+)', 'CONFIG (-)')
+end
+
+function CAUIGumpMainRow_closeMainConfigWindow()
+    CAUIGumpMainRow_updateMainConfigWindow(true, false)
+end
+
 function CAUIGumpMainRow_processConfigMenuButtonInteractions()
-    if CAUIGumpMainRow_CAUIGMR.configButton:WasClicked() then
-        CAUIGumpMainRowState.MainConfigOpen = CAUIGumpLogicBase_onConfigMenuButtonPressed(CAUIGumpMainRowState.MainConfigOpen, CAUIGumpMainRow_CAUIGMR.configButton, CAUIGumpMainRow_CAUIGMR.Config.window, 'Main Config', 'CONFIG (+)', 'CONFIG (-)')
+    if CAUIGMR.configButton:WasClicked() then
+        CAUIGumpMainRow_updateMainConfigWindow(not CAUIGumpMainRowState.MainConfigClosed, true)
     end
 end
 
 function CAUIGumpMainRow_processRearmModeButtonInteractions()
-    if CAUIGumpMainRow_CAUIGMR.Config.rearmButton:WasClicked() then
-        CAUIGumpMainRowState.RearmMode = CAUIGumpLogicBase_onEnumStateButtonPressed(CAUIGumpMainRowState.RearmMode, CAUIGumpMainRow_RearmModeValues.MoveAndTime, CAUIGumpMainRow_RearmModeStrings, CAUIGumpMainRow_CAUIGMR.Config.rearmButton, 'Rearm Mode')
+    if CAUIGMR.Config.rearmButton:WasClicked() then
+        CAUIGumpMainRowState.RearmMode = CAUIGumpLogicBase_onEnumStateButtonPressed(CAUIGumpMainRowState.RearmMode, RearmModeValues.MoveAndTime, RearmModeStrings, CAUIGMR.Config.rearmButton, 'Rearm Mode')
     end
 end
 
 function CAUIGumpMainRow_processSkinnModeButtonInteractions()
-    if CAUIGumpMainRow_CAUIGMR.Config.skinnButton:WasClicked() then
-        CAUIGumpMainRowState.SkinnMode = CAUIGumpLogicBase_onEnumStateButtonPressed(CAUIGumpMainRowState.SkinnMode, CAUIGumpMainRow_SkinnModeValues.ValoritePlus, CAUIGumpMainRow_SkinnModeStrings, CAUIGumpMainRow_CAUIGMR.Config.skinnButton, 'Skinning Mode')
+    if CAUIGMR.Config.skinnButton:WasClicked() then
+        CAUIGumpMainRowState.SkinnMode = CAUIGumpLogicBase_onEnumStateButtonPressed(CAUIGumpMainRowState.SkinnMode, SkinnModeValues.Valorite, SkinnModeStrings, CAUIGMR.Config.skinnButton, 'Skinning Mode')
     end
 end
 
@@ -3530,29 +3549,28 @@ end
 
 function CAUIGumpMainRow_updateCAConfigToCurrentUIConfig(CAConfig)
     local armDisarmConfig = CAConfig.modules.ArmDisarm
-    local armDisarmEnabled = CAUIGumpMainRowState.RearmMode ~= CAUIGumpMainRow_RearmModeValues.None
-    local rearmOnMove = CAUIGumpMainRowState.RearmMode == CAUIGumpMainRow_RearmModeValues.Move or CAUIGumpMainRowState.RearmMode == CAUIGumpMainRow_RearmModeValues.MoveAndTime
-    local rearmOnDelay = CAUIGumpMainRowState.RearmMode == CAUIGumpMainRow_RearmModeValues.Time or CAUIGumpMainRowState.RearmMode == CAUIGumpMainRow_RearmModeValues.MoveAndTime
+    local armDisarmEnabled = CAUIGumpMainRowState.RearmMode ~= RearmModeValues.None
+    local rearmOnMove = CAUIGumpMainRowState.RearmMode == RearmModeValues.Move or CAUIGumpMainRowState.RearmMode == RearmModeValues.MoveAndTime
+    local rearmOnDelay = CAUIGumpMainRowState.RearmMode == RearmModeValues.Time or CAUIGumpMainRowState.RearmMode == RearmModeValues.MoveAndTime
     armDisarmConfig.Enable = armDisarmEnabled
     armDisarmConfig.AutoRearmOnMove = armDisarmEnabled and rearmOnMove
     armDisarmConfig.AutoRearmWithDelay = armDisarmEnabled and rearmOnDelay
 
     local skinningConfig = CAConfig.modules.Skinning
-    local skinningEnabled = CAUIGumpMainRowState.SkinnMode ~= CAUIGumpMainRow_SkinnModeValues.None
+    local skinningEnabled = CAUIGumpMainRowState.SkinnMode ~= SkinnModeValues.None
     skinningConfig.Enable = skinningEnabled
-    skinningConfig.LeatherHuesToKeep = CAUIGumpMainRow_SkinnModeHueKeepTables[CAUIGumpMainRowState.SkinnMode]
+    skinningConfig.LeatherHuesToKeep = SkinnModeHueKeepTables[CAUIGumpMainRowState.SkinnMode]
 end
 
 function CAUIGumpMainRow_initUI(mainWindow)
     CALog_debug('Creating Main Row UI...')
-    CAUIGumpMainRow_CAUIGMR.titleLabel = mainWindow:AddLabel(CAUIGumpMainRow_CAUIGumpMainRowLayout.TitleLabelPosX, CAUIGumpMainRow_CAUIGumpMainRowLayout.TitleLabelPosY, 'SAGAS Combat Assistant')
-    CAUIGumpMainRow_CAUIGMR.titleLabel:SetColor(0.2, 0.8, 1, 1)
-
-    CAUIGumpMainRow_CAUIGMR.configButton = mainWindow:AddButton(CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonPosX, CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonPosY, 'CONFIG (+)', CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonSizeX, CAUIGumpMainRow_CAUIGumpMainRowLayout.ConfigButtonSizeY)
-
-    CAUIGumpMainRow_CAUIGMR.Config.window = CAUIGumpLayoutBase_createModuleConfigWindow('MainConfigWindow', 'Main Config', 2, 1)
-    CAUIGumpMainRow_CAUIGMR.Config.rearmButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpMainRow_CAUIGMR.Config.window, 1, CAUIGumpMainRow_RearmModeStrings[CAUIGumpMainRowState.RearmMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    CAUIGumpMainRow_CAUIGMR.Config.skinnButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpMainRow_CAUIGMR.Config.window, 2, CAUIGumpMainRow_SkinnModeStrings[CAUIGumpMainRowState.SkinnMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGMR.titleLabel = mainWindow:AddLabel(CAUIGumpMainRowLayout.TitleLabelPosX, CAUIGumpMainRowLayout.TitleLabelPosY, 'SAGAS Combat Assistant')
+    CAUIGMR.titleLabel:SetColor(0.2, 0.8, 1, 1)
+    CAUIGMR.configButton = mainWindow:AddButton(CAUIGumpMainRowLayout.ConfigButtonPosX, CAUIGumpMainRowLayout.ConfigButtonPosY, 'CONFIG (+)', CAUIGumpMainRowLayout.ConfigButtonSizeX, CAUIGumpMainRowLayout.ConfigButtonSizeY)
+    CAUIGMR.Config.window = CAUIGumpLayoutBase_createModuleConfigWindow('MainConfigWindow', 'Main Config', 2, 1)
+    CAUIGumpLogicBase_registerSharedVisibilityConfigWindowsCloseFunction(CAUIGumpMainRow_closeMainConfigWindow)
+    CAUIGMR.Config.rearmButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 1, RearmModeStrings[CAUIGumpMainRowState.RearmMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGMR.Config.skinnButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 2, SkinnModeStrings[CAUIGumpMainRowState.SkinnMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
 end
 
 CAUIGumpRun_CAUIGumpRunLayout = {
@@ -3642,7 +3660,7 @@ CAUIGumpHeal_HealPotsModeStrings = {
 
 CAUIGumpHealConfig = {
     HealEnabled = true,
-    ConfigWindowOpen = true,
+    ConfigWindowClosed = true,
     BandageSelf = true,
     BandageOther = true,
     HealPotsMode = CAUIGumpHeal_HealPotsModeValues.TwentyPercent,
@@ -3656,9 +3674,17 @@ function CAUIGumpHeal_processHealButtonInteractions()
     end
 end
 
+function CAUIGumpHeal_updateHealConfigWindow(targetValue, closeOtherCWs)
+    CAUIGumpHealConfig.ConfigWindowClosed = CAUIGumpLogicBase_onConfigMenuButtonPressed(not targetValue, CAUIGumpHeal_CAUIGH.configButton, CAUIGumpHeal_CAUIGH.Config.window, 'Heal Config', closeOtherCWs)
+end
+
+function CAUIGumpHeal_closeHealConfigWindow()
+    CAUIGumpHeal_updateHealConfigWindow(true, false)
+end
+
 function CAUIGumpHeal_processHealConfigButtonInteractions()
     if CAUIGumpHeal_CAUIGH.configButton:WasClicked() then
-        CAUIGumpHealConfig.ConfigWindowOpen = CAUIGumpLogicBase_onConfigMenuButtonPressed(CAUIGumpHealConfig.ConfigWindowOpen, CAUIGumpHeal_CAUIGH.configButton, CAUIGumpHeal_CAUIGH.Config.window, 'Heal Config')
+        CAUIGumpHeal_updateHealConfigWindow(not CAUIGumpHealConfig.ConfigWindowClosed, true)
     end
 end
 
@@ -3730,6 +3756,7 @@ function CAUIGumpHeal_initUI(mainWindow, row)
     CAUIGumpHeal_CAUIGH.enableLabel = CAUIGumpLayoutBase_createModuleEnableLabelAtRow(mainWindow, row, 'Enabled')
     CAUIGumpHeal_CAUIGH.configButton = CAUIGumpLayoutBase_createModuleConfigButtonAtRow(mainWindow, row)
     CAUIGumpHeal_CAUIGH.Config.window = CAUIGumpLayoutBase_createModuleConfigWindow('healConfigWindow', 'Heal Config', 5, row)
+    CAUIGumpLogicBase_registerSharedVisibilityConfigWindowsCloseFunction(CAUIGumpHeal_closeHealConfigWindow)
     CAUIGumpHeal_CAUIGH.Config.bandageSelfButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpHeal_CAUIGH.Config.window, 1, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpHealConfig.BandageSelf, 'Bandage Self'), 140, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
     CAUIGumpHeal_CAUIGH.Config.bandageOtherButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpHeal_CAUIGH.Config.window, 2, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpHealConfig.BandageOther, 'Bandage Others'), 140, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
     CAUIGumpHeal_CAUIGH.Config.healPotionsModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpHeal_CAUIGH.Config.window, 3, CAUIGumpHeal_HealPotsModeStrings[CAUIGumpHealConfig.HealPotsMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
@@ -3777,7 +3804,7 @@ CAUIGumpBuffs_StaminaPotsModeStrings = {
 
 CAUIGumpBuffsState = {
     BuffsEnabled = false,
-    ConfigWindowOpen = true,
+    ConfigWindowClosed = true,
     EnableNightsight = true,
     EnableStrength = true,
     EnableAgility = true,
@@ -3791,9 +3818,17 @@ function CAUIGumpBuffs_processBuffsButtonInteractions()
     end
 end
 
+function CAUIGumpBuffs_updateBuffsConfigWindow(targetValue, closeOtherCWs)
+    CAUIGumpBuffsState.ConfigWindowClosed = CAUIGumpLogicBase_onConfigMenuButtonPressed(not targetValue, CAUIGumpBuffs_CAUIGB.configButton, CAUIGumpBuffs_CAUIGB.Config.window, 'Buffs Config', closeOtherCWs)
+end
+
+function CAUIGumpBuffs_closeBuffsConfigWindow()
+    CAUIGumpBuffs_updateBuffsConfigWindow(true, false)
+end
+
 function CAUIGumpBuffs_processBuffsConfigButtonInteractions()
     if CAUIGumpBuffs_CAUIGB.configButton:WasClicked() then
-        CAUIGumpBuffsState.ConfigWindowOpen = CAUIGumpLogicBase_onConfigMenuButtonPressed(CAUIGumpBuffsState.ConfigWindowOpen, CAUIGumpBuffs_CAUIGB.configButton, CAUIGumpBuffs_CAUIGB.Config.window, 'Buffs Config')
+        CAUIGumpBuffs_updateBuffsConfigWindow(not CAUIGumpBuffsState.ConfigWindowClosed, true)
     end
 end
 
@@ -3854,6 +3889,7 @@ function CAUIGumpBuffs_initUI(mainWindow, row)
     CAUIGumpBuffs_CAUIGB.enableLabel:SetColor(1, 0, 0, 1)
     CAUIGumpBuffs_CAUIGB.configButton = CAUIGumpLayoutBase_createModuleConfigButtonAtRow(mainWindow, row)
     CAUIGumpBuffs_CAUIGB.Config.window = CAUIGumpLayoutBase_createModuleConfigWindow('buffsConfigWindow', 'Buffs Config', 5, row)
+    CAUIGumpLogicBase_registerSharedVisibilityConfigWindowsCloseFunction(CAUIGumpBuffs_closeBuffsConfigWindow)
     CAUIGumpBuffs_CAUIGB.Config.enableNightsight = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpBuffs_CAUIGB.Config.window, 1, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpBuffsState.EnableNightsight, 'Nightsight'))
     CAUIGumpBuffs_CAUIGB.Config.enableStrength = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpBuffs_CAUIGB.Config.window, 2, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpBuffsState.EnableStrength, 'Strength'))
     CAUIGumpBuffs_CAUIGB.Config.enableAgility = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpBuffs_CAUIGB.Config.window, 3, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpBuffsState.EnableAgility, 'Agility'))
@@ -3950,7 +3986,7 @@ CAUIGumpAttack_AttackExceptionModeStrings = {
 
 CAUIGumpAttackConfig = {
     AttackEnabled = false,
-    ConfigWindowOpen = true,
+    ConfigWindowClosed = true,
     AttackRangeMax = CAUIGumpAttack_AttackRangeValues.Five,
     AttackExceptionsMode = CAUIGumpAttack_AttackExceptionModeValues.IDAndNames
 }
@@ -3961,9 +3997,17 @@ function CAUIGumpAttack_processAttackButtonInteractions()
     end
 end
 
+function CAUIGumpAttack_updateAttackConfigWindow(targetValue, closeOtherCWs)
+    CAUIGumpAttackConfig.ConfigWindowClosed = CAUIGumpLogicBase_onConfigMenuButtonPressed(not targetValue, CAUIGumpAttack_CAUIGA.configButton, CAUIGumpAttack_CAUIGA.Config.window, 'Attack Config', closeOtherCWs)
+end
+
+function CAUIGumpAttack_closeAttackConfigWindow()
+    CAUIGumpAttack_updateAttackConfigWindow(true, false)
+end
+
 function CAUIGumpAttack_processAttackConfigButtonInteractions()
     if CAUIGumpAttack_CAUIGA.configButton:WasClicked() then
-        CAUIGumpAttackConfig.ConfigWindowOpen = CAUIGumpLogicBase_onConfigMenuButtonPressed(CAUIGumpAttackConfig.ConfigWindowOpen, CAUIGumpAttack_CAUIGA.configButton, CAUIGumpAttack_CAUIGA.Config.window, 'Attack Config')
+        CAUIGumpAttack_updateAttackConfigWindow(not CAUIGumpAttackConfig.ConfigWindowClosed, true)
     end
 end
 
@@ -4001,6 +4045,7 @@ function CAUIGumpAttack_initUI(mainWindow, row)
     CAUIGumpAttack_CAUIGA.enableLabel:SetColor(1, 0, 0, 1)
     CAUIGumpAttack_CAUIGA.configButton = CAUIGumpLayoutBase_createModuleConfigButtonAtRow(mainWindow, row)
     CAUIGumpAttack_CAUIGA.Config.window = CAUIGumpLayoutBase_createModuleConfigWindow('attackConfigWindow', 'Attack Config', 2, row)
+    CAUIGumpLogicBase_registerSharedVisibilityConfigWindowsCloseFunction(CAUIGumpAttack_closeAttackConfigWindow)
     CAUIGumpAttack_CAUIGA.Config.rangeMaxButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpAttack_CAUIGA.Config.window, 1, CAUIGumpAttack_AttackRangeStrings[CAUIGumpAttackConfig.AttackRangeMax])
     CAUIGumpAttack_CAUIGA.Config.exceptionModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpAttack_CAUIGA.Config.window, 2, 'Exceptions (ID + Names)', 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
 end
@@ -4035,9 +4080,17 @@ function CAUIGumpScavenge_processScavengerButtonInteractions()
     end
 end
 
+function CAUIGumpScavenge_updateScavengerConfigWindow(targetValue, closeOtherCWs)
+    CAUIGumpScavengeConfig.ConfigWindowOpen = CAUIGumpLogicBase_onConfigMenuButtonPressed(not targetValue, CAUIGumpScavenge_CAUIGS.configButton, CAUIGumpScavenge_CAUIGS.Config.window, 'Scavenger Config', closeOtherCWs)
+end
+
+function CAUIGumpScavenge_closeScavengerConfigWindow()
+    CAUIGumpScavenge_updateScavengerConfigWindow(true, false)
+end
+
 function CAUIGumpScavenge_processScavengerConfigButtonInteractions()
     if CAUIGumpScavenge_CAUIGS.configButton:WasClicked() then
-        CAUIGumpScavengeConfig.ConfigWindowOpen = CAUIGumpLogicBase_onConfigMenuButtonPressed(CAUIGumpScavengeConfig.ConfigWindowOpen, CAUIGumpScavenge_CAUIGS.configButton, CAUIGumpScavenge_CAUIGS.Config.window, 'Scavenger Config')
+        CAUIGumpScavenge_updateScavengerConfigWindow(not CAUIGumpScavengeConfig.ConfigWindowOpen, true)
     end
 end
 
@@ -4098,6 +4151,7 @@ function CAUIGumpScavenge_initUI(mainWindow, row)
     CAUIGumpScavenge_CAUIGS.enableLabel:SetColor(1, 0, 0, 1)
     CAUIGumpScavenge_CAUIGS.configButton = CAUIGumpLayoutBase_createModuleConfigButtonAtRow(mainWindow, row)
     CAUIGumpScavenge_CAUIGS.Config.window = CAUIGumpLayoutBase_createModuleConfigWindow('scavengerConfigWindow', 'Scavenge Config', 5, row)
+    CAUIGumpLogicBase_registerSharedVisibilityConfigWindowsCloseFunction(CAUIGumpScavenge_closeScavengerConfigWindow)
     CAUIGumpScavenge_CAUIGS.Config.activateGoldButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpScavenge_CAUIGS.Config.window, 1, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpScavengeConfig.ScavengeGold, 'Gold'))
     CAUIGumpScavenge_CAUIGS.Config.activateBandagesButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpScavenge_CAUIGS.Config.window, 2, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpScavengeConfig.ScavengeCleanBandages, 'Bandages'))
     CAUIGumpScavenge_CAUIGS.Config.activateBonesButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpScavenge_CAUIGS.Config.window, 3, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpScavengeConfig.ScavengeBones, 'Bones'))
@@ -4218,6 +4272,80 @@ function CAUIGump_runGump(CAConfig)
     end
 end
 
+FriendsSerialList = {     --- FriendsSerialList: add serials of friends to this list so that:
+                                ---  1) Attack module does not attack them, even when they are grey
+                                ---  2) To cross-heal them if they are damaged
+    0x003306A5  --- Dardez Jum Zir (if you want to attack me, remove me from the list)
+}
+
+MobilesExceptionsGraphicIDs = {   --- MobilesExceptionsGraphicIDs: add graphic IDs of mobiles you want attack module to ignore
+    0x00ED  --- A Hind
+}
+
+MobilesExceptionsNames = {    --- MobilesExceptionsNames: add names of mobiles you want attack module to ignore
+    "a cow",
+    "a horse",
+    "a rat",
+    "a magpie",
+    "a crow",
+    "a towhee",
+    "a dog",
+    "a cat",
+    "a bull",
+    "a sheep",
+    "a gorila",
+    "a forest ostard"
+
+}
+
+ScavengerLootTable = {  --- ScavengerLootTable: add here the graphic IDs of items to auto-loot
+    --- (highest priority)
+    0xFDAD,  --- Eren Coin
+    0x0F91,  --- Fragment
+    0xFD8C,  --- Soul
+    0xFD8F,  --- Mastery Gem
+    0x0E73,  --- Skill Cap Ball
+    0xFF3A,  --- Skill Scroll
+    0x9FF8,  --- Paragon Chest
+    0x9FF9,  --- Paragon Chest
+    0x14EC,  --- Treasure Map
+    0x573B,  --- Pigments
+    ---0x0EB2,  --- Lap Harp
+    ---0x0EB1,  --- Standing Harp
+    ---0x0EB3,  --- Lute
+    ---0x0E9D,  --- Tambourine
+    ---0x0E9E,  --- Tambourine
+    ---0x0E9C,  --- Drum
+    0x0F26,  --- Diamond
+    0x0F10,  --- Emerald
+    0x0F16,  --- Amethyst
+    0x0F10,  --- Emerald
+    0x0F19,  --- Saphire
+    0x0F25,  --- Amber
+    0x0F13,  --- Ruby
+    0x26B4,  --- Daemon Scales
+    0xFCA9,  --- Hardened Resin
+    0x318B,  --- Enchanted Bark
+    0x0E21,  --- Clean Bandage
+    ---0x0F8D,  --- Spider Silk
+    ---0x0F86,  --- Mandrake Root
+    ---0x0F8C,  --- Ash
+    ---0x0F7B,  --- Blood Moss
+    ---0x0F88,  --- Night Shade
+    ---0x0F84,  --- Garlic
+    ---0x0F7A,  --- Black Pearl
+    ---0x0F85,  --- Ginseng
+    ---0x0F3F,  --- Arrows
+    ---0x1BFB,  --- Bolts
+    ---0x09F1,  --- Raw Ribs
+    ---0x0E86,  --- Pickaxe
+    0xFF30,  --- Potato
+    0x0F7E,  --- Bones
+    0x2D9D,  --- Grimoire
+    0x0EED,  --- Gold
+    --- (lowest priority)
+}
+
 DexerMainLoopConfig = {
     time = {
         ActionWaitTime = 1000,  --- in milliseconds, how long to wait for actions like using items, targeting etc.
@@ -4253,11 +4381,11 @@ DexerMainLoopConfig = {
             HPDrinkThreshould = 20  --- in percentage, when to use heal potion
         },
         Bandages = {
-            Enable = true,                  --- Bandages player if HP is below BandageSelfHPThreshould or if poisoned and no cure potions
-            BandageSelfHPThreshould = 99,   --- in percentage, when to use bandage
-            BandageAllies = true,           --- Whether to attempt to bandage allies when player is not in need of bandaging
-            BandageAlliesHPThreshould = 90, --- in percentage, when to use bandage
-            AlliesSerials = {}              --- List of allies serials to bandage, if BandageAllies is true
+            Enable = true,                      --- Bandages player if HP is below BandageSelfHPThreshould or if poisoned and no cure potions
+            BandageSelfHPThreshould = 99,       --- in percentage, when to use bandage
+            BandageAllies = true,               --- Whether to attempt to bandage allies when player is not in need of bandaging
+            BandageAlliesHPThreshould = 90,     --- in percentage, when to use bandage
+            AlliesSerials = FriendsSerialList   --- List of allies serials to bandage, if BandageAllies is true
         },
         Buffs = {
             Enable = true,              --- Enables automatic buffs, see bellow (disable if you prefer to use manually)
@@ -4299,42 +4427,29 @@ DexerMainLoopConfig = {
         Skinning = {
             Enable = false,
             NoisyMode = true,       --- To Log XOR Say when dropping or keeping a resource
-            LeatherHuesToKeep = {
-                --- 0x0000,         --- Regular
-                --- 0x0973,         --- Dull Copper
-                --- 0x0966,         --- Shadow Iron
-                --- 0x096D,         --- Copper
-                0x0972,             --- Bronze
-                0x08A5,             --- Gold
-                0x0979,             --- Agapite
-                0x089F,             --- Verite
-                0x08AB              --- Valorite
-            }
+            LeatherHuesToKeep = {}
         },
         Scavenging = {
-            Enable = false,         --- Scavenges items from the ground, only arrows, add more if needed
-            Frequency = 0,          --- milliseconds, zero means immediate
-            LootItemsSerials = {    --- List of items to scavenge
-                0x0F3F,
-                0x1BFB
-            },
-            LootItemsNames = {},            --- Use if serial not available
-            DisallowGold = false,           --- Toggle scavenging gold
-            DisallowCleanBandage = false,   --- Toggle scavenging clean bandages
-            DisallowBones = false,          --- Toggle scavenging bones
-            DisallowGrimoire = false,       --- Toggle scavenging grimoires
-            DisallowRibs = false            --- Toggle scavenging ribs
+            Enable = false,                             --- Scavenges items from the ground, only arrows, add more if needed
+            Frequency = 0,                              --- milliseconds, zero means immediate
+            LootItemsSerials = ScavengerLootTable,      --- List of items to scavenge,
+            LootItemsNames = {},                        --- Use if serial not available
+            DisallowGold = false,                       --- Toggle scavenging gold
+            DisallowCleanBandage = false,               --- Toggle scavenging clean bandages
+            DisallowBones = false,                      --- Toggle scavenging bones
+            DisallowGrimoire = false,                   --- Toggle scavenging grimoires
+            DisallowRibs = false                        --- Toggle scavenging ribs
         },
         Attack = {
-            Enable = false,                             --- Attacks nearby enemies automatically
-            Rangemax = 10,                              --- Attack search range
-            AllowMobilesExceptionsSerials = true,       --- Allow Mobiles Serials to ignore
-            MobilesExceptionsSerials = {},              --- Mobiles Serials to ignore (add friends so to not attack should they become grey)
-            AllowMobilesExceptionsGraphicIDs = true,    --- Allow Mobiles Mobiles GraphicIDs to ignore
-            MobilesExceptionsGraphicIDs = {},           --- Mobiles GraphicIDs to ignore (don't kill: cows, dogs...)
-            AllowMobilesExceptionsNames = true,         --- Allow Mobiles Mobiles Names to ignore
-            MobilesExceptionsNames = {},                --- Mobiles Names to ignore (use if don't have serial or graphic available)
-            CheckFrequency = 500                        --- in milliseconds, how often to check for new targets, adjust if needed
+            Enable = false,                                             --- Attacks nearby enemies automatically
+            Rangemax = 10,                                              --- Attack search range
+            AllowMobilesExceptionsSerials = true,                       --- Allow Mobiles Serials to ignore
+            MobilesExceptionsSerials = FriendsSerialList,               --- Mobiles Serials to ignore (add friends so to not attack should they become grey)
+            AllowMobilesExceptionsGraphicIDs = true,                    --- Allow Mobiles Mobiles GraphicIDs to ignore
+            MobilesExceptionsGraphicIDs = MobilesExceptionsGraphicIDs,  --- Mobiles GraphicIDs to ignore (don't kill: cows, dogs...)
+            AllowMobilesExceptionsNames = true,                         --- Allow Mobiles Mobiles Names to ignore
+            MobilesExceptionsNames = MobilesExceptionsNames,            --- Mobiles Names to ignore (use if don't have serial or graphic available)
+            CheckFrequency = 500                                        --- in milliseconds, how often to check for new targets, adjust if needed
         }
     },
     userCommands = {
