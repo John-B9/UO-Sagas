@@ -88,11 +88,13 @@ local function processAttackButtonInteractions_()
     end
 end
 
+local closeAttackConfigWindow_ = nil
+
 local function updateAttackConfigWindow_(targetValue, closeOtherCWs)
-    CAUIGumpAttackConfig.ConfigWindowClosed = cauiglogicb.onConfigMenuButtonPressed(not targetValue, CAUIGA.configButton, CAUIGA.Config.window, 'Attack Config', closeOtherCWs)
+    CAUIGumpAttackConfig.ConfigWindowClosed = cauiglogicb.onConfigMenuButtonPressed(not targetValue, CAUIGA.configButton, CAUIGA.Config.window, 'Attack Config', closeOtherCWs, closeAttackConfigWindow_)
 end
 
-local function closeAttackConfigWindow_()
+closeAttackConfigWindow_ = function ()
     updateAttackConfigWindow_(true, false)
 end
 

@@ -19,6 +19,7 @@ local cauigcommands = Import('CAUIGumpCommands')
 local cauigattack = Import('CAUIGumpAttack')
 local cauigscavenge = Import('CAUIGumpScavenge')
 local capn = Import('CAPotionsNightsight')
+local cauiglogicb = Import('CAUIGumpLogicBase')
 
 ---------------------------------
 --- Main Window - UI Elements ---
@@ -45,6 +46,8 @@ local CAUIMainWindowState = {
 -----------------
 
 local function processUIGumpInteractions_()
+
+    cauiglogicb.checkAndCloseOpenConfigWindow()
 
     local nightsightUIEnabled = cauigbuffs.getEnableNightsight()
 

@@ -81,11 +81,13 @@ local function processBuffsButtonInteractions_()
     end
 end
 
+local closeBuffsConfigWindow_ = nil
+
 local function updateBuffsConfigWindow_(targetValue, closeOtherCWs)
-    CAUIGumpBuffsState.ConfigWindowClosed = cauiglogicb.onConfigMenuButtonPressed(not targetValue, CAUIGB.configButton, CAUIGB.Config.window, 'Buffs Config', closeOtherCWs)
+    CAUIGumpBuffsState.ConfigWindowClosed = cauiglogicb.onConfigMenuButtonPressed(not targetValue, CAUIGB.configButton, CAUIGB.Config.window, 'Buffs Config', closeOtherCWs, closeBuffsConfigWindow_)
 end
 
-local function closeBuffsConfigWindow_()
+closeBuffsConfigWindow_ = function ()
     updateBuffsConfigWindow_(true, false)
 end
 
@@ -95,9 +97,9 @@ local function processBuffsConfigButtonInteractions_()
     end
 end
 
-local function processNightsightButtonInteractions_(force)
-    if force or CAUIGB.Config.enableNightsight:WasClicked() then
-        CAUIGumpBuffsState.EnableNightsight = cauiglogicb.onBooleanButtonPressed(CAUIGumpBuffsState.EnableNightsight, CAUIGB.Config.enableNightsight, 'Nightsight')
+local function processNightsightButtonInteractions_(forced)
+    if forced or CAUIGB.Config.enableNightsight:WasClicked() then
+        CAUIGumpBuffsState.EnableNightsight = cauiglogicb.onBooleanButtonPressed(CAUIGumpBuffsState.EnableNightsight, CAUIGB.Config.enableNightsight, 'Nightsight', forced)
     end
 end
 

@@ -30,6 +30,7 @@ local CAUIGMR = {
     configButton = nil,
     Config = {
         window = nil,
+        configWindowTimeoutModeButton = nil,
         rearmButton = nil,
         skinnButton = nil
     }
@@ -38,6 +39,31 @@ local CAUIGMR = {
 -----------------
 --- Constants ---
 -----------------
+
+local ConfigWindowTimeoutModeValues = {
+    NoTimeout = 1,
+    TimeoutThreeSeconds = 2,
+    TimeoutFourSeconds = 3,
+    TimeoutFiveSeconds = 4,
+    TimeoutSevenSeconds = 5,
+}
+
+local ConfigWindowTimeoutModeStrings = {
+    'Config W Timeout (None)',
+    'Config W Timeout (3s)',
+    'Config W Timeout (4s)',
+    'Config W Timeout (5s)',
+    'Config W Timeout (7s)',
+    'Config W Timeout (10s)',
+}
+
+local ConfigWindowTimeoutValues = {
+    nil,
+    3000,
+    4000,
+    5000,
+    7000,
+}
 
 local RearmModeValues = {
     None = 1,
@@ -134,6 +160,7 @@ local SkinnModeHueKeepTables = {
 
 CAUIGumpMainRowState = {
     MainConfigClosed = true,
+    ConfigWindowTimeoutMode = ConfigWindowTimeoutModeValues.TimeoutFourSeconds,
     RearmMode = RearmModeValues.Move,
     SkinnMode = SkinnModeValues.None
 }
@@ -142,17 +169,25 @@ CAUIGumpMainRowState = {
 --- Functions ---
 -----------------
 
+local closeMainConfigWindow_ = nil
+
 local function updateMainConfigWindow_(targetValue, closeOtherCWs)
-    CAUIGumpMainRowState.MainConfigClosed = cauiglogicb.onConfigMenuButtonPressed(not targetValue, CAUIGMR.configButton, CAUIGMR.Config.window, 'Main Config', closeOtherCWs, 'CONFIG (+)', 'CONFIG (-)')
+    CAUIGumpMainRowState.MainConfigClosed = cauiglogicb.onConfigMenuButtonPressed(not targetValue, CAUIGMR.configButton, CAUIGMR.Config.window, 'Main Config', closeOtherCWs, closeMainConfigWindow_, 'CONFIG (+)', 'CONFIG (-)')
 end
 
-local function closeMainConfigWindow_()
+closeMainConfigWindow_ = function ()
     updateMainConfigWindow_(true, false)
 end
 
 local function processConfigMenuButtonInteractions_()
     if CAUIGMR.configButton:WasClicked() then
         updateMainConfigWindow_(not CAUIGumpMainRowState.MainConfigClosed, true)
+    end
+end
+
+local function processConfigWindowTimeoutModeButtonInteractions_()
+    if CAUIGMR.Config.configWindowTimeoutModeButton:WasClicked() then
+        CAUIGumpMainRowState.ConfigWindowTimeoutMode = cauiglogicb.onEnumStateButtonPressed(CAUIGumpMainRowState.ConfigWindowTimeoutMode, ConfigWindowTimeoutModeValues.TimeoutSevenSeconds, ConfigWindowTimeoutModeStrings, CAUIGMR.Config.configWindowTimeoutModeButton, 'Config Window Timeout Mode')
     end
 end
 
@@ -170,11 +205,14 @@ end
 
 local function processUIInteractions_()
     processConfigMenuButtonInteractions_()
+    processConfigWindowTimeoutModeButtonInteractions_()
     processRearmModeButtonInteractions_()
     processSkinnModeButtonInteractions_()
 end
 
 local function updateCAConfigToCurrentUIConfig_(CAConfig)
+    cauiglogicb.setWindowAutoCloseTime(ConfigWindowTimeoutValues[CAUIGumpMainRowState.ConfigWindowTimeoutMode])
+
     local armDisarmConfig = CAConfig.modules.ArmDisarm
     local armDisarmEnabled = CAUIGumpMainRowState.RearmMode ~= RearmModeValues.None
     local rearmOnMove = CAUIGumpMainRowState.RearmMode == RearmModeValues.Move or CAUIGumpMainRowState.RearmMode == RearmModeValues.MoveAndTime
@@ -194,10 +232,11 @@ local function initUI_(mainWindow)
     CAUIGMR.titleLabel = mainWindow:AddLabel(CAUIGumpMainRowLayout.TitleLabelPosX, CAUIGumpMainRowLayout.TitleLabelPosY, 'SAGAS Combat Assistant')
     CAUIGMR.titleLabel:SetColor(0.2, 0.8, 1, 1)
     CAUIGMR.configButton = mainWindow:AddButton(CAUIGumpMainRowLayout.ConfigButtonPosX, CAUIGumpMainRowLayout.ConfigButtonPosY, 'CONFIG (+)', CAUIGumpMainRowLayout.ConfigButtonSizeX, CAUIGumpMainRowLayout.ConfigButtonSizeY)
-    CAUIGMR.Config.window = cauiglayoutb.createModuleConfigWindow('MainConfigWindow', 'Main Config', 2, 1)
+    CAUIGMR.Config.window = cauiglayoutb.createModuleConfigWindow('MainConfigWindow', 'Main Config', 3, 1)
     cauiglogicb.registerSharedVisibilityConfigWindowsCloseFunction(closeMainConfigWindow_)
-    CAUIGMR.Config.rearmButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 1, RearmModeStrings[CAUIGumpMainRowState.RearmMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    CAUIGMR.Config.skinnButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 2, SkinnModeStrings[CAUIGumpMainRowState.SkinnMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGMR.Config.configWindowTimeoutModeButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 1, ConfigWindowTimeoutModeStrings[CAUIGumpMainRowState.ConfigWindowTimeoutMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGMR.Config.rearmButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 2, RearmModeStrings[CAUIGumpMainRowState.RearmMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGMR.Config.skinnButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 3, SkinnModeStrings[CAUIGumpMainRowState.SkinnMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
 end
 
 --------------

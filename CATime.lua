@@ -91,6 +91,7 @@ end
 local Obj = {
     getActionWaitTime = getActionWaitTime_,
     setActionWaitTime = setActionWaitTime_,
+    getCurrentTime = getCurrentTime_,
     getCurrentTickTime = getCurrentTickTime_,
     updateCurrentTickTime = updateCurrentTickTime_,
     pauseUntil = pauseUntil_,

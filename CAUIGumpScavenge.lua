@@ -53,11 +53,13 @@ local function processScavengerButtonInteractions_()
     end
 end
 
+local closeScavengerConfigWindow_ = nil
+
 local function updateScavengerConfigWindow_(targetValue, closeOtherCWs)
-    CAUIGumpScavengeConfig.ConfigWindowOpen = cauiglogicb.onConfigMenuButtonPressed(not targetValue, CAUIGS.configButton, CAUIGS.Config.window, 'Scavenger Config', closeOtherCWs)
+    CAUIGumpScavengeConfig.ConfigWindowOpen = cauiglogicb.onConfigMenuButtonPressed(not targetValue, CAUIGS.configButton, CAUIGS.Config.window, 'Scavenger Config', closeOtherCWs, closeScavengerConfigWindow_)
 end
 
-local function closeScavengerConfigWindow_()
+closeScavengerConfigWindow_ =function ()
     updateScavengerConfigWindow_(true, false)
 end
 

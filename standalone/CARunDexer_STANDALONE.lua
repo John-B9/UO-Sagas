@@ -3329,14 +3329,77 @@ CAUIGumpMainRow_CAUIGumpLogicBase_ColorValues = {
     { 1,   0, 0, 1 }
 }
 
-SharedVisibilityConfigWindowsCloseFunctions = {}
+CAUIGumpLogicBaseState = {
+    SharedVisibilityConfigWindowsCloseFunctions = {},
+    LastWindowPosition = {
+        X = nil,
+        Y = nil
+    },
+    LastConfigWindowOpenTime = nil,
+    WindowAutoCloseTime = 4000,
+    CloseWindowCallback = nil
+}
 
 function CAUIGumpLogicBase_getColorOptions()
     return CAUIGumpMainRow_CAUIGumpLogicBase_ColorOptions
 end
 
 function CAUIGumpLogicBase_registerSharedVisibilityConfigWindowsCloseFunction(closeFunction)
-    table.insert(SharedVisibilityConfigWindowsCloseFunctions, closeFunction)
+    table.insert(CAUIGumpLogicBaseState.SharedVisibilityConfigWindowsCloseFunctions, closeFunction)
+end
+
+function CAUIGumpLogicBase_setWindowAutoCloseTime(timeout)
+    if CAUIGumpLogicBaseState.WindowAutoCloseTime ~= timeout then
+        if timeout then
+            CALog_debug('Setting config window close timer to: '..timeout..'(s)...')
+        else
+            CALog_debug('Disabling config window close timer...')
+        end
+        CAUIGumpLogicBaseState.WindowAutoCloseTime = timeout
+        if CAUIGumpLogicBaseState.WindowAutoCloseTime ~= nil then
+            currentTickTime = CATime_getCurrentTime()
+            CAUIGumpLogicBaseState.LastConfigWindowOpenTime = currentTickTime
+        else
+            CAUIGumpLogicBaseState.LastConfigWindowOpenTime = nil
+        end
+    end
+end
+
+function CAUIGumpLogicBase_clearConfigWindowCloseState()
+    CALog_debug("Clearing timer to close config window...")
+    CAUIGumpLogicBaseState.LastConfigWindowOpenTime = nil
+    CAUIGumpLogicBaseState.CloseWindowCallback = nil
+end
+
+function CAUIGumpLogicBase_setConfigWindowCloseState(closeWindowCallback)
+    if CAUIGumpLogicBaseState.WindowAutoCloseTime ~= nil then
+        CALog_debug("Setting timer to close config window...")
+        local currentTickTime = CATime_getCurrentTime()
+        CAUIGumpLogicBaseState.LastConfigWindowOpenTime = currentTickTime
+        CAUIGumpLogicBaseState.CloseWindowCallback = closeWindowCallback
+    end
+end
+
+function CAUIGumpLogicBase_checkResetConfigWindowCloseTimer()
+    if CAUIGumpLogicBaseState.WindowAutoCloseTime ~= nil and CAUIGumpLogicBaseState.LastConfigWindowOpenTime ~= nil then
+        CALog_debug("Re-setting timer to close config window...")
+        local currentTickTime = CATime_getCurrentTime()
+        CAUIGumpLogicBaseState.LastConfigWindowOpenTime = currentTickTime
+    end
+end
+
+function CAUIGumpLogicBase_checkAndCloseOpenConfigWindow()
+    if CAUIGumpLogicBaseState.WindowAutoCloseTime == nil or CAUIGumpLogicBaseState.LastConfigWindowOpenTime == nil then
+        return
+    end
+    currentTickTime = CATime_getCurrentTime()
+    if not CATime_exceedsDuration(CAUIGumpLogicBaseState.LastConfigWindowOpenTime, currentTickTime, CAUIGumpLogicBaseState.WindowAutoCloseTime) then
+        CALog_debug("Close window timmer running...")
+        return
+    end
+    CALog_debug("Timer expired: closing config window...")
+    CAUIGumpLogicBaseState.CloseWindowCallback()
+    CAUIGumpLogicBase_clearConfigWindowCloseState()
 end
 
 function CAUIGumpLogicBase_setLabelColor(label, colorOption)
@@ -3348,21 +3411,40 @@ function CAUIGumpLogicBase_logButtonPressEvent(buttonEventLogStr, currentStateSt
     CALog_debug(buttonEventLogStr..' button pressed: '..currentStateStr..' -> '..newStateStr)
 end
 
-function CAUIGumpLogicBase_onConfigMenuButtonPressed(currentState, configB, configW, buttonEventLogStr, closeOtherCWs, configBClosedStr, configBOpenStr)
+function CAUIGumpLogicBase_updateConfigWindowPosition(configW)
+    local currentWindowX = configW.x
+    local currentWindowY = configW.y
+    CALog_info('Window surrent position: ('..currentWindowX..', '..currentWindowY..')')
+    if CAUIGumpLogicBaseState.LastWindowPosition.X ~= currentWindowX and CAUIGumpLogicBaseState.LastWindowPosition.Y ~= currentWindowY then
+        CALog_info('Updating window position')
+        configW:SetPosition(currentWindowX, currentWindowY)
+    end
+    CAUIGumpLogicBaseState.LastWindowPosition.X = currentWindowX
+    CAUIGumpLogicBaseState.LastWindowPosition.Y = currentWindowY
+end
+
+function CAUIGumpLogicBase_onConfigMenuButtonPressed(currentState, configB, configW, buttonEventLogStr, closeOtherCWs, closeWindowCallback, configBClosedStr, configBOpenStr)
     local newState = not currentState
     CAUIGumpLogicBase_logButtonPressEvent(buttonEventLogStr, tostring(currentState), tostring(newState))
     if newState then
+        --- Closing the currently openned config window
         configB:SetText(configBClosedStr or '+')
         configW:Hide()
-    else
         if closeOtherCWs then
-            for _, closeFunction in ipairs(SharedVisibilityConfigWindowsCloseFunctions) do
+            CAUIGumpLogicBase_clearConfigWindowCloseState()
+        end
+    else
+
+        if closeOtherCWs then
+            for _, closeFunction in ipairs(CAUIGumpLogicBaseState.SharedVisibilityConfigWindowsCloseFunctions) do
                 closeFunction()
             end
         end
         configB:SetText(configBOpenStr or '-')
         configW:Show()
+        CAUIGumpLogicBase_setConfigWindowCloseState(closeWindowCallback)
     end
+
     return newState
 end
 
@@ -3370,6 +3452,7 @@ function CAUIGumpLogicBase_onEnumStateButtonPressed(currentState, lastValue, enu
     local newState  = (currentState == lastValue and 1) or currentState+1
     CAUIGumpLogicBase_logButtonPressEvent(buttonEventLogStr, enumStrings[currentState], enumStrings[newState])
     button:SetText(enumStrings[newState])
+    CAUIGumpLogicBase_checkResetConfigWindowCloseTimer()
     return newState
 end
 
@@ -3380,6 +3463,7 @@ function CAUIGumpLogicBase_onLabeledBooleanButtonPressed(currentState, label, bu
     local colorOption = (newState and trueStateVals[2]) or falseStateVals[2]
     label:SetText(text)
     CAUIGumpLogicBase_setLabelColor(label, colorOption)
+    CAUIGumpLogicBase_checkResetConfigWindowCloseTimer()
     return newState
 end
 
@@ -3391,11 +3475,14 @@ function CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(state, buttonDescrip
     return buttonDescriptionStr .. ((state and ' (Y)') or ' (N)')
 end
 
-function CAUIGumpLogicBase_onBooleanButtonPressed(currentState, button, buttonDescriptionStr, buttonEventLogStr)
+function CAUIGumpLogicBase_onBooleanButtonPressed(currentState, button, buttonDescriptionStr, forced, buttonEventLogStr)
     local newState = not currentState
     CAUIGumpLogicBase_logButtonPressEvent(buttonEventLogStr or buttonDescriptionStr, tostring(currentState), tostring(newState))
     local text = CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(newState, buttonDescriptionStr)
     button:SetText(text)
+    if not forced then
+        CAUIGumpLogicBase_checkResetConfigWindowCloseTimer()
+    end
     return newState
 end
 
@@ -3414,9 +3501,35 @@ CAUIGMR = {
     configButton = nil,
     Config = {
         window = nil,
+        configWindowTimeoutModeButton = nil,
         rearmButton = nil,
         skinnButton = nil
     }
+}
+
+ConfigWindowTimeoutModeValues = {
+    NoTimeout = 1,
+    TimeoutThreeSeconds = 2,
+    TimeoutFourSeconds = 3,
+    TimeoutFiveSeconds = 4,
+    TimeoutSevenSeconds = 5,
+}
+
+ConfigWindowTimeoutModeStrings = {
+    'Config W Timeout (None)',
+    'Config W Timeout (3s)',
+    'Config W Timeout (4s)',
+    'Config W Timeout (5s)',
+    'Config W Timeout (7s)',
+    'Config W Timeout (10s)',
+}
+
+ConfigWindowTimeoutValues = {
+    nil,
+    3000,
+    4000,
+    5000,
+    7000,
 }
 
 RearmModeValues = {
@@ -3510,21 +3623,30 @@ SkinnModeHueKeepTables = {
 
 CAUIGumpMainRowState = {
     MainConfigClosed = true,
+    ConfigWindowTimeoutMode = ConfigWindowTimeoutModeValues.TimeoutFourSeconds,
     RearmMode = RearmModeValues.Move,
     SkinnMode = SkinnModeValues.None
 }
 
+closeMainConfigWindow_ = nil
+
 function CAUIGumpMainRow_updateMainConfigWindow(targetValue, closeOtherCWs)
-    CAUIGumpMainRowState.MainConfigClosed = CAUIGumpLogicBase_onConfigMenuButtonPressed(not targetValue, CAUIGMR.configButton, CAUIGMR.Config.window, 'Main Config', closeOtherCWs, 'CONFIG (+)', 'CONFIG (-)')
+    CAUIGumpMainRowState.MainConfigClosed = CAUIGumpLogicBase_onConfigMenuButtonPressed(not targetValue, CAUIGMR.configButton, CAUIGMR.Config.window, 'Main Config', closeOtherCWs, closeMainConfigWindow_, 'CONFIG (+)', 'CONFIG (-)')
 end
 
-function CAUIGumpMainRow_closeMainConfigWindow()
+closeMainConfigWindow_ = function ()
     CAUIGumpMainRow_updateMainConfigWindow(true, false)
 end
 
 function CAUIGumpMainRow_processConfigMenuButtonInteractions()
     if CAUIGMR.configButton:WasClicked() then
         CAUIGumpMainRow_updateMainConfigWindow(not CAUIGumpMainRowState.MainConfigClosed, true)
+    end
+end
+
+function CAUIGumpMainRow_processConfigWindowTimeoutModeButtonInteractions()
+    if CAUIGMR.Config.configWindowTimeoutModeButton:WasClicked() then
+        CAUIGumpMainRowState.ConfigWindowTimeoutMode = CAUIGumpLogicBase_onEnumStateButtonPressed(CAUIGumpMainRowState.ConfigWindowTimeoutMode, ConfigWindowTimeoutModeValues.TimeoutSevenSeconds, ConfigWindowTimeoutModeStrings, CAUIGMR.Config.configWindowTimeoutModeButton, 'Config Window Timeout Mode')
     end
 end
 
@@ -3542,11 +3664,14 @@ end
 
 function CAUIGumpMainRow_processUIInteractions()
     CAUIGumpMainRow_processConfigMenuButtonInteractions()
+    CAUIGumpMainRow_processConfigWindowTimeoutModeButtonInteractions()
     CAUIGumpMainRow_processRearmModeButtonInteractions()
     CAUIGumpMainRow_processSkinnModeButtonInteractions()
 end
 
 function CAUIGumpMainRow_updateCAConfigToCurrentUIConfig(CAConfig)
+    CAUIGumpLogicBase_setWindowAutoCloseTime(ConfigWindowTimeoutValues[CAUIGumpMainRowState.ConfigWindowTimeoutMode])
+
     local armDisarmConfig = CAConfig.modules.ArmDisarm
     local armDisarmEnabled = CAUIGumpMainRowState.RearmMode ~= RearmModeValues.None
     local rearmOnMove = CAUIGumpMainRowState.RearmMode == RearmModeValues.Move or CAUIGumpMainRowState.RearmMode == RearmModeValues.MoveAndTime
@@ -3566,10 +3691,11 @@ function CAUIGumpMainRow_initUI(mainWindow)
     CAUIGMR.titleLabel = mainWindow:AddLabel(CAUIGumpMainRowLayout.TitleLabelPosX, CAUIGumpMainRowLayout.TitleLabelPosY, 'SAGAS Combat Assistant')
     CAUIGMR.titleLabel:SetColor(0.2, 0.8, 1, 1)
     CAUIGMR.configButton = mainWindow:AddButton(CAUIGumpMainRowLayout.ConfigButtonPosX, CAUIGumpMainRowLayout.ConfigButtonPosY, 'CONFIG (+)', CAUIGumpMainRowLayout.ConfigButtonSizeX, CAUIGumpMainRowLayout.ConfigButtonSizeY)
-    CAUIGMR.Config.window = CAUIGumpLayoutBase_createModuleConfigWindow('MainConfigWindow', 'Main Config', 2, 1)
-    CAUIGumpLogicBase_registerSharedVisibilityConfigWindowsCloseFunction(CAUIGumpMainRow_closeMainConfigWindow)
-    CAUIGMR.Config.rearmButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 1, RearmModeStrings[CAUIGumpMainRowState.RearmMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    CAUIGMR.Config.skinnButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 2, SkinnModeStrings[CAUIGumpMainRowState.SkinnMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGMR.Config.window = CAUIGumpLayoutBase_createModuleConfigWindow('MainConfigWindow', 'Main Config', 3, 1)
+    CAUIGumpLogicBase_registerSharedVisibilityConfigWindowsCloseFunction(closeMainConfigWindow_)
+    CAUIGMR.Config.configWindowTimeoutModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 1, ConfigWindowTimeoutModeStrings[CAUIGumpMainRowState.ConfigWindowTimeoutMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGMR.Config.rearmButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 2, RearmModeStrings[CAUIGumpMainRowState.RearmMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGMR.Config.skinnButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 3, SkinnModeStrings[CAUIGumpMainRowState.SkinnMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
 end
 
 CAUIGumpRun_CAUIGumpRunLayout = {
@@ -3673,11 +3799,13 @@ function CAUIGumpHeal_processHealButtonInteractions()
     end
 end
 
+CAUIGumpHeal_closeHealConfigWindow = nil
+
 function CAUIGumpHeal_updateHealConfigWindow(targetValue, closeOtherCWs)
-    CAUIGumpHealConfig.ConfigWindowClosed = CAUIGumpLogicBase_onConfigMenuButtonPressed(not targetValue, CAUIGumpHeal_CAUIGH.configButton, CAUIGumpHeal_CAUIGH.Config.window, 'Heal Config', closeOtherCWs)
+    CAUIGumpHealConfig.ConfigWindowClosed = CAUIGumpLogicBase_onConfigMenuButtonPressed(not targetValue, CAUIGumpHeal_CAUIGH.configButton, CAUIGumpHeal_CAUIGH.Config.window, 'Heal Config', closeOtherCWs, CAUIGumpHeal_closeHealConfigWindow)
 end
 
-function CAUIGumpHeal_closeHealConfigWindow()
+CAUIGumpHeal_closeHealConfigWindow = function ()
     CAUIGumpHeal_updateHealConfigWindow(true, false)
 end
 
@@ -3817,11 +3945,13 @@ function CAUIGumpBuffs_processBuffsButtonInteractions()
     end
 end
 
+CAUIGumpBuffs_closeBuffsConfigWindow = nil
+
 function CAUIGumpBuffs_updateBuffsConfigWindow(targetValue, closeOtherCWs)
-    CAUIGumpBuffsState.ConfigWindowClosed = CAUIGumpLogicBase_onConfigMenuButtonPressed(not targetValue, CAUIGumpBuffs_CAUIGB.configButton, CAUIGumpBuffs_CAUIGB.Config.window, 'Buffs Config', closeOtherCWs)
+    CAUIGumpBuffsState.ConfigWindowClosed = CAUIGumpLogicBase_onConfigMenuButtonPressed(not targetValue, CAUIGumpBuffs_CAUIGB.configButton, CAUIGumpBuffs_CAUIGB.Config.window, 'Buffs Config', closeOtherCWs, CAUIGumpBuffs_closeBuffsConfigWindow)
 end
 
-function CAUIGumpBuffs_closeBuffsConfigWindow()
+CAUIGumpBuffs_closeBuffsConfigWindow = function ()
     CAUIGumpBuffs_updateBuffsConfigWindow(true, false)
 end
 
@@ -3831,9 +3961,9 @@ function CAUIGumpBuffs_processBuffsConfigButtonInteractions()
     end
 end
 
-function CAUIGumpBuffs_processNightsightButtonInteractions(force)
-    if force or CAUIGumpBuffs_CAUIGB.Config.enableNightsight:WasClicked() then
-        CAUIGumpBuffsState.EnableNightsight = CAUIGumpLogicBase_onBooleanButtonPressed(CAUIGumpBuffsState.EnableNightsight, CAUIGumpBuffs_CAUIGB.Config.enableNightsight, 'Nightsight')
+function CAUIGumpBuffs_processNightsightButtonInteractions(forced)
+    if forced or CAUIGumpBuffs_CAUIGB.Config.enableNightsight:WasClicked() then
+        CAUIGumpBuffsState.EnableNightsight = CAUIGumpLogicBase_onBooleanButtonPressed(CAUIGumpBuffsState.EnableNightsight, CAUIGumpBuffs_CAUIGB.Config.enableNightsight, 'Nightsight', forced)
     end
 end
 
@@ -3996,11 +4126,13 @@ function CAUIGumpAttack_processAttackButtonInteractions()
     end
 end
 
+CAUIGumpAttack_closeAttackConfigWindow = nil
+
 function CAUIGumpAttack_updateAttackConfigWindow(targetValue, closeOtherCWs)
-    CAUIGumpAttackConfig.ConfigWindowClosed = CAUIGumpLogicBase_onConfigMenuButtonPressed(not targetValue, CAUIGumpAttack_CAUIGA.configButton, CAUIGumpAttack_CAUIGA.Config.window, 'Attack Config', closeOtherCWs)
+    CAUIGumpAttackConfig.ConfigWindowClosed = CAUIGumpLogicBase_onConfigMenuButtonPressed(not targetValue, CAUIGumpAttack_CAUIGA.configButton, CAUIGumpAttack_CAUIGA.Config.window, 'Attack Config', closeOtherCWs, CAUIGumpAttack_closeAttackConfigWindow)
 end
 
-function CAUIGumpAttack_closeAttackConfigWindow()
+CAUIGumpAttack_closeAttackConfigWindow = function ()
     CAUIGumpAttack_updateAttackConfigWindow(true, false)
 end
 
@@ -4079,11 +4211,13 @@ function CAUIGumpScavenge_processScavengerButtonInteractions()
     end
 end
 
+CAUIGumpScavenge_closeScavengerConfigWindow = nil
+
 function CAUIGumpScavenge_updateScavengerConfigWindow(targetValue, closeOtherCWs)
-    CAUIGumpScavengeConfig.ConfigWindowOpen = CAUIGumpLogicBase_onConfigMenuButtonPressed(not targetValue, CAUIGumpScavenge_CAUIGS.configButton, CAUIGumpScavenge_CAUIGS.Config.window, 'Scavenger Config', closeOtherCWs)
+    CAUIGumpScavengeConfig.ConfigWindowOpen = CAUIGumpLogicBase_onConfigMenuButtonPressed(not targetValue, CAUIGumpScavenge_CAUIGS.configButton, CAUIGumpScavenge_CAUIGS.Config.window, 'Scavenger Config', closeOtherCWs, CAUIGumpScavenge_closeScavengerConfigWindow)
 end
 
-function CAUIGumpScavenge_closeScavengerConfigWindow()
+CAUIGumpScavenge_closeScavengerConfigWindow =function ()
     CAUIGumpScavenge_updateScavengerConfigWindow(true, false)
 end
 
@@ -4175,6 +4309,8 @@ CAUIMainWindowState = {
 }
 
 function CAUIGump_processUIGumpInteractions()
+
+    CAUIGumpLogicBase_checkAndCloseOpenConfigWindow()
 
     local nightsightUIEnabled = CAUIGumpBuffs_getEnableNightsight()
 

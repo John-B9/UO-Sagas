@@ -81,11 +81,13 @@ local function processHealButtonInteractions_()
     end
 end
 
+local closeHealConfigWindow_ = nil
+
 local function updateHealConfigWindow_(targetValue, closeOtherCWs)
-    CAUIGumpHealConfig.ConfigWindowClosed = cauiglogicb.onConfigMenuButtonPressed(not targetValue, CAUIGH.configButton, CAUIGH.Config.window, 'Heal Config', closeOtherCWs)
+    CAUIGumpHealConfig.ConfigWindowClosed = cauiglogicb.onConfigMenuButtonPressed(not targetValue, CAUIGH.configButton, CAUIGH.Config.window, 'Heal Config', closeOtherCWs, closeHealConfigWindow_)
 end
 
-local function closeHealConfigWindow_()
+closeHealConfigWindow_ = function ()
     updateHealConfigWindow_(true, false)
 end
 
