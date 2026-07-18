@@ -3623,7 +3623,7 @@ SkinnModeHueKeepTables = {
 
 CAUIGumpMainRowState = {
     MainConfigClosed = true,
-    ConfigWindowTimeoutMode = ConfigWindowTimeoutModeValues.TimeoutFourSeconds,
+    ConfigWindowTimeoutMode = ConfigWindowTimeoutModeValues.TimeoutThreeSeconds,
     RearmMode = RearmModeValues.Move,
     SkinnMode = SkinnModeValues.None
 }

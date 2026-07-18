@@ -1,8 +1,8 @@
 ----------------------------------------------------------------------
---- CL (Crafting Leveling) Smithing
---- Author: JohnB9
----
---- Description: To level up Smithing
+--  CL (Crafting Leveling) Bowcraft Fletching
+--  Author: JohnB9
+-- 
+--  Description: To level up Bowcraft/Fletching
 ----------------------------------------------------------------------
 
 -- ========================================
@@ -426,54 +426,40 @@ function CLLib_craftItem(config)
 --- Variables ---
 -----------------
 
---- Blacksmithing items by skill range
-SMITH_ITEMS = {
-    { name = "Dagger",   		   minSkill = 00.0, maxSkill =  49.9, category = 36, craft = 17, final = 16, graphic_id =  3922 },
-    { name = "Ringmail Gloves",    minSkill = 50.0, maxSkill =  61.9, category =  1, craft =  3, final =  2, graphic_id =  5099 },
-    { name = "Platemail Gorget",   minSkill = 62.0, maxSkill =  79.9, category = 15, craft = 17, final = 16, graphic_id =  5139 },
-    { name = "Platemail Gloves",   minSkill = 80.0, maxSkill =  89.9, category = 15, craft = 10, final =  9, graphic_id =  5140 },
-    { name = "Plate Arms",         minSkill = 90.0, maxSkill =  93.9, category = 15, craft =  3, final =  2, graphic_id =  5136 },
-    { name = "Plate Legs",         minSkill = 94.0, maxSkill =  96.9, category = 15, craft = 24, final = 23, graphic_id =  5137 },
-    { name = "Plate Tunic",        minSkill = 97.0, maxSkill = 120.0, category = 15, craft = 31, final = 30, graphic_id =  5141 },
+--- Constants
+bowcraftFletchingSkillStr = "Bowcraft/Fletching"
+
+--- Crafting items by skill range
+BOWCRAFT_FLETCHING_ITEMS = {
+    { name = "Shaft",          minSkill =  0.0, maxSkill =  34.9, category =  1, craft = 10, final =  9, material = 0x1BD7 }, --- drop all boards at your feet before crafting (!)
+    { name = "Bow",            minSkill = 35.0, maxSkill =  64.9, category = 15, craft =  3, final =  2, material = nil    },
+    { name = "Crossbow",       minSkill = 65.0, maxSkill =  84.9, category = 15, craft = 10, final =  9, material = nil    },
+    { name = "Heavy Crossbow", minSkill = 85.0, maxSkill = 119.9, category = 15, craft = 17, final = 16, material = nil    }
 }
 
---- Post-Work Function: smelt the crafted item back into ingots
-function postWork(config_)
-    local smithItem = CLLib_getItemToCraft(config_)
-    if not smithItem then
+--- Pre-Work Function: pick one Board from the ground into Player Backpack (if needed)
+function preWork(config_)
+    local craftItem = CLLib_getItemToCraft(config_)
+    if not craftItem then
         Console.debug("No configured craft item!")
+        return false
+    end
+    if not craftItem.material then
+        Console.debug("No Pre-Work Needed!")
         return true
     end
-
-    itemToSmelt = BaseLib_findInInventory(smithItem.graphic_id)
-    if not itemToSmelt or #itemToSmelt == 0 then
-        Console.debug("No item to smelt!")
-        return true
-    end
-
-    for i, item in ipairs(itemToSmelt) do
-        --- press Smelt Gump Button
-        Gumps.PressButton(2653346093, 14)
-        Target.WaitForTarget(1000)
-        --- select crafted item
-        Target.TargetSerial(item.Serial)
-        Gumps.WaitForGump(2653346093, 1000)
-        break
-    end
-
-    Pause(500)
-    return true
+    return BaseLib_findItemOnGroundPickAndDropInBackpack(craftItem.material, 1)
 end
 
 --- User Settings
 config = {
-    TOOL_ID = 0x13E3,              --- Smith's Hammer
-    GUMP_ID = 2653346093,          --- Gump ID used by Blacksmithing
-    MAKE_LAST_BUTTON_ID = 21,      --- "Make Last" button
-    SKILL_TO_LEVEL = "Blacksmithy",
-    ITEMS = SMITH_ITEMS,
-    PREWORK_FUNCTION = nil,
-    POSTWORK_FUNCTION = postWork
+    TOOL_ID = 0x1022,              -- Fletcher's Tools
+    GUMP_ID = 2653346093,          -- Gump ID used by Bowcraft and Fletching
+    MAKE_LAST_BUTTON_ID = 21,      -- "Make Last" button
+    SKILL_TO_LEVEL = bowcraftFletchingSkillStr,
+    ITEMS = BOWCRAFT_FLETCHING_ITEMS,
+    PREWORK_FUNCTION = preWork,
+    POSTWORK_FUNCTION = nil
 }
 
 -----------

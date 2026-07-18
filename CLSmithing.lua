@@ -14,12 +14,12 @@ local cll = Import('CLLib')
 
 --- Blacksmithing items by skill range
 local SMITH_ITEMS = {
-    { name = "Dagger",   		   minSkill = 00.0, maxSkill = 49.9, category = 36, craft = 17,  final = 16 },
-    { name = "Ringmail Gloves",    minSkill = 50.0, maxSkill = 61.9, category = 1, craft = 3,  final = 2 },
-    { name = "Platemail Gorget",   minSkill = 62.0, maxSkill = 79.9, category = 15, craft = 17,  final = 16, graphic_id =  5139 },
-    { name = "Platemail Gloves",   minSkill = 80.0, maxSkill = 89.9, category = 15, craft = 10, final = 9, graphic_id =  5140 },
-    { name = "Plate Arms",         minSkill = 90.0, maxSkill = 93.9, category = 15, craft = 3, final = 2, graphic_id =  5136 },
-    { name = "Plate Legs",         minSkill = 94.0, maxSkill = 96.9, category = 15, craft = 24, final = 23, graphic_id =  5137 },
+    { name = "Dagger",   		   minSkill = 00.0, maxSkill =  49.9, category = 36, craft = 17, final = 16, graphic_id =  3922 },
+    { name = "Ringmail Gloves",    minSkill = 50.0, maxSkill =  61.9, category =  1, craft =  3, final =  2, graphic_id =  5099 },
+    { name = "Platemail Gorget",   minSkill = 62.0, maxSkill =  79.9, category = 15, craft = 17, final = 16, graphic_id =  5139 },
+    { name = "Platemail Gloves",   minSkill = 80.0, maxSkill =  89.9, category = 15, craft = 10, final =  9, graphic_id =  5140 },
+    { name = "Plate Arms",         minSkill = 90.0, maxSkill =  93.9, category = 15, craft =  3, final =  2, graphic_id =  5136 },
+    { name = "Plate Legs",         minSkill = 94.0, maxSkill =  96.9, category = 15, craft = 24, final = 23, graphic_id =  5137 },
     { name = "Plate Tunic",        minSkill = 97.0, maxSkill = 120.0, category = 15, craft = 31, final = 30, graphic_id =  5141 },
 }
 

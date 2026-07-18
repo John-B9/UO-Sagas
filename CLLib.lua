@@ -80,7 +80,7 @@ local function craftItem_(config)
 
     --- call pre-work function
     if config.PREWORK_FUNCTION ~= nil then
-        local success = config.PREWORK_FUNCTION()
+        local success = config.PREWORK_FUNCTION(config)
             if success == false then
                 Messages.Overhead("Pre-Work failed for Crafting ("..config.SKILL_TO_LEVEL..")!...", Colors.ALERT, Player.Serial)
                 return false

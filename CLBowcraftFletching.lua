@@ -14,25 +14,27 @@ local cll = Import('CLLib')
 
 --- Constants
 local bowcraftFletchingSkillStr = "Bowcraft/Fletching"
-local shaftSkillThreshould = 35.0
-local BOARDS_GRAPHIC = 0x1BD7
 
 --- Crafting items by skill range
 local BOWCRAFT_FLETCHING_ITEMS = {
-    { name = "Shaft",          minSkill = 0.0, maxSkill = shaftSkillThreshould - 0.1, category = 1, craft = 10, final = 9 },
-    { name = "Bow",            minSkill = shaftSkillThreshould, maxSkill = 64.9, category = 15, craft = 3, final = 2 },
-    { name = "Crossbow",       minSkill = 65.0, maxSkill = 84.9, category = 15, craft = 10, final = 9 },
-    { name = "Heavy Crossbow", minSkill = 85.0, maxSkill = 100.0, category = 15, craft = 17, final = 16 }
+    { name = "Shaft",          minSkill =  0.0, maxSkill =  34.9, category =  1, craft = 10, final =  9, material = 0x1BD7 }, --- drop all boards at your feet before crafting (!)
+    { name = "Bow",            minSkill = 35.0, maxSkill =  64.9, category = 15, craft =  3, final =  2, material = nil    },
+    { name = "Crossbow",       minSkill = 65.0, maxSkill =  84.9, category = 15, craft = 10, final =  9, material = nil    },
+    { name = "Heavy Crossbow", minSkill = 85.0, maxSkill = 119.9, category = 15, craft = 17, final = 16, material = nil    }
 }
 
---- Pre-Work Function: pick one Board from the ground into Player Backpack
-local function preWork()
-    local bowcraftFletchingSkillLevel = bl.getSkillValue(bowcraftFletchingSkillStr)
-    if bowcraftFletchingSkillLevel >= shaftSkillThreshould then
-        -- No prework needed...
-        return
+--- Pre-Work Function: pick one Board from the ground into Player Backpack (if needed)
+local function preWork(config_)
+    local craftItem = cll.getItemToCraft(config_)
+    if not craftItem then
+        Console.debug("No configured craft item!")
+        return false
     end
-    return bl.findItemOnGroundPickAndDropInBackpack(BOARDS_GRAPHIC, 1)
+    if not craftItem.material then
+        Console.debug("No Pre-Work Needed!")
+        return true
+    end
+    return bl.findItemOnGroundPickAndDropInBackpack(craftItem.material, 1)
 end
 
 --- User Settings

@@ -1,12 +1,12 @@
 ----------------------------------------------------------------------
---- CL (Crafting Leveling) Smithing
+--- CL (Crafting Leveling) Tinkering
 --- Author: JohnB9
 ---
---- Description: To level up Smithing
+--- Description: To level up Tinkering
 ----------------------------------------------------------------------
 
 -- ========================================
--- Imported: BaseLib
+-- Imported: CLLib
 -- ========================================
 
 function BaseLib_deepCopy(orig)
@@ -126,26 +126,19 @@ function BaseLib_getHpPercentage(player)
     return (player.Hits / player.HitsMax) * 100
 end
 
--- End of: BaseLib
--- ========================================
-
--- ========================================
--- Imported: CLLib
--- ========================================
-
-CLLib_IPLib_debugEnabled = false
+debugEnabled = false
 
 function IPLib_getItemSingleValueProperty(item, singleValuePropertyRegexStr)
-    BaseLib_printIfDebug(CLLib_IPLib_debugEnabled, item.Properties)
+    BaseLib_printIfDebug(debugEnabled, item.Properties)
     local cleanProperties = string.gsub(item.Properties, "<.->", "")
-    BaseLib_printIfDebug(CLLib_IPLib_debugEnabled, cleanProperties)
+    BaseLib_printIfDebug(debugEnabled, cleanProperties)
     local regexMatchIter = string.gmatch(cleanProperties, singleValuePropertyRegexStr)
     local propertyVal = regexMatchIter()
     if propertyVal == nil then
-        BaseLib_printIfDebug(CLLib_IPLib_debugEnabled, "Single Value Property = (nil)")
+        BaseLib_printIfDebug(debugEnabled, "Single Value Property = (nil)")
         return nil
     end
-    BaseLib_printIfDebug(CLLib_IPLib_debugEnabled, "Single Value Property = (" .. propertyVal .. ")")
+    BaseLib_printIfDebug(debugEnabled, "Single Value Property = (" .. propertyVal .. ")")
     return propertyVal
 end
 
@@ -154,14 +147,14 @@ function IPLib_getItemSingleValuePropertyNumber(item, singleValuePropertyRegexSt
     return tonumber(propertyVal)
 end
 
-CLLib_IPLib_uses_remaining_regex_str = "Uses Remaining: (%d+)"
+uses_remaining_regex_str = "Uses Remaining: (%d+)"
 function IPLib_getUsesRemaining(item)
-    return IPLib_getItemSingleValuePropertyNumber(item, CLLib_IPLib_uses_remaining_regex_str)
+    return IPLib_getItemSingleValuePropertyNumber(item, uses_remaining_regex_str)
 end
 
-CLLib_IPLib_identification_charges_regex_str = "Identification Charges: (%d+)"
+identification_charges_regex_str = "Identification Charges: (%d+)"
 function IPLib_getIdentificationCharges(item)
-    return IPLib_getItemSingleValuePropertyNumber(item, CLLib_IPLib_identification_charges_regex_str)
+    return IPLib_getItemSingleValuePropertyNumber(item, identification_charges_regex_str)
 end
 
 material_regex_str = "Material: (%w+)"
@@ -170,16 +163,16 @@ function IPLib_getMaterial(item)
 end
 
 function IPLib_getItemDoubleValueProperty(item, doubleValuePropertyRegexStr)
-    BaseLib_printIfDebug(CLLib_IPLib_debugEnabled, item.Properties)
+    BaseLib_printIfDebug(debugEnabled, item.Properties)
     local cleanProperties = string.gsub(item.Properties, "<.->", "")
-    BaseLib_printIfDebug(CLLib_IPLib_debugEnabled, cleanProperties)
+    BaseLib_printIfDebug(debugEnabled, cleanProperties)
     local regexMatchIter = string.gmatch(cleanProperties, doubleValuePropertyRegexStr)
     local lPropertyVal, rPropertyVal = regexMatchIter()
     if lPropertyVal == nil or rPropertyVal == nil then
-        BaseLib_printIfDebug(CLLib_IPLib_debugEnabled, "Double Value Property = (nil)")
+        BaseLib_printIfDebug(debugEnabled, "Double Value Property = (nil)")
         return nil
     end
-    BaseLib_printIfDebug(CLLib_IPLib_debugEnabled, "Double Value Property = (" .. lPropertyVal .. "," .. rPropertyVal .. ")")
+    BaseLib_printIfDebug(debugEnabled, "Double Value Property = (" .. lPropertyVal .. "," .. rPropertyVal .. ")")
     return { tonumber(lPropertyVal), tonumber(rPropertyVal) }
 end
 
@@ -202,7 +195,7 @@ function IPLib_getItemWithBestPropertyValue_singleID(itemID, propertyGetter, pro
     ---local items = Items.FindInContainer(Player.Backpack.Serial, itemID)
     if items then
         for i, item in ipairs(items) do
-            BaseLib_printIfDebug(CLLib_IPLib_debugEnabled, itemAcceptPredicate)
+            BaseLib_printIfDebug(debugEnabled, itemAcceptPredicate)
             if itemAcceptPredicate == nil or itemAcceptPredicate(item) then
                 local itemProperties = propertyGetter(item, propertyFieldRegexStr)
                 if bestItem == nil or comparePredicate(itemProperties, bestItemProperties) then
@@ -214,7 +207,7 @@ function IPLib_getItemWithBestPropertyValue_singleID(itemID, propertyGetter, pro
     end
 
     if bestItem == nil then
-        BaseLib_printIfDebug(CLLib_IPLib_debugEnabled, "Found no item with ID = " .. itemID)
+        BaseLib_printIfDebug(debugEnabled, "Found no item with ID = " .. itemID)
     end
 
     return bestItem
@@ -274,15 +267,15 @@ function IPLib_equipItemWithLessSinglePropertyValue(itemID, fieldStr, itemName, 
 end
 
 function IPLib_getItemWithLessUsesRemaining(itemID, itemAcceptPredicate)
-    return IPLib_getItemWithLessSinglePropertyValue(itemID, CLLib_IPLib_uses_remaining_regex_str, itemAcceptPredicate)
+    return IPLib_getItemWithLessSinglePropertyValue(itemID, uses_remaining_regex_str, itemAcceptPredicate)
 end
 
 function IPLib_equipItemWithLessUsesRemaining(itemID, itemName, itemAcceptPredicate)
-    return IPLib_equipItemWithLessSinglePropertyValue(itemID, CLLib_IPLib_uses_remaining_regex_str, itemName, itemAcceptPredicate)
+    return IPLib_equipItemWithLessSinglePropertyValue(itemID, uses_remaining_regex_str, itemName, itemAcceptPredicate)
 end
 
 function IPLib_getItemWithLessIdentificationCharges(itemID, itemAcceptPredicate)
-    return IPLib_getItemWithLessSinglePropertyValue(itemID, CLLib_IPLib_identification_charges_regex_str, itemAcceptPredicate)
+    return IPLib_getItemWithLessSinglePropertyValue(itemID, identification_charges_regex_str, itemAcceptPredicate)
 end
 
 function IPLib_lessPropertyFirstValueComparePredicate(lprops, rprops)
@@ -426,54 +419,23 @@ function CLLib_craftItem(config)
 --- Variables ---
 -----------------
 
---- Blacksmithing items by skill range
-SMITH_ITEMS = {
-    { name = "Dagger",   		   minSkill = 00.0, maxSkill =  49.9, category = 36, craft = 17, final = 16, graphic_id =  3922 },
-    { name = "Ringmail Gloves",    minSkill = 50.0, maxSkill =  61.9, category =  1, craft =  3, final =  2, graphic_id =  5099 },
-    { name = "Platemail Gorget",   minSkill = 62.0, maxSkill =  79.9, category = 15, craft = 17, final = 16, graphic_id =  5139 },
-    { name = "Platemail Gloves",   minSkill = 80.0, maxSkill =  89.9, category = 15, craft = 10, final =  9, graphic_id =  5140 },
-    { name = "Plate Arms",         minSkill = 90.0, maxSkill =  93.9, category = 15, craft =  3, final =  2, graphic_id =  5136 },
-    { name = "Plate Legs",         minSkill = 94.0, maxSkill =  96.9, category = 15, craft = 24, final = 23, graphic_id =  5137 },
-    { name = "Plate Tunic",        minSkill = 97.0, maxSkill = 120.0, category = 15, craft = 31, final = 30, graphic_id =  5141 },
+--- Tinkering items by skill range
+TINKER_ITEMS = {
+    { name = "Fork",        minSkill = 30.0, maxSkill =  49.9, category = 15, craft = 38, final = 37 },
+    { name = "Bartap",      minSkill = 50.0, maxSkill =  69.9, category =  8, craft = 24, final = 23 },
+    { name = "Spyglass",    minSkill = 70.0, maxSkill =  89.9, category = 22, craft = 38, final = 37 },
+    { name = "Scales",      minSkill = 90.0, maxSkill = 120.0, category = 22, craft = 17, final = 16 }
 }
-
---- Post-Work Function: smelt the crafted item back into ingots
-function postWork(config_)
-    local smithItem = CLLib_getItemToCraft(config_)
-    if not smithItem then
-        Console.debug("No configured craft item!")
-        return true
-    end
-
-    itemToSmelt = BaseLib_findInInventory(smithItem.graphic_id)
-    if not itemToSmelt or #itemToSmelt == 0 then
-        Console.debug("No item to smelt!")
-        return true
-    end
-
-    for i, item in ipairs(itemToSmelt) do
-        --- press Smelt Gump Button
-        Gumps.PressButton(2653346093, 14)
-        Target.WaitForTarget(1000)
-        --- select crafted item
-        Target.TargetSerial(item.Serial)
-        Gumps.WaitForGump(2653346093, 1000)
-        break
-    end
-
-    Pause(500)
-    return true
-end
 
 --- User Settings
 config = {
-    TOOL_ID = 0x13E3,              --- Smith's Hammer
-    GUMP_ID = 2653346093,          --- Gump ID used by Blacksmithing
+    TOOL_ID = 0x1EB8,              --- Tinkers Tools
+    GUMP_ID = 2653346093,          --- Gump ID used by Tinkering
     MAKE_LAST_BUTTON_ID = 21,      --- "Make Last" button
-    SKILL_TO_LEVEL = "Blacksmithy",
-    ITEMS = SMITH_ITEMS,
+    SKILL_TO_LEVEL = "Tinkering",
+    ITEMS = TINKER_ITEMS,
     PREWORK_FUNCTION = nil,
-    POSTWORK_FUNCTION = postWork
+    POSTWORK_FUNCTION = nil
 }
 
 -----------

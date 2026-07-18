@@ -15,22 +15,25 @@ local cll = Import('CLLib')
 
 --- Constants
 local cookingSkillStr = "Cooking"
-local fishSteakSkillThreshould = 120.0
-local RAW_FISH_GRAPHIC = 0x097A
 
 --- Cooking items by skill range
 local COOKING_ITEMS = {
-    { name = "Fish Steaks", minSkill = 0.0, maxSkill = fishSteakSkillThreshould - 0.1, category = 22, craft = 17, final = 16 }
+    { name = "Fish Steak" , minSkill =   0.0, maxSkill = 109.9, category = 22, craft = 17, final = 16, material = 0x097A }, --- drop all fish steaks at your feet before crafting (!)
+    { name = "Cut Of Ribs", minSkill = 110.0, maxSkill = 119.9, category = 22, craft = 38, final = 37, material = 0x09F1 }  --- drop all cut of raw ribs at your feet before crafting (!)
 }
 
---- Pre-Work Function: pick one Raw fish Steak from the ground into Player Backpack
-local function preWork()
-    local cookingSkillLevel = bl.getSkillValue(cookingSkillStr)
-    if cookingSkillLevel >= fishSteakSkillThreshould then
-        -- No prework needed...
-        return
+--- Pre-Work Function: pick one Raw fish Steak/Cut Of Raw Ribs from the ground into Player Backpack
+local function preWork(config_)
+    local cookItem = cll.getItemToCraft(config_)
+    if not cookItem then
+        Console.debug("No configured cook item!")
+        return false
     end
-    return bl.findItemOnGroundPickAndDropInBackpack(RAW_FISH_GRAPHIC, 1)
+    if not cookItem.material then
+        Console.debug("No Pre-Work Needed!")
+        return true
+    end
+    return bl.findItemOnGroundPickAndDropInBackpack(cookItem.material, 1)
 end
 
 --- User Settings

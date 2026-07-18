@@ -13,14 +13,16 @@ local cll = Import('CLLib')
 
 --- Crafting items by skill range
 local CARPENTRY_ITEMS = {
-    { name = "Barrel Staves", minSkill = 0.0, maxSkill = 10.9, category = 8, craft = 3, final = 2 },
-    { name = "Barrel Lid",    minSkill = 11.0, maxSkill = 20.9, category = 8, craft = 10, final = 9 },
-    { name = "Wooden Box",    minSkill = 21.0, maxSkill = 30.9, category = 22, craft = 3, final = 2 },
-    { name = "Medium Crate",  minSkill = 31.0, maxSkill = 33.9, category = 22, craft = 17, final = 16 },
-    { name = "Club",          minSkill = 34.0, maxSkill = 52.5, category = 29, craft = 24, final = 23 },
-    { name = "Wooden Shield", minSkill = 52.6, maxSkill = 73.5, category = 29, craft = 31, final = 30 },
-    { name = "Quarter Staff", minSkill = 73.6, maxSkill = 78.8, category = 29, craft = 3, final = 2 },
-    { name = "Gnarled Staff", minSkill = 78.9, maxSkill = 99.9, category = 29, craft = 17, final = 16 }
+    { name = "Barrel Staves", minSkill =   0.0, maxSkill =  10.9, category =  8, craft =  3, final =  2 },
+    { name = "Barrel Lid",    minSkill =  11.0, maxSkill =  20.9, category =  8, craft = 10, final =  9 },
+    { name = "Wooden Box",    minSkill =  21.0, maxSkill =  30.9, category = 22, craft =  3, final =  2 },
+    { name = "Medium Crate",  minSkill =  31.0, maxSkill =  33.9, category = 22, craft = 17, final = 16 },
+    { name = "Club",          minSkill =  34.0, maxSkill =  52.5, category = 29, craft = 24, final = 23 },
+    { name = "Wooden Shield", minSkill =  52.6, maxSkill =  73.5, category = 29, craft = 31, final = 30 },
+    { name = "Quarter Staff", minSkill =  73.6, maxSkill =  78.8, category = 29, craft =  3, final =  2 },
+    { name = "Gnarled Staff", minSkill =  78.9, maxSkill =  89.9, category = 29, craft = 17, final = 16 },
+    { name = "Small Tablet",  minSkill =  90.0, maxSkill =  99.9, category = 78, craft = 52, final = 51 },   --- can sell to players
+    { name = "Large Tablet",  minSkill = 100.0, maxSkill = 120.0, category = 78, craft = 59, final = 58 }    --- can sell to players
 }
 
 --- User Settings
