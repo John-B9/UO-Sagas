@@ -90,7 +90,7 @@ local function checkResetConfigWindowCloseTimer_()
 end
 
 local function checkAndCloseOpenConfigWindow_()
-    if CAUIGumpLogicBaseState.WindowAutoCloseTime == nil or CAUIGumpLogicBaseState.LastConfigWindowOpenTime == nil then
+    if CAUIGumpLogicBaseState.WindowAutoCloseTime == nil or CAUIGumpLogicBaseState.LastConfigWindowOpenTime == nil or CAUIGumpLogicBaseState.CloseWindowCallback == nil then
         return
     end
     local currentTickTime = cat.getCurrentTime()

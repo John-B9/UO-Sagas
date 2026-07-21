@@ -2854,7 +2854,7 @@ function IULumberjackSwap_equipHatchet()
     IPLib_equipItemWithLessUsesRemaining(IULumberjackSwap_hatchet_type_id, hatchet.Name, IULumberjackSwap_hatchetAcceptPredicate)
 end
 
-function IULumberjackSwap_equipAxeAndFight()
+function IULumberjackSwap_equipAxe()
     local axe = Items.FindByType(IULumberjackSwap_double_axe_type_id)
     Player.Equip(axe.Serial)
     if IULumberjackSwap_postSwapCallback then
@@ -2865,7 +2865,7 @@ end
 
 IULumberjackSwap_config = {
     first = { serial = IULumberjackSwap_hatchet_type_id, equip = IULumberjackSwap_equipHatchet, acceptPredicate = nil },
-    second = { serial = IULumberjackSwap_double_axe_type_id, equip = IULumberjackSwap_equipAxeAndFight, acceptPredicate = nil }
+    second = { serial = IULumberjackSwap_double_axe_type_id, equip = IULumberjackSwap_equipAxe, acceptPredicate = nil }
 }
 
 function IULumberjackSwap_lumberjackSwap(hatchetAcceptPredicate_, callback)
@@ -2901,6 +2901,210 @@ function IUIDWand_useIdWand(callback)
         callback()
     end
 
+end
+
+CAGathering_CAGatheringLumberjacking_LumberjackingFSMStates = {
+    EquipHatchet = 1,
+    Chop = 2,
+    WaitingForChop = 3
+}
+
+CAGathering_CAGatheringLumberjacking_LumberjackingFSMStatesStrings = {
+    "EquipHatchet",
+    "Chop",
+    "WaitingForChop"
+}
+
+CAGathering_CAGatheringLumberjacking_GatheringLumberjackingStaticConfig = {
+    HatchetGraphicID = 3907,
+    LogsGraphicID = 7133,
+    WeightLogCutThreshold = 10
+}
+
+GatheringLumberjackingState = {
+    FSMState = CAGathering_CAGatheringLumberjacking_LumberjackingFSMStates.EquipHatchet,
+    HatchetInUse = nil
+}
+
+function CAGatheringLumberjacking_resetLumberjackFSM()
+    CALog_debug("Clearing lumberjacking FSM state")
+    GatheringLumberjackingState.FSMState = CAGathering_CAGatheringLumberjacking_LumberjackingFSMStates.EquipHatchet
+    GatheringLumberjackingState.HatchetInUse = nil
+end
+
+function CAGatheringLumberjacking_equipHatchet()
+    local hatchet = Items.FindByLayer(2)
+    if hatchet == nil or hatchet.Graphic ~= CAGathering_CAGatheringLumberjacking_GatheringLumberjackingStaticConfig.HatchetGraphicID then
+        IULumberjackSwap_lumberjackSwap(IPMaterialPredicates_itemIsOfIron, nil)
+        hatchet = Items.FindByLayer(2)
+        Pause(CATime_getActionWaitTime())
+    end
+    if hatchet == nil then
+        CALog_mainInfo("Missing Hatchet")
+    end
+    GatheringLumberjackingState.HatchetInUse = hatchet
+end
+
+CAGathering_CAGatheringLumberjacking_brokeAxeJournalLog = "You broke your axe."
+CAGathering_CAGatheringLumberjacking_noTreesNearbyJournalLog = "There is nothing you can harvest nearby."
+CAGathering_CAGatheringLumberjacking_nearbyTreesDepletedJournalLog = "There's not enough wood here to harvest."
+CAGathering_CAGatheringLumberjacking_waitActionJournalLog = "You must wait to perform another action."
+CAGathering_CAGatheringLumberjacking_windowOutOfFocus = "Your game window does not have focus"
+CAGathering_CAGatheringLumberjacking_normalLogsCollectedJournalLog = "logs and put them into your backpack."
+CAGathering_CAGatheringLumberjacking_questProgressJournalLog = "Quest progress: Gather"
+
+failedToGatherJournalLog = "You hack at the tree for a while"
+
+veriteLogsCollectedJournalLog = "You chop some verite logs and put them into your backpack."
+valoriteLogsCollectedJournalLog = "You chop some valorite logs and put them into your backpack."
+
+function checkJournal()
+
+    if Journal.Contains(CAGathering_CAGatheringLumberjacking_brokeAxeJournalLog) then
+        CALog_mainInfo("Axe broke. Re-equipping...")
+        return CAGathering_CAGatheringLumberjacking_LumberjackingFSMStates.EquipHatchet
+    end
+
+    if Journal.Contains(CAGathering_CAGatheringLumberjacking_noTreesNearbyJournalLog) then
+        CALog_mainInfo("No trees nearby...")
+        return CAGathering_CAGatheringLumberjacking_LumberjackingFSMStates.Chop
+    end
+
+    if Journal.Contains(CAGathering_CAGatheringLumberjacking_nearbyTreesDepletedJournalLog) then
+        CALog_mainInfo("Trees already depleted...")
+        return CAGathering_CAGatheringLumberjacking_LumberjackingFSMStates.Chop
+    end
+
+    if Journal.Contains(CAGathering_CAGatheringLumberjacking_waitActionJournalLog) or Journal.Contains(CAGathering_CAGatheringLumberjacking_windowOutOfFocus) then
+
+        return CAGathering_CAGatheringLumberjacking_LumberjackingFSMStates.Chop
+    end
+
+    if Journal.Contains(CAGathering_CAGatheringLumberjacking_normalLogsCollectedJournalLog) or Journal.Contains(CAGathering_CAGatheringLumberjacking_questProgressJournalLog) then
+        CALog_mainInfo("Got some Logs...")
+        return CAGathering_CAGatheringLumberjacking_LumberjackingFSMStates.Chop
+    end
+
+    return CAGathering_CAGatheringLumberjacking_LumberjackingFSMStates.WaitingForChop
+end
+
+function CAGatheringLumberjacking_weightThreshouldReached()
+    return Player.Weight > Player.MaxWeight - CAGathering_CAGatheringLumberjacking_GatheringLumberjackingStaticConfig.WeightLogCutThreshold
+end
+
+function CAGatheringLumberjacking_checkWeightAndCutLogs()
+    if CAGatheringLumberjacking_weightThreshouldReached() then
+        --- Check and cut logs
+        local logs = BaseLib_findInInventory(CAGathering_CAGatheringLumberjacking_GatheringLumberjackingStaticConfig.LogsGraphicID)
+        if GatheringLumberjackingState.HatchetInUse ~= nil and logs ~= nil then
+            CALog_mainInfo("Chopping Logs...")
+            for i, item in ipairs(logs) do
+                Player.UseObject(GatheringLumberjackingState.HatchetInUse.Serial)
+                if Target.WaitForTarget(1000) then
+                    Target.TargetSerial(item.Serial)
+                end
+                Pause(CATime_getActionWaitTime())
+            end
+        else
+            CALog_mainInfo("I need to find a bank")
+        end
+    end
+end
+
+function CAGatheringLumberjacking_transitionLumberjackFSM()
+
+    local currentState = GatheringLumberjackingState.FSMState
+    local currentStateString = CAGathering_CAGatheringLumberjacking_LumberjackingFSMStatesStrings[currentState]
+    CALog_debug("Transitioning lumberjacking FSM (Current state: " .. currentStateString .. ")")
+
+    if currentState == CAGathering_CAGatheringLumberjacking_LumberjackingFSMStates.EquipHatchet then
+
+        CAGatheringLumberjacking_equipHatchet()
+        if GatheringLumberjackingState.HatchetInUse ~= nil then
+            GatheringLumberjackingState.FSMState = CAGathering_CAGatheringLumberjacking_LumberjackingFSMStates.Chop
+        end
+
+    elseif currentState == CAGathering_CAGatheringLumberjacking_LumberjackingFSMStates.Chop then
+
+        Player.UseObject(GatheringLumberjackingState.HatchetInUse.Serial)
+        if Target.WaitForTarget(1000) then
+            Target.Self()
+        end
+        Pause(CATime_getActionWaitTime())
+        GatheringLumberjackingState.FSMState = checkJournal()
+
+    elseif currentState == CAGathering_CAGatheringLumberjacking_LumberjackingFSMStates.WaitingForChop then
+
+        GatheringLumberjackingState.FSMState = checkJournal()
+
+    end
+
+    CAGatheringLumberjacking_checkWeightAndCutLogs()
+
+    CALog_debug("Transitioning lumberjacking FSM (End state: " .. CAGathering_CAGatheringLumberjacking_LumberjackingFSMStatesStrings[GatheringLumberjackingState.FSMState] .. ")")
+
+end
+
+GatheringMiningConfig = {
+}
+
+CAGatheringMining_GatheringMiningStaticConfig = {
+}
+
+CAGatheringMining_GatheringMiningState = {
+}
+
+function CAGatheringMining_resetMiningFSM()
+    CALog_debug("Clearing mining FSM state")
+end
+
+function CAGatheringMining_transitionMiningFSM()
+    CALog_debug("Stepping mining FSM")
+end
+
+GatheringConfig = {
+    MiningModeActive = false,
+    LumberjackingModeActive = false
+}
+
+function CAGathering_resetGatheringFSM()
+    CALog_debug("Clearing gathering FSM state")
+    CAGatheringLumberjacking_resetLumberjackFSM()
+    CAGatheringMining_resetMiningFSM()
+end
+
+function CAGathering_disableGatheringModes()
+    CALog_debug("Disabling all gathering modes")
+    GatheringConfig.MiningModeActive = false
+    GatheringConfig.LumberjackingModeActive = false
+    CAGathering_resetGatheringFSM()
+end
+
+function CAGathering_toggleMiningMode()
+    local newState = not GatheringConfig.MiningModeActive
+    CAGathering_disableGatheringModes()
+    CALog_mainInfo("Toggling Mining Mode to: " .. tostring(newState))
+    GatheringConfig.MiningModeActive = newState
+end
+
+function CAGathering_toggleLumberjackingMode()
+    local newState = not GatheringConfig.LumberjackingModeActive
+    CAGathering_disableGatheringModes()
+    CALog_mainInfo("Toggling Lumberjacking Mode to: " .. tostring(newState))
+    GatheringConfig.LumberjackingModeActive = newState
+end
+
+function CAGathering_gather()
+    if not GatheringConfig.MiningModeActive and not GatheringConfig.LumberjackingModeActive then
+        CALog_debug("No gathering mode is active...")
+        return
+    end
+    CALog_debug("Gathering resources")
+    if GatheringConfig.MiningModeActive then
+        CAGatheringMining_transitionMiningFSM()
+    elseif GatheringConfig.LumberjackingModeActive then
+        CAGatheringLumberjacking_transitionLumberjackFSM()
+    end
 end
 
 UserTriggeredCommandsConfig = {
@@ -2951,12 +3155,12 @@ function CAUserTriggeredCommands_useIdWand()
     IUIDWand_useIdWand(nil)
 end
 
-function CAUserTriggeredCommands_useMiningStart()
-    --IUIDWand_useIdWand(nil)
+function CAUserTriggeredCommands_toggleMining()
+    CAGathering_toggleMiningMode()
 end
 
-function CAUserTriggeredCommands_useMiningStop()
-    --IUIDWand_useIdWand(nil)
+function CAUserTriggeredCommands_toggleLumberjacking()
+    CAGathering_toggleLumberjackingMode()
 end
 
 Commands = {
@@ -2967,8 +3171,8 @@ Commands = {
     { Keyword = "Skinn", Callback = CAUserTriggeredCommands_useSkinningKnife },
     { Keyword = "Scissors", Callback = CAUserTriggeredCommands_useScissors },
     { Keyword = "ID Wand", Callback = CAUserTriggeredCommands_useIdWand },
-    { Keyword = "Let's Mine!", Callback = CAUserTriggeredCommands_useMiningStart },
-    { Keyword = "I'm done minning...", Callback = CAUserTriggeredCommands_useMiningStop }
+    { Keyword = "Toggle Mining", Callback = CAUserTriggeredCommands_toggleMining },
+    { Keyword = "Toggle Lumberjacking", Callback = CAUserTriggeredCommands_toggleLumberjacking }
 }
 
 function CAUserTriggeredCommands_journalContainsCommand(keyword)
@@ -3183,6 +3387,7 @@ function CAMainLoop_journalDependantActions()
     CADebuffs_debuffs()
     CAArmDisarm_rearmPlayer()
     CADetectPlayers_detectPlayers()
+    CAGathering_gather()
 end
 
 function CAMainLoop_journalIndependantActions()
@@ -3390,7 +3595,7 @@ function CAUIGumpLogicBase_checkResetConfigWindowCloseTimer()
 end
 
 function CAUIGumpLogicBase_checkAndCloseOpenConfigWindow()
-    if CAUIGumpLogicBaseState.WindowAutoCloseTime == nil or CAUIGumpLogicBaseState.LastConfigWindowOpenTime == nil then
+    if CAUIGumpLogicBaseState.WindowAutoCloseTime == nil or CAUIGumpLogicBaseState.LastConfigWindowOpenTime == nil or CAUIGumpLogicBaseState.CloseWindowCallback == nil then
         return
     end
     currentTickTime = CATime_getCurrentTime()
@@ -3624,7 +3829,7 @@ SkinnModeHueKeepTables = {
 
 CAUIGumpMainRowState = {
     MainConfigClosed = true,
-    ConfigWindowTimeoutMode = ConfigWindowTimeoutModeValues.TimeoutThreeSeconds,
+    ConfigWindowTimeoutMode = ConfigWindowTimeoutModeValues.TimeoutFourSeconds,
     RearmMode = RearmModeValues.Move,
     SkinnMode = SkinnModeValues.None
 }

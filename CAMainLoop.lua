@@ -24,6 +24,7 @@ local casca = Import('CAScavenge')
 local caski = Import('CASkinn')
 local cautc = Import('CAUserTriggeredCommands')
 local caa = Import('CAAttack')
+local cag = Import('CAGathering')
 
 -----------------
 --- Variables ---
@@ -73,6 +74,7 @@ local function journalDependantActions_()
     cadbuf.debuffs()
     caad.rearmPlayer()
     cadp.detectPlayers()
+    cag.gather()
 end
 
 local function journalIndependantActions_()

@@ -49,6 +49,7 @@ local iuls = Import('IULumberjackSwap')
 local iuski = Import('IUSkinn')
 local iusci = Import('IUScissors')
 local iuidw = Import('IUIDWand')
+local cag = Import('CAGathering')
 
 -----------------
 --- Variables ---
@@ -110,12 +111,12 @@ local function useIdWand_()
     iuidw.useIdWand(nil)
 end
 
-local function useMiningStart_()
-    --iuidw.useIdWand(nil)
+local function toggleMining_()
+    cag.toggleMiningMode()
 end
 
-local function useMiningStop_()
-    --iuidw.useIdWand(nil)
+local function toggleLumberjacking_()
+    cag.toggleLumberjackingMode()
 end
 
 local Commands = {
@@ -126,8 +127,8 @@ local Commands = {
     { Keyword = "Skinn", Callback = useSkinningKnife_ },
     { Keyword = "Scissors", Callback = useScissors_ },
     { Keyword = "ID Wand", Callback = useIdWand_ },
-    { Keyword = "Let's Mine!", Callback = useMiningStart_ },
-    { Keyword = "I'm done minning...", Callback = useMiningStop_ }
+    { Keyword = "Toggle Mining", Callback = toggleMining_ },
+    { Keyword = "Toggle Lumberjacking", Callback = toggleLumberjacking_ }
 }
 
 -----------------

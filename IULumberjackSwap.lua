@@ -33,7 +33,7 @@ local function equipHatchet_()
     ipl.equipItemWithLessUsesRemaining(hatchet_type_id, hatchet.Name, hatchetAcceptPredicate)
 end
 
-local function equipAxeAndFight_()
+local function equipAxe_()
     local axe = Items.FindByType(double_axe_type_id)
     Player.Equip(axe.Serial)
     if postSwapCallback then
@@ -44,7 +44,7 @@ end
 
 local config = {
     first = { serial = hatchet_type_id, equip = equipHatchet_, acceptPredicate = nil },
-    second = { serial = double_axe_type_id, equip = equipAxeAndFight_, acceptPredicate = nil }
+    second = { serial = double_axe_type_id, equip = equipAxe_, acceptPredicate = nil }
 }
 
 local function lumberjackSwap_(hatchetAcceptPredicate_, callback)
