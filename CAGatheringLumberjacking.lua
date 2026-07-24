@@ -13,46 +13,45 @@ local cal = Import('CALog')
 local cat = Import('CATime')
 local ipmp = Import('IPMaterialPredicates')
 local iuls = Import('IULumberjackSwap')
+local cagfsm = Import('CAGatheringFSM')
 
 -----------------
 --- Constants ---
 -----------------
 
-local LumberjackingFSMStates = {
-    EquipHatchet = 1,
-    Chop = 2,
-    WaitingForChop = 3
-}
-
-local LumberjackingFSMStatesStrings = {
-    "EquipHatchet",
-    "Chop",
-    "WaitingForChop"
-}
-
 local GatheringLumberjackingStaticConfig = {
     HatchetGraphicID = 3907,
-    LogsGraphicID = 7133,
-    WeightLogCutThreshold = 10
+    LogsGraphicID = 7133
+}
+
+GatheringLumberjackingConfig = {
+    LogHuesToKeep = {
+        --- 0x0000,         --- Regular
+        --- 0x0973,         --- Dull Copper
+        0x0966,         --- Shadow Iron
+        0x096D,         --- Copper
+        0x0972,             --- Bronze
+        0x08A5,             --- Gold
+        0x0979,             --- Agapite
+        0x089F,             --- Verite
+        0x08AB              --- Valorite
+    }
 }
 
 -----------------
---- Variables ---
+--- Accessors ---
 -----------------
 
-GatheringLumberjackingState = {
-    FSMState = LumberjackingFSMStates.EquipHatchet,
-    HatchetInUse = nil
-}
+local function setLogHuesToKeep_(hues)
+    GatheringFSMState.LogHuesToKeep = hues
+end
 
 -----------------
 --- Functions ---
 -----------------
 
 local function resetLumberjackFSM_()
-    cal.debug("Clearing lumberjacking FSM state")
-    GatheringLumberjackingState.FSMState = LumberjackingFSMStates.EquipHatchet
-    GatheringLumberjackingState.HatchetInUse = nil
+    cagfsm.resetGatheringFSM()
 end
 
 local function equipHatchet_()
@@ -65,7 +64,7 @@ local function equipHatchet_()
     if hatchet == nil then
         cal.mainInfo("Missing Hatchet")
     end
-    GatheringLumberjackingState.HatchetInUse = hatchet
+    cagfsm.setToolInUse(hatchet)
 end
 
 local brokeAxeJournalLog = "You broke your axe."
@@ -81,91 +80,59 @@ local failedToGatherJournalLog = "You hack at the tree for a while"
 local veriteLogsCollectedJournalLog = "You chop some verite logs and put them into your backpack."
 local valoriteLogsCollectedJournalLog = "You chop some valorite logs and put them into your backpack."
 
-local function checkJournal()
+local function checkJournal_()
 
     if Journal.Contains(brokeAxeJournalLog) then
         cal.mainInfo("Axe broke. Re-equipping...")
-        return LumberjackingFSMStates.EquipHatchet
+        return cagfsm.getGatheringFSMStates().EquipTool
     end
 
     if Journal.Contains(noTreesNearbyJournalLog) then
         cal.mainInfo("No trees nearby...")
-        return LumberjackingFSMStates.Chop
+        return cagfsm.getGatheringFSMStates().Gather
     end
 
     if Journal.Contains(nearbyTreesDepletedJournalLog) then
         cal.mainInfo("Trees already depleted...")
-        return LumberjackingFSMStates.Chop
+        return cagfsm.getGatheringFSMStates().Gather
     end
 
     if Journal.Contains(waitActionJournalLog) or Journal.Contains(windowOutOfFocus) then
-        ---cal.mainInfo("Trees already depleted...")
-        return LumberjackingFSMStates.Chop
+        return cagfsm.getGatheringFSMStates().Gather
     end
 
     if Journal.Contains(normalLogsCollectedJournalLog) or Journal.Contains(questProgressJournalLog) then
         cal.mainInfo("Got some Logs...")
-        return LumberjackingFSMStates.Chop
+        return cagfsm.getGatheringFSMStates().Gather
     end
 
-    return LumberjackingFSMStates.WaitingForChop
+    return cagfsm.getGatheringFSMStates().WaitingResult
 end
 
-local function weightThreshouldReached_()
-    return Player.Weight > Player.MaxWeight - GatheringLumberjackingStaticConfig.WeightLogCutThreshold
-end
-
-local function checkWeightAndCutLogs_()
-    if weightThreshouldReached_() then
-        --- Check and cut logs
-        local logs = bl.findInInventory(GatheringLumberjackingStaticConfig.LogsGraphicID)
-        if GatheringLumberjackingState.HatchetInUse ~= nil and logs ~= nil then
-            cal.mainInfo("Chopping Logs...")
-            for i, item in ipairs(logs) do
-                Player.UseObject(GatheringLumberjackingState.HatchetInUse.Serial)
-                if Target.WaitForTarget(1000) then
-                    Target.TargetSerial(item.Serial)
-                end
-                Pause(cat.getActionWaitTime())
+local function cutLogs_()
+    local logs = bl.findInInventory(GatheringLumberjackingStaticConfig.LogsGraphicID)
+    if cagfsm.getToolInUse() ~= nil and logs ~= nil then
+        cal.mainInfo("Chopping Logs...")
+        for i, item in ipairs(logs) do
+            Player.UseObject(cagfsm.getToolInUse().Serial)
+            if Target.WaitForTarget(1000) then
+                Target.TargetSerial(item.Serial)
             end
-        else
-            cal.mainInfo("I need to find a bank")
+            Pause(cat.getActionWaitTime())
         end
     end
 end
 
 local function transitionLumberjackFSM_()
-
-    local currentState = GatheringLumberjackingState.FSMState
-    local currentStateString = LumberjackingFSMStatesStrings[currentState]
-    cal.debug("Transitioning lumberjacking FSM (Current state: " .. currentStateString .. ")")
-
-    if currentState == LumberjackingFSMStates.EquipHatchet then
-
-        equipHatchet_()
-        if GatheringLumberjackingState.HatchetInUse ~= nil then
-            GatheringLumberjackingState.FSMState = LumberjackingFSMStates.Chop
-        end
-
-    elseif currentState == LumberjackingFSMStates.Chop then
-        
-        Player.UseObject(GatheringLumberjackingState.HatchetInUse.Serial)
-        if Target.WaitForTarget(1000) then
-            Target.Self()
-        end
-        Pause(cat.getActionWaitTime())
-        GatheringLumberjackingState.FSMState = checkJournal()
-
-    elseif currentState == LumberjackingFSMStates.WaitingForChop then
-
-        GatheringLumberjackingState.FSMState = checkJournal()
-
-    end
-    
-    checkWeightAndCutLogs_()
-
-    cal.debug("Transitioning lumberjacking FSM (End state: " .. LumberjackingFSMStatesStrings[GatheringLumberjackingState.FSMState] .. ")")
-
+    local FSMConfigLumberjacking = {
+        SkillName = "Lumberjacking",
+        equipTool = equipHatchet_,
+        checkJournal = checkJournal_,
+        weightThreshouldReachedCallback = cutLogs_,
+        materialGraphicID = GatheringLumberjackingStaticConfig.LogsGraphicID,
+        materialHuesToKeep = GatheringLumberjackingConfig.LogHuesToKeep
+    }
+    cagfsm.transitionGatheringFSM(FSMConfigLumberjacking)
 end
 
 --------------
@@ -173,6 +140,7 @@ end
 --------------
 
 local Obj = {
+    setLogHuesToKeep = setLogHuesToKeep_,
     resetLumberjackFSM = resetLumberjackFSM_,
     transitionLumberjackFSM = transitionLumberjackFSM_
 }

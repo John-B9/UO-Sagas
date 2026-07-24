@@ -10,6 +10,8 @@
 local cal = Import('CALog')
 local cauiglayoutb = Import('CAUIGumpLayoutBase')
 local cauiglogicb = Import('CAUIGumpLogicBase')
+local cagl = Import('CAGatheringLumberjacking')
+local cagm = Import('CAGatheringMining')
 
 --------------
 --- Layout ---
@@ -32,7 +34,9 @@ local CAUIGMR = {
         window = nil,
         configWindowTimeoutModeButton = nil,
         rearmButton = nil,
-        skinnButton = nil
+        skinningGatheringModeButton = nil,
+        lumberjackingGatheringModeButton = nil,
+        miningGatheringModeButton = nil
     }
 }
 
@@ -79,7 +83,7 @@ local RearmModeStrings = {
     'Rearm (On Move + Timer)'
 }
 
-local SkinnModeValues = {
+local GatheringModeValues = {
     None = 1,
     All = 2,
     ShaddowPlus = 3,
@@ -89,20 +93,40 @@ local SkinnModeValues = {
     Valorite = 7
 }
 
-local SkinnModeStrings = {
-    'Skinn (None)',
-    'Skinn (All)',
-    'Skinn (Shaddow +)',
-    'Skinn (Copper +)',
-    'Skinn (Bronze +)',
-    'Skinn (Verite +)',
+local SkinningGatheringModeStrings = {
+    'Skinning (None)',
+    'Skinning (All)',
+    'Skinning (Shaddow +)',
+    'Skinning (Copper +)',
+    'Skinning (Bronze +)',
+    'Skinning (Verite +)',
     'Skinn (Valorite)'
 }
 
-local LeatherHuesToKeepNone = {
+local LumberjackingGatheringModeStrings = {
+    'Lumberjack (None)',
+    'Lumberjack (All)',
+    'Lumberjack (Shaddow +)',
+    'Lumberjack (Copper +)',
+    'Lumberjack (Bronze +)',
+    'Lumberjack (Verite +)',
+    'Lumberjack (Valorite)'
 }
 
-local LeatherHuesToKeepAll = {
+local MiningGatheringModeStrings = {
+    'Mining (None)',
+    'Mining (All)',
+    'Mining (Shaddow +)',
+    'Mining (Copper +)',
+    'Mining (Bronze +)',
+    'Mining (Verite +)',
+    'Mining (Valorite)'
+}
+
+local HuesToKeepTableNone = {
+}
+
+local HuesToKeepTableAll = {
     0x0000,             --- Regular
     ---0x0973,             --- Dull Copper
     0x0966,             --- Shadow Iron
@@ -114,7 +138,7 @@ local LeatherHuesToKeepAll = {
     0x08AB              --- Valorite
 }
 
-local LeatherHuesToKeepShadowPlus = {
+local HuesToKeepTableShadowPlus = {
     0x0966,             --- Shadow Iron
     0x096D,             --- Copper
     0x0972,             --- Bronze
@@ -122,36 +146,36 @@ local LeatherHuesToKeepShadowPlus = {
     0x08AB              --- Valorite
 }
 
-local LeatherHuesToKeepCopperPlus = {
+local HuesToKeepTableCopperPlus = {
     0x096D,             --- Copper
     0x0972,             --- Bronze
     0x089F,             --- Verite
     0x08AB              --- Valorite
 }
 
-local LeatherHuesToKeepBronzePlus = {
+local HuesToKeepTableBronzePlus = {
     0x0972,             --- Bronze
     0x089F,             --- Verite
     0x08AB              --- Valorite
 }
 
-local LeatherHuesToKeepVeritePlus = {
+local HuesToKeepTableVeritePlus = {
     0x089F,             --- Verite
     0x08AB              --- Valorite
 }
 
-local LeatherHuesToKeepValorite = {
+local HuesToKeepTableValorite = {
     0x08AB              --- Valorite
 }
 
-local SkinnModeHueKeepTables = {
-    LeatherHuesToKeepNone,
-    LeatherHuesToKeepAll,
-    LeatherHuesToKeepShadowPlus,
-    LeatherHuesToKeepCopperPlus,
-    LeatherHuesToKeepBronzePlus,
-    LeatherHuesToKeepVeritePlus,
-    LeatherHuesToKeepValorite
+local HuesToKeepTables = {
+    HuesToKeepTableNone,
+    HuesToKeepTableAll,
+    HuesToKeepTableShadowPlus,
+    HuesToKeepTableCopperPlus,
+    HuesToKeepTableBronzePlus,
+    HuesToKeepTableVeritePlus,
+    HuesToKeepTableValorite
 }
 
 -------------
@@ -162,7 +186,9 @@ CAUIGumpMainRowState = {
     MainConfigClosed = true,
     ConfigWindowTimeoutMode = ConfigWindowTimeoutModeValues.TimeoutFourSeconds,
     RearmMode = RearmModeValues.Move,
-    SkinnMode = SkinnModeValues.None
+    SkinningGatheringMode = GatheringModeValues.None,
+    LumberjackingGatheringMode = GatheringModeValues.All,
+    MiningGatheringMode = GatheringModeValues.All
 }
 
 -----------------
@@ -197,9 +223,21 @@ local function processRearmModeButtonInteractions_()
     end
 end
 
-local function processSkinnModeButtonInteractions_()
-    if CAUIGMR.Config.skinnButton:WasClicked() then
-        CAUIGumpMainRowState.SkinnMode = cauiglogicb.onEnumStateButtonPressed(CAUIGumpMainRowState.SkinnMode, SkinnModeValues.Valorite, SkinnModeStrings, CAUIGMR.Config.skinnButton, 'Skinning Mode')
+local function processSkinningGatheringModeButtonInteractions_()
+    if CAUIGMR.Config.skinningGatheringModeButton:WasClicked() then
+        CAUIGumpMainRowState.SkinningGatheringMode = cauiglogicb.onEnumStateButtonPressed(CAUIGumpMainRowState.SkinningGatheringMode, GatheringModeValues.Valorite, SkinningGatheringModeStrings, CAUIGMR.Config.skinningGatheringModeButton, 'Skinning Mode')
+    end
+end
+
+local function processLumberjackingGatheringModeButtonInteractions_()
+    if CAUIGMR.Config.lumberjackingGatheringModeButton:WasClicked() then
+        CAUIGumpMainRowState.LumberjackingGatheringMode = cauiglogicb.onEnumStateButtonPressed(CAUIGumpMainRowState.LumberjackingGatheringMode, GatheringModeValues.Valorite, LumberjackingGatheringModeStrings, CAUIGMR.Config.lumberjackingGatheringModeButton, 'Lumberjacking Mode')
+    end
+end
+
+local function processMiningGatheringModeButtonInteractions_()
+    if CAUIGMR.Config.miningGatheringModeButton:WasClicked() then
+        CAUIGumpMainRowState.MiningGatheringMode = cauiglogicb.onEnumStateButtonPressed(CAUIGumpMainRowState.MiningGatheringMode, GatheringModeValues.Valorite, MiningGatheringModeStrings, CAUIGMR.Config.miningGatheringModeButton, 'Mining Mode')
     end
 end
 
@@ -207,7 +245,9 @@ local function processUIInteractions_()
     processConfigMenuButtonInteractions_()
     processConfigWindowTimeoutModeButtonInteractions_()
     processRearmModeButtonInteractions_()
-    processSkinnModeButtonInteractions_()
+    processSkinningGatheringModeButtonInteractions_()
+    processLumberjackingGatheringModeButtonInteractions_()
+    processMiningGatheringModeButtonInteractions_()
 end
 
 local function updateCAConfigToCurrentUIConfig_(CAConfig)
@@ -222,9 +262,12 @@ local function updateCAConfigToCurrentUIConfig_(CAConfig)
     armDisarmConfig.AutoRearmWithDelay = armDisarmEnabled and rearmOnDelay
     
     local skinningConfig = CAConfig.modules.Skinning
-    local skinningEnabled = CAUIGumpMainRowState.SkinnMode ~= SkinnModeValues.None
+    local skinningEnabled = CAUIGumpMainRowState.SkinningGatheringMode ~= GatheringModeValues.None
     skinningConfig.Enable = skinningEnabled
-    skinningConfig.LeatherHuesToKeep = SkinnModeHueKeepTables[CAUIGumpMainRowState.SkinnMode]
+    skinningConfig.LeatherHuesToKeep = HuesToKeepTables[CAUIGumpMainRowState.SkinningGatheringMode]
+
+    cagl.setLogHuesToKeep(HuesToKeepTables[CAUIGumpMainRowState.LumberjackingGatheringMode])
+    cagm.setOreHuesToKeep(HuesToKeepTables[CAUIGumpMainRowState.MiningGatheringMode])
 end
 
 local function initUI_(mainWindow)
@@ -232,11 +275,13 @@ local function initUI_(mainWindow)
     CAUIGMR.titleLabel = mainWindow:AddLabel(CAUIGumpMainRowLayout.TitleLabelPosX, CAUIGumpMainRowLayout.TitleLabelPosY, 'SAGAS Combat Assistant')
     CAUIGMR.titleLabel:SetColor(0.2, 0.8, 1, 1)
     CAUIGMR.configButton = mainWindow:AddButton(CAUIGumpMainRowLayout.ConfigButtonPosX, CAUIGumpMainRowLayout.ConfigButtonPosY, 'CONFIG (+)', CAUIGumpMainRowLayout.ConfigButtonSizeX, CAUIGumpMainRowLayout.ConfigButtonSizeY)
-    CAUIGMR.Config.window = cauiglayoutb.createModuleConfigWindow('MainConfigWindow', 'Main Config', 3, 1)
+    CAUIGMR.Config.window = cauiglayoutb.createModuleConfigWindow('MainConfigWindow', 'Main Config', 5, 1)
     cauiglogicb.registerSharedVisibilityConfigWindowsCloseFunction(closeMainConfigWindow_)
     CAUIGMR.Config.configWindowTimeoutModeButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 1, ConfigWindowTimeoutModeStrings[CAUIGumpMainRowState.ConfigWindowTimeoutMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
     CAUIGMR.Config.rearmButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 2, RearmModeStrings[CAUIGumpMainRowState.RearmMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    CAUIGMR.Config.skinnButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 3, SkinnModeStrings[CAUIGumpMainRowState.SkinnMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGMR.Config.skinningGatheringModeButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 3, SkinningGatheringModeStrings[CAUIGumpMainRowState.SkinningGatheringMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGMR.Config.lumberjackingGatheringModeButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 4, LumberjackingGatheringModeStrings[CAUIGumpMainRowState.LumberjackingGatheringMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGMR.Config.miningGatheringModeButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 5, MiningGatheringModeStrings[CAUIGumpMainRowState.MiningGatheringMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
 end
 
 --------------
