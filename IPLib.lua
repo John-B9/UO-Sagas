@@ -18,6 +18,9 @@ local debugEnabled = false
 
 local function getItemSingleValueProperty_(item, singleValuePropertyRegexStr)
     bl.printIfDebug(debugEnabled, item.Properties)
+    if not item.Properties then
+        return nil
+    end
     local cleanProperties = string.gsub(item.Properties, "<.->", "")
     bl.printIfDebug(debugEnabled, cleanProperties)
     local regexMatchIter = string.gmatch(cleanProperties, singleValuePropertyRegexStr)
@@ -32,6 +35,9 @@ end
 
 local function getItemSingleValuePropertyNumber_(item, singleValuePropertyRegexStr)
     local propertyVal = getItemSingleValueProperty_(item, singleValuePropertyRegexStr)
+    if not propertyVal then
+        return 0
+    end
     return tonumber(propertyVal)
 end
 
@@ -60,6 +66,9 @@ end
 
 local function getItemDoubleValueProperty_(item, doubleValuePropertyRegexStr)
     bl.printIfDebug(debugEnabled, item.Properties)
+    if not item.Properties then
+        return nil
+    end
     local cleanProperties = string.gsub(item.Properties, "<.->", "")
     bl.printIfDebug(debugEnabled, cleanProperties)
     local regexMatchIter = string.gmatch(cleanProperties, doubleValuePropertyRegexStr)
@@ -84,6 +93,14 @@ end
 local durability_regex_str = "Durability: (%d+)/(%d+)"
 local function getDurability_(item)
     return getItemDoubleValueProperty_(item, durability_regex_str)
+end
+
+local function getDurabilityPercentage_(item)
+    local durabilityProperty = getDurability_(item)
+    if not durabilityProperty or durabilityProperty[2] == 0 then
+        return nil
+    end
+    return (durabilityProperty[1]/durabilityProperty[2]) * 100
 end
 
 -----------------
@@ -253,6 +270,7 @@ local Obj = {
     getItemDoubleValueProperty = getItemDoubleValueProperty_,
     getContents = getContents_,
     getDurability = getDurability_,
+    getDurabilityPercentage = getDurabilityPercentage_,
     getItemWithLessSinglePropertyValue = getItemWithLessSinglePropertyValue_,
     equipItemWithLessSinglePropertyValue = equipItemWithLessSinglePropertyValue_,
     getItemWithLessUsesRemaining = getItemWithLessUsesRemaining_,

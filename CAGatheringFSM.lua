@@ -121,8 +121,9 @@ local function transitionGatheringFSM_(FSMConfig)
 
     elseif currentState == GatheringFSMStates.WaitingResult then
 
+        local currentTickTime = cat.getCurrentTickTime()
         if GatheringFSMState.LastWaitingGatheringStartTime == nil then
-            GatheringFSMState.LastWaitingGatheringStartTime = cat.getCurrentTickTime()
+            GatheringFSMState.LastWaitingGatheringStartTime = currentTickTime
         end
 
         GatheringFSMState.FSMState = FSMConfig.checkJournal()
@@ -130,7 +131,6 @@ local function transitionGatheringFSM_(FSMConfig)
         if GatheringFSMState.FSMState ~= GatheringFSMStates.WaitingResult then
             GatheringFSMState.LastWaitingGatheringStartTime = nil
         else
-            local currentTickTime = cat.getCurrentTickTime()
             local exceedsDuration = cat.exceedsDuration(GatheringFSMState.LastWaitingGatheringStartTime, currentTickTime, GatheringFSMConfigStatic.GatheringWaitTimeout)
             if exceedsDuration then
                 cal.debug("Gathering timeout reached...")

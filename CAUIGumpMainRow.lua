@@ -23,11 +23,11 @@ local CAUIGumpMainRowLayout = {
     ConfigButtonPosX = 175,
     ConfigButtonPosY = 35,
     ConfigButtonSizeX = 85,
-    ConfigButtonSizeY = 25
+    ConfigButtonSizeY = 25,
+    ConfigButtonYOffset = 10
 }
 
 local CAUIGMR = {
-    mainWindow = nil,
     titleLabel = nil,
     configButton = nil,
     Config = {
@@ -195,6 +195,10 @@ CAUIGumpMainRowState = {
 --- Functions ---
 -----------------
 
+local function getTotalSizeY_()
+    return CAUIGumpMainRowLayout.ConfigButtonPosY + CAUIGumpMainRowLayout.ConfigButtonSizeY + CAUIGumpMainRowLayout.ConfigButtonYOffset
+end
+
 local closeMainConfigWindow_ = nil
 
 local function updateMainConfigWindow_(targetValue, closeOtherCWs)
@@ -272,7 +276,7 @@ end
 
 local function initUI_(mainWindow)
     cal.debug('Creating Main Row UI...')
-    CAUIGMR.titleLabel = mainWindow:AddLabel(CAUIGumpMainRowLayout.TitleLabelPosX, CAUIGumpMainRowLayout.TitleLabelPosY, 'SAGAS Combat Assistant')
+    CAUIGMR.titleLabel = mainWindow:AddLabel(CAUIGumpMainRowLayout.TitleLabelPosX, CAUIGumpMainRowLayout.TitleLabelPosY, ' _/ Dexxer Gatherer \\_')
     CAUIGMR.titleLabel:SetColor(0.2, 0.8, 1, 1)
     CAUIGMR.configButton = mainWindow:AddButton(CAUIGumpMainRowLayout.ConfigButtonPosX, CAUIGumpMainRowLayout.ConfigButtonPosY, 'CONFIG (+)', CAUIGumpMainRowLayout.ConfigButtonSizeX, CAUIGumpMainRowLayout.ConfigButtonSizeY)
     CAUIGMR.Config.window = cauiglayoutb.createModuleConfigWindow('MainConfigWindow', 'Main Config', 5, 1)
@@ -289,6 +293,7 @@ end
 --------------
 
 local Obj = {
+    getTotalSizeY = getTotalSizeY_,
     updateCAConfigToCurrentUIConfig = updateCAConfigToCurrentUIConfig_,
     processUIInteractions = processUIInteractions_,
     initUI = initUI_

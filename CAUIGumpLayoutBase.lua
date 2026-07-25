@@ -13,12 +13,15 @@ local cal = Import('CALog')
 --- Layout ---
 --------------
 
+CAUIGumpLayoutValues = {
+    ModulesRowPosYStart = nil
+}
+
 local CAUIGumpLayoutConstants = {
     ModuleEnableButtonPosX = 10,
     ModuleEnableButtonSizeX = 100,
     ModuleEnableButtonSizeY = 30,
     ModuleEnableLabelPosX = 140,
-    ModuleRowPosYStart = 70,
     ModuleRowPosYIncrement = 50,
     ModuleRowPosYLabelAlignIncrement = 8,
     ModuleConfigButtonPosX = 220,
@@ -35,17 +38,29 @@ local CAUIGumpLayoutConstants = {
 }
 
 -----------------
---- Functions ---
+--- Accessors ---
 -----------------
+
+local function getModulesRowPosYStart_()
+    return CAUIGumpLayoutValues.ModulesRowPosYStart
+end
+
+local function setModulesRowPosYStart_(val)
+    CAUIGumpLayoutValues.ModulesRowPosYStart = val
+end
 
 local function getLayoutConstants_()
     return CAUIGumpLayoutConstants
 end
 
+-----------------
+--- Functions ---
+-----------------
+
 local function createModuleEnableButtonAtRow_(mainWindow, row, buttonText, sizeX, sizeY)
     cal.debug('Initializing Module Enable "..buttonText.." Button (At Row: "..row..")...')
     local buttonPosX = CAUIGumpLayoutConstants.ModuleEnableButtonPosX
-    local buttonPosY = CAUIGumpLayoutConstants.ModuleRowPosYStart + ((row -1) * CAUIGumpLayoutConstants.ModuleRowPosYIncrement)
+    local buttonPosY = CAUIGumpLayoutValues.ModulesRowPosYStart + ((row -1) * CAUIGumpLayoutConstants.ModuleRowPosYIncrement)
     local buttonSizeX = (sizeX ~= nil and sizeX) or CAUIGumpLayoutConstants.ModuleEnableButtonSizeX
     local buttonSizeY = (sizeY ~= nil and sizeY) or CAUIGumpLayoutConstants.ModuleEnableButtonSizeY
     local button = mainWindow:AddButton(buttonPosX, buttonPosY, buttonText, buttonSizeX, buttonSizeY)
@@ -55,7 +70,7 @@ end
 local function createModuleEnableLabelAtRow_(mainWindow, row, labelText)
     cal.debug('Initializing Module Enable Label (At Row: "..row..")...')
     local labelPosX = CAUIGumpLayoutConstants.ModuleEnableLabelPosX
-    local labelPosY = CAUIGumpLayoutConstants.ModuleRowPosYStart + ((row -1) * CAUIGumpLayoutConstants.ModuleRowPosYIncrement) + CAUIGumpLayoutConstants.ModuleRowPosYLabelAlignIncrement
+    local labelPosY = CAUIGumpLayoutValues.ModulesRowPosYStart + ((row -1) * CAUIGumpLayoutConstants.ModuleRowPosYIncrement) + CAUIGumpLayoutConstants.ModuleRowPosYLabelAlignIncrement
     local label = mainWindow:AddLabel(labelPosX, labelPosY, labelText)
     label:SetColor(0, 1, 0, 1)
     return label
@@ -64,7 +79,7 @@ end
 local function createModuleConfigButtonAtRow_(mainWindow, row)
     cal.debug('Initializing Module Config Button (At Row: "..row..")...')
     local buttonPosX = CAUIGumpLayoutConstants.ModuleConfigButtonPosX
-    local buttonPosY = CAUIGumpLayoutConstants.ModuleRowPosYStart + ((row -1) * CAUIGumpLayoutConstants.ModuleRowPosYIncrement)
+    local buttonPosY = CAUIGumpLayoutValues.ModulesRowPosYStart + ((row -1) * CAUIGumpLayoutConstants.ModuleRowPosYIncrement)
     local buttonSizeX = CAUIGumpLayoutConstants.ModuleConfigButtonSizeX
     local buttonSizeY = CAUIGumpLayoutConstants.ModuleConfigButtonSizeY
     local button = mainWindow:AddButton(buttonPosX, buttonPosY, '+', buttonSizeX, buttonSizeY)
@@ -103,6 +118,8 @@ end
 --------------
 
 local Obj = {
+    getModulesRowPosYStart = getModulesRowPosYStart_,
+    setModulesRowPosYStart = setModulesRowPosYStart_,
     getLayoutConstants = getLayoutConstants_,
     createModuleEnableButtonAtRow = createModuleEnableButtonAtRow_,
     createModuleEnableLabelAtRow = createModuleEnableLabelAtRow_,

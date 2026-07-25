@@ -12,6 +12,7 @@ local cal = Import('CALog')
 local caml = Import('CAMainLoop')
 local cauiglayoutb = Import('CAUIGumpLayoutBase')
 local cauigmainrow = Import('CAUIGumpMainRow')
+local cauigstats = Import('CAUIGumpStatsDisplay')
 local cauigrun = Import('CAUIGumpRun')
 local cauigheal = Import('CAUIGumpHeal')
 local cauigbuffs = Import('CAUIGumpBuffs')
@@ -52,6 +53,7 @@ local function processUIGumpInteractions_()
     local nightsightUIEnabled = cauigbuffs.getEnableNightsight()
 
     cauigmainrow.processUIInteractions()        --- Main Row
+    cauigstats.processUIInteractions()          --- Stats
     cauigrun.processUIInteractions()            --- Run
     cauigcommands.processUIInteractions()       --- Commands
     cauigattack.processUIInteractions()         --- Attack
@@ -66,6 +68,7 @@ local function updateCombatAssistantConfig_(CAConfig)
 
     --- Override UI values to CA Config
     cauigmainrow.updateCAConfigToCurrentUIConfig(CAConfig)      --- Main Row
+    cauigstats.updateCAConfigToCurrentUIConfig(CAConfig)        --- Stats
     cauigcommands.updateCAConfigToCurrentUIConfig(CAConfig)     --- Commands
     cauigattack.updateCAConfigToCurrentUIConfig(CAConfig)       --- Attack
     cauigheal.updateCAConfigToCurrentUIConfig(CAConfig)         --- Heal
@@ -93,15 +96,21 @@ end
 local function initMainWindow_()
 
     cal.debug('Initializing main gump...')
-    CAUI.mainWindow = UI.CreateWindow('CAUI.mainWindow', 'SAGAS Combat Assistant')
+    CAUI.mainWindow = UI.CreateWindow('CAUI.mainWindow', 'JB9\'s SAGAS Combat Assistants')
     if not CAUI.mainWindow then
         cal.debug('Failed to create main gump!')
         return
     end
 
     cal.debug('Initializing Main Window...')
+    cauigstats.setPosYStart(cauigmainrow.getTotalSizeY())                                --- Adjust the starting Y position of the Stats Display to account for the Main Row height
+    local modulesRowPosYStart = cauigmainrow.getTotalSizeY() + cauigstats.getTotalSizeY()
+    cauiglayoutb.setModulesRowPosYStart(modulesRowPosYStart)                                --- Adjust the starting Y position of the modules to account for the Stats Display height
+
+    cal.debug('Initializing Main Window...')
     local furthestElementX = cauiglayoutb.getLayoutConstants().ModuleConfigButtonPosX + cauiglayoutb.getLayoutConstants().ModuleConfigButtonSizeX
-    local furthestElementY = cauiglayoutb.getLayoutConstants().ModuleRowPosYStart + cauiglayoutb.getLayoutConstants().ModuleRowPosYIncrement * (CAUIMainWindowLayout.NumberOfModules -1) + cauiglayoutb.getLayoutConstants().ModuleEnableButtonSizeY
+    local modulesSizeY = cauiglayoutb.getLayoutConstants().ModuleRowPosYIncrement * (CAUIMainWindowLayout.NumberOfModules -1) + cauiglayoutb.getLayoutConstants().ModuleEnableButtonSizeY
+    local furthestElementY = cauiglayoutb.getModulesRowPosYStart() + modulesSizeY 
     CAUI.mainWindow:SetPosition(CAUIMainWindowLayout.StartPosX, CAUIMainWindowLayout.StartPosY)
     CAUI.mainWindow:SetSize(furthestElementX + CAUIMainWindowLayout.SizeXOffset, furthestElementY + CAUIMainWindowLayout.SizeYOffset)
 
@@ -110,6 +119,7 @@ end
 
 local function initModules_()
     cauigmainrow.initUI(CAUI.mainWindow)        --- Main Row
+    cauigstats.initUI(CAUI.mainWindow)          --- Stats
     cauigrun.initUI(CAUI.mainWindow, 1)         --- Run
     cauigcommands.initUI(CAUI.mainWindow, 2)    --- Commands
     cauigattack.initUI(CAUI.mainWindow, 3)      --- Attack

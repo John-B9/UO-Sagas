@@ -219,9 +219,10 @@ function BaseLib_tableContains(tbl, val)
     return false
 end
 
-function BaseLib_findInInventory(itemTypeID)
+function BaseLib_findInInventory(itemTypeID, huesToInclude)
 
-    local items = Items.FindByFilter({ graphics = itemTypeID, onground = false })
+    local filter = { graphics = itemTypeID, onground = false, hues = huesToInclude }
+    local items = Items.FindByFilter(filter)
     if not items or #items == 0 then
         return nil
     end
@@ -233,6 +234,20 @@ function BaseLib_findInInventory(itemTypeID)
     end
 
     return items
+end
+
+function BaseLib_countAmountInInventory(itemTypeID, huesToInclude)
+    local items = BaseLib_findInInventory(itemTypeID, huesToInclude)
+    if not items or #items == 0 then
+        return 0
+    end
+
+    totalAmount = 0
+    for _, item in ipairs(items) do
+        totalAmount = totalAmount + item.Amount
+    end
+
+    return totalAmount
 end
 
 function BaseLib_findInInventoryGetFirst(itemTypeID)
@@ -303,14 +318,25 @@ function BaseLib_getHpPercentage(player)
     return (player.Hits / player.HitsMax) * 100
 end
 
+function BaseLib_getStaminaPercentage(player)
+    return(Player.Stam / Player.MaxStam) * 100
+end
+
+function BaseLib_getCarryCapacityPercentage(player)
+    return(Player.Weight / Player.MaxWeight) * 100
+end
+
 debugEnabled = false
 
 function IPLib_getItemSingleValueProperty(item, singleValuePropertyRegexStr)
     BaseLib_printIfDebug(debugEnabled, item.Properties)
-    local cleanProperties = string.gsub(item.Properties, "<.->", "")
+    if not item.Properties then
+        return nil
+    end
+    cleanProperties = string.gsub(item.Properties, "<.->", "")
     BaseLib_printIfDebug(debugEnabled, cleanProperties)
-    local regexMatchIter = string.gmatch(cleanProperties, singleValuePropertyRegexStr)
-    local propertyVal = regexMatchIter()
+    regexMatchIter = string.gmatch(cleanProperties, singleValuePropertyRegexStr)
+    propertyVal = regexMatchIter()
     if propertyVal == nil then
         BaseLib_printIfDebug(debugEnabled, "Single Value Property = (nil)")
         return nil
@@ -321,6 +347,9 @@ end
 
 function IPLib_getItemSingleValuePropertyNumber(item, singleValuePropertyRegexStr)
     local propertyVal = IPLib_getItemSingleValueProperty(item, singleValuePropertyRegexStr)
+    if not propertyVal then
+        return 0
+    end
     return tonumber(propertyVal)
 end
 
@@ -341,9 +370,12 @@ end
 
 function IPLib_getItemDoubleValueProperty(item, doubleValuePropertyRegexStr)
     BaseLib_printIfDebug(debugEnabled, item.Properties)
-    local cleanProperties = string.gsub(item.Properties, "<.->", "")
+    if not item.Properties then
+        return nil
+    end
+    cleanProperties = string.gsub(item.Properties, "<.->", "")
     BaseLib_printIfDebug(debugEnabled, cleanProperties)
-    local regexMatchIter = string.gmatch(cleanProperties, doubleValuePropertyRegexStr)
+    regexMatchIter = string.gmatch(cleanProperties, doubleValuePropertyRegexStr)
     local lPropertyVal, rPropertyVal = regexMatchIter()
     if lPropertyVal == nil or rPropertyVal == nil then
         BaseLib_printIfDebug(debugEnabled, "Double Value Property = (nil)")
@@ -361,6 +393,14 @@ end
 durability_regex_str = "Durability: (%d+)/(%d+)"
 function IPLib_getDurability(item)
     return IPLib_getItemDoubleValueProperty(item, durability_regex_str)
+end
+
+function IPLib_getDurabilityPercentage(item)
+    local durabilityProperty = IPLib_getDurability(item)
+    if not durabilityProperty or durabilityProperty[2] == 0 then
+        return nil
+    end
+    return (durabilityProperty[1]/durabilityProperty[2]) * 100
 end
 
 function IPLib_getItemWithBestPropertyValue_singleID(itemID, propertyGetter, propertyFieldRegexStr, comparePredicate, itemAcceptPredicate)
@@ -2996,8 +3036,9 @@ function CAGatheringFSM_transitionGatheringFSM(FSMConfig)
 
     elseif currentState == CAGathering_CAGatheringLumberjacking_CAGatheringFSM_GatheringFSMStates.WaitingResult then
 
+        currentTickTime = CATime_getCurrentTickTime()
         if GatheringFSMState.LastWaitingGatheringStartTime == nil then
-            GatheringFSMState.LastWaitingGatheringStartTime = CATime_getCurrentTickTime()
+            GatheringFSMState.LastWaitingGatheringStartTime = currentTickTime
         end
 
         GatheringFSMState.FSMState = FSMConfig.checkJournal()
@@ -3005,7 +3046,6 @@ function CAGatheringFSM_transitionGatheringFSM(FSMConfig)
         if GatheringFSMState.FSMState ~= CAGathering_CAGatheringLumberjacking_CAGatheringFSM_GatheringFSMStates.WaitingResult then
             GatheringFSMState.LastWaitingGatheringStartTime = nil
         else
-            currentTickTime = CATime_getCurrentTickTime()
             exceedsDuration = CATime_exceedsDuration(GatheringFSMState.LastWaitingGatheringStartTime, currentTickTime, CAGathering_CAGatheringLumberjacking_CAGatheringFSM_GatheringFSMConfigStatic.GatheringWaitTimeout)
             if exceedsDuration then
                 CALog_debug("Gathering timeout reached...")
@@ -3051,7 +3091,7 @@ GatheringLumberjackingConfig = {
 }
 
 function CAGatheringLumberjacking_setLogHuesToKeep(hues)
-    GatheringFSMState.LogHuesToKeep = hues
+    GatheringLumberjackingConfig.LogHuesToKeep = hues
 end
 
 function CAGatheringLumberjacking_resetLumberjackFSM()
@@ -3573,8 +3613,10 @@ function CAMainLoop_mainLoopInit(config)
 
     --- Configure and Greet
     CAMainLoop_configure(config)
-    CALog_mainInfo("Sagas Combat Assistant")
-    CALog_debug("Sagas Combat Assistant - Started")
+    CALog_mainInfo('JB9\'s')
+    CALog_mainInfo('SAGAS Combat Assistant')
+    CALog_mainInfo('Dexxer Gatherer')
+    CALog_debug("Dexxer Gatherer Combat Assistant - Started")
 
     --- Start with a clean journal
     Journal.Clear()
@@ -3613,12 +3655,15 @@ function CAMainLoop_mainLoop(config)
     end
 end
 
+CAUIGumpLayoutValues = {
+    ModulesRowPosYStart = nil
+}
+
 CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants = {
     ModuleEnableButtonPosX = 10,
     ModuleEnableButtonSizeX = 100,
     ModuleEnableButtonSizeY = 30,
     ModuleEnableLabelPosX = 140,
-    ModuleRowPosYStart = 70,
     ModuleRowPosYIncrement = 50,
     ModuleRowPosYLabelAlignIncrement = 8,
     ModuleConfigButtonPosX = 220,
@@ -3634,6 +3679,14 @@ CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants = {
     ModuleConfigWindowFeatureEnableButtonSizeY = 30
 }
 
+function CAUIGumpLayoutBase_getModulesRowPosYStart()
+    return CAUIGumpLayoutValues.ModulesRowPosYStart
+end
+
+function CAUIGumpLayoutBase_setModulesRowPosYStart(val)
+    CAUIGumpLayoutValues.ModulesRowPosYStart = val
+end
+
 function CAUIGumpLayoutBase_getLayoutConstants()
     return CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants
 end
@@ -3641,7 +3694,7 @@ end
 function CAUIGumpLayoutBase_createModuleEnableButtonAtRow(mainWindow, row, buttonText, sizeX, sizeY)
     CALog_debug('Initializing Module Enable "..buttonText.." Button (At Row: "..row..")...')
     local buttonPosX = CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleEnableButtonPosX
-    local buttonPosY = CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleRowPosYStart + ((row -1) * CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleRowPosYIncrement)
+    local buttonPosY = CAUIGumpLayoutValues.ModulesRowPosYStart + ((row -1) * CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleRowPosYIncrement)
     local buttonSizeX = (sizeX ~= nil and sizeX) or CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleEnableButtonSizeX
     local buttonSizeY = (sizeY ~= nil and sizeY) or CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleEnableButtonSizeY
     local button = mainWindow:AddButton(buttonPosX, buttonPosY, buttonText, buttonSizeX, buttonSizeY)
@@ -3651,7 +3704,7 @@ end
 function CAUIGumpLayoutBase_createModuleEnableLabelAtRow(mainWindow, row, labelText)
     CALog_debug('Initializing Module Enable Label (At Row: "..row..")...')
     local labelPosX = CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleEnableLabelPosX
-    local labelPosY = CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleRowPosYStart + ((row -1) * CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleRowPosYIncrement) + CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleRowPosYLabelAlignIncrement
+    local labelPosY = CAUIGumpLayoutValues.ModulesRowPosYStart + ((row -1) * CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleRowPosYIncrement) + CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleRowPosYLabelAlignIncrement
     local label = mainWindow:AddLabel(labelPosX, labelPosY, labelText)
     label:SetColor(0, 1, 0, 1)
     return label
@@ -3660,7 +3713,7 @@ end
 function CAUIGumpLayoutBase_createModuleConfigButtonAtRow(mainWindow, row)
     CALog_debug('Initializing Module Config Button (At Row: "..row..")...')
     local buttonPosX = CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleConfigButtonPosX
-    local buttonPosY = CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleRowPosYStart + ((row -1) * CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleRowPosYIncrement)
+    local buttonPosY = CAUIGumpLayoutValues.ModulesRowPosYStart + ((row -1) * CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleRowPosYIncrement)
     local buttonSizeX = CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleConfigButtonSizeX
     local buttonSizeY = CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleConfigButtonSizeY
     local button = mainWindow:AddButton(buttonPosX, buttonPosY, '+', buttonSizeX, buttonSizeY)
@@ -3695,15 +3748,23 @@ function CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(configWindow, ro
 end
 
 CAUIGumpMainRow_CAUIGumpLogicBase_ColorOptions = {
-    Green = 1,
-    Orange = 2,
-    Red = 3
+    LightGreen = 1,
+    Green = 2,
+    LightOrange = 3,
+    Orange = 4,
+    LightRed = 5,
+    Red = 6,
+    Blue = 7
 }
 
 CAUIGumpMainRow_CAUIGumpLogicBase_ColorValues = {
-    { 0,   1, 0, 1 },
-    { 1, 0.5, 0, 1 },
-    { 1,   0, 0, 1 }
+    {    0, 0.75,   0,   1 },
+    {    0,    1,   0,   1 },
+    { 0.75, 0.75,   0,   1 },
+    {    1,  0.5,   0,   1 },
+    { 0.65,    0,   0,   1 },
+    {    1,    0,   0,   1 },
+    {  0.2,  0.8,   1,   1 }
 }
 
 CAUIGumpLogicBaseState = {
@@ -3869,11 +3930,11 @@ CAUIGumpMainRowLayout = {
     ConfigButtonPosX = 175,
     ConfigButtonPosY = 35,
     ConfigButtonSizeX = 85,
-    ConfigButtonSizeY = 25
+    ConfigButtonSizeY = 25,
+    ConfigButtonYOffset = 10
 }
 
 CAUIGMR = {
-    mainWindow = nil,
     titleLabel = nil,
     configButton = nil,
     Config = {
@@ -4029,6 +4090,10 @@ CAUIGumpMainRowState = {
     MiningGatheringMode = GatheringModeValues.All
 }
 
+function CAUIGumpMainRow_getTotalSizeY()
+    return CAUIGumpMainRowLayout.ConfigButtonPosY + CAUIGumpMainRowLayout.ConfigButtonSizeY + CAUIGumpMainRowLayout.ConfigButtonYOffset
+end
+
 closeMainConfigWindow_ = nil
 
 function CAUIGumpMainRow_updateMainConfigWindow(targetValue, closeOtherCWs)
@@ -4106,7 +4171,7 @@ end
 
 function CAUIGumpMainRow_initUI(mainWindow)
     CALog_debug('Creating Main Row UI...')
-    CAUIGMR.titleLabel = mainWindow:AddLabel(CAUIGumpMainRowLayout.TitleLabelPosX, CAUIGumpMainRowLayout.TitleLabelPosY, 'SAGAS Combat Assistant')
+    CAUIGMR.titleLabel = mainWindow:AddLabel(CAUIGumpMainRowLayout.TitleLabelPosX, CAUIGumpMainRowLayout.TitleLabelPosY, ' _/ Dexxer Gatherer \\_')
     CAUIGMR.titleLabel:SetColor(0.2, 0.8, 1, 1)
     CAUIGMR.configButton = mainWindow:AddButton(CAUIGumpMainRowLayout.ConfigButtonPosX, CAUIGumpMainRowLayout.ConfigButtonPosY, 'CONFIG (+)', CAUIGumpMainRowLayout.ConfigButtonSizeX, CAUIGumpMainRowLayout.ConfigButtonSizeY)
     CAUIGMR.Config.window = CAUIGumpLayoutBase_createModuleConfigWindow('MainConfigWindow', 'Main Config', 5, 1)
@@ -4116,6 +4181,619 @@ function CAUIGumpMainRow_initUI(mainWindow)
     CAUIGMR.Config.skinningGatheringModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 3, SkinningGatheringModeStrings[CAUIGumpMainRowState.SkinningGatheringMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
     CAUIGMR.Config.lumberjackingGatheringModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 4, LumberjackingGatheringModeStrings[CAUIGumpMainRowState.LumberjackingGatheringMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
     CAUIGMR.Config.miningGatheringModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 5, MiningGatheringModeStrings[CAUIGumpMainRowState.MiningGatheringMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+end
+
+CAUIGumpStatsDisplay_IUWeapons_limit_durability = 0
+CAUIGumpStatsDisplay_IUWeapons_disarm_wait_time = 1000
+
+function IUWeapons_getEquipedShield()
+    local shield = Items.FindByLayer(2)
+    if shield and shield.Name and string.find(shield.Name, "Shield") then
+        return shield
+    end
+    return nil
+end
+
+function IUWeapons_getEquipedShieldDurabilityPercentage()
+    local shield = IUWeapons_getEquipedShield()
+    if not shield then
+        return nil
+    end
+    return IPLib_getDurabilityPercentage(shield)
+end
+
+function IUWeapons_getEquipedWeapon()
+    local weapon = Items.FindByLayer(1)
+    if not weapon then
+        local secondHandItem = Items.FindByLayer(2)
+        if secondHandItem and secondHandItem.Name and not string.find(secondHandItem.Name, "Shield") then
+            weapon = Items.FindByLayer(2)
+        end
+    end
+    return weapon
+end
+
+function IUWeapons_getEquipedWeaponDurabilityPercentage()
+    local weapon = IUWeapons_getEquipedWeapon()
+    if not weapon then
+        return nil
+    end
+    return IPLib_getDurabilityPercentage(weapon)
+end
+
+function IUWeapons_getFirstOrSecondHandEquipedItem()
+    local weapon = Items.FindByLayer(1)
+    if not weapon then
+        weapon = Items.FindByLayer(2)
+    end
+    return weapon
+end
+
+function IUWeapons_disarmPlayerIfWeaponDurabilityBellowThreshould(durabilityThreshould, disarmWaitTime)
+    local disarmedPlayer = false
+    local handToUnequip = "left"
+    local weapon = IUWeapons_getFirstOrSecondHandEquipedItem()
+    if weapon then
+        local durability = IPLib_getDurability(weapon)[1]
+        if IPLib_getDurability(weapon)[1] <= durabilityThreshould then
+            Player.ClearHands(handToUnequip)
+            -- Wait for hands to be cleared
+            Pause(disarmWaitTime)
+            disarmedPlayer = true
+        end
+    end
+    return disarmedPlayer
+end
+
+function IUWeapons_disarmPlayerIfWeaponDurabilityTooLow()
+    return IUWeapons_disarmPlayerIfWeaponDurabilityBellowThreshould(CAUIGumpStatsDisplay_IUWeapons_limit_durability, CAUIGumpStatsDisplay_IUWeapons_disarm_wait_time)
+end
+
+IUArmour_ArmourLayers = {
+    4,  --- Pants
+    6,  --- Helmet
+    7,  --- Gloves
+    10, --- Necklace
+    13, --- Torso
+    19  --- Arms
+}
+
+function IUArmour_getDurabilityPercentageOfArmourAtLayer(layer)
+    local armourPiece = Items.FindByLayer(layer)
+    if not armourPiece then
+        return nil
+    end
+    armourPieceDurabilityPercentage = IPLib_getDurabilityPercentage(armourPiece)
+    if not armourPieceDurabilityPercentage then
+        return nil
+    end
+    return math.floor(armourPieceDurabilityPercentage)
+end
+
+function IUArmour_getEquipedArmourAverageDurabilityPercentage()
+    local durabilityPercentageSum = 0
+    local totalArmourItemsEquiped = 0
+    for _, armourLayer in ipairs(IUArmour_ArmourLayers) do
+        local armourDurabilityPercentage = IUArmour_getDurabilityPercentageOfArmourAtLayer(armourLayer)
+        if armourDurabilityPercentage then
+            durabilityPercentageSum = durabilityPercentageSum + armourDurabilityPercentage
+            totalArmourItemsEquiped = totalArmourItemsEquiped + 1
+        end
+    end
+    if totalArmourItemsEquiped == 0 then
+        return nil
+    end
+    return math.floor((durabilityPercentageSum/totalArmourItemsEquiped))
+end
+
+function IUArmour_getEquipedArmourWorstDurabilityPercentageItem()
+    local worstDurabilityPercentageItem = nil
+    for _, armourLayer in ipairs(IUArmour_ArmourLayers) do
+        local armourDurabilityPercentage = IUArmour_getDurabilityPercentageOfArmourAtLayer(armourLayer)
+        if armourDurabilityPercentage ~= nil then
+            if (not worstDurabilityPercentageItem) or worstDurabilityPercentageItem > armourDurabilityPercentage then
+                worstDurabilityPercentageItem = armourDurabilityPercentage
+            end
+        end
+    end
+    if not worstDurabilityPercentageItem then
+        return nil
+    end
+    return math.floor(worstDurabilityPercentageItem)
+end
+
+IUGathering_pickaxe_type_id = 3718
+IUGathering_hatchet_type_id = 3907
+IUGathering_skinning_knife_type_id = 65193
+
+function IUGathering_getTotalAmountOfUsesRemainingFromItemInInventory(itemGraphicID)
+    local totalCount = 0
+    local items = BaseLib_findInInventory(itemGraphicID)
+    if not items or #items == 0 then
+        return 0
+    end
+    for _, item in ipairs(items) do
+        usesRemaining = IPLib_getUsesRemaining(item)
+        totalCount = totalCount + usesRemaining
+    end
+    return totalCount
+end
+
+function IUGathering_getTotalAmountOfPickaxeCharges()
+    return IUGathering_getTotalAmountOfUsesRemainingFromItemInInventory(IUGathering_pickaxe_type_id)
+end
+
+function IUGathering_getTotalAmountOfHatchetCharges()
+    return IUGathering_getTotalAmountOfUsesRemainingFromItemInInventory(IUGathering_hatchet_type_id)
+end
+
+function IUGathering_getTotalAmountOfSkinningKnifeCharges()
+    return IUGathering_getTotalAmountOfUsesRemainingFromItemInInventory(IUGathering_skinning_knife_type_id)
+end
+
+CAUIGumpStatsDisplayConfig = {
+    PosYStart = nil
+}
+
+CAUIGumpStatsDisplayStaticConfig = {
+    TotalSizeY = 150,
+    RowIncrementSizeY = 20,
+    RefreshRate = 1000,
+    ItemsGraphicIDs = {
+        Bandage = 0x0e21,
+        TrappedPouch = 0x0e79,
+        HealingPotion = 0x0f0c,
+        CurePotion = 0x0f07,
+        StaminaPotion = 0x0f0b,
+        AgilityPotion = 0x0f08,
+        StrengthPotion = 0x0f09,
+        NightsightPotion = 0x0f06
+    },
+    ItemsHues = {
+        TrappedPouch = 0x0025
+    }
+}
+
+CAUIGumpStatsDisplayState = {
+    LastRefreshTime = 0     --- Refresh right away at startup
+}
+
+function CAUIGumpStatsDisplay_setPosYStart(val)
+    CAUIGumpStatsDisplayConfig.PosYStart = val
+end
+
+function CAUIGumpStatsDisplay_getTotalSizeY()
+    return CAUIGumpStatsDisplayStaticConfig.TotalSizeY
+end
+
+CAUIGumpStatsDisplayLayout = {
+    RowPosYIncrement = 30,
+    Row1 = {
+        CharLabelPosX = 10,
+        HitPointsPercentageLabelPosX = 70,
+        StaminaPercentageLabelPosX = 135,
+        WeightPercentageLabelPosX = 200
+    },
+    Row2 = {
+        ItemsLabelPosX = 10,
+        BandagesLabelPosX = 70,
+        TrappedPouchesLabelPosX = 150
+    },
+    Row3 = {
+        PotionsLabelPosX = 10,
+        HealingPotionsLabelPosX = 70,
+        CurePotionsLabelPosX = 130,
+        StaminaPotionsLabelPosX = 190
+    },
+    Row4 = {
+        AgilityPotionsLabelPosX = 70,
+        StrengthPotionsLabelPosX = 130,
+        NightsightPotionsLabelPosX = 190
+    },
+    Row5 = {
+        GatheringLabelPosX = 10,
+        PickaxesLabelPosX = 70,
+        HatchetsLabelPosX = 130,
+        SkinningKnifesLabelPosX = 190
+    },
+    Row6 = {
+        HandsLabelPosX = 10,
+        WeaponDurabilityLabelPosX = 70,
+        ShieldLabelPosX = 150
+    },
+    Row7 = {
+        ArmourLabelPosX = 10,
+        ArmourAverageDurabilityLabelPosX = 70,
+        ArmourWorstPieceDurabilityLabelPosX = 150
+    }
+}
+
+CAUIGSD = {
+    Row1 = {
+        CharLabel = nil,
+        HitPointsPercentageLabel = nil,
+        StaminaPercentageLabel = nil,
+        WeightPercentageLabel = nil
+    },
+    Row2 = {
+        ItemsLabel = nil,
+        BandagesLabel = nil,
+        TrappedPouchesLabel = nil
+    },
+    Row3 = {
+        PotionsLabel = nil,
+        HealingPotionsLabel = nil,
+        CurePotionsLabel = nil,
+        StaminaPotionsLabel = nil
+    },
+    Row4 = {
+        AgilityPotionsLabel = nil,
+        StrengthPotionsLabel = nil,
+        NightsightPotionsLabel = nil
+    },
+    Row5 = {
+        GatheringLabel = nil,
+        PickaxesLabel = nil,
+        HatchetsLabel = nil,
+        SkinningKnifesLabel = nil
+    },
+    Row6 = {
+        HandsLabel = nil,
+        WeaponDurabilityLabel = nil,
+        ShieldDurabilityLabel = nil
+    },
+    Row7 = {
+        ArmourLabel = nil,
+        ArmourAverageDurabilityLabel = nil,
+        ArmourWorstPieceDurabilityLabel = nil
+    }
+}
+
+function CAUIGumpStatsDisplay_getAmountColor(amount, amountRed, amountOrange)
+    if amount <= amountRed then
+        return CAUIGumpLogicBase_getColorOptions().LightRed
+    elseif amount <= amountOrange then
+        return CAUIGumpLogicBase_getColorOptions().LightOrange
+    else
+        return CAUIGumpLogicBase_getColorOptions().LightGreen
+    end
+end
+
+function CAUIGumpStatsDisplay_getPercentageAmountColor(percentageAmount)
+    return CAUIGumpStatsDisplay_getAmountColor(percentageAmount, 30, 70)
+end
+
+function CAUIGumpStatsDisplay_getGatheringPercentageAmountColor(percentageAmount)
+    return CAUIGumpStatsDisplay_getAmountColor(percentageAmount, 100, 300)
+end
+
+function CAUIGumpStatsDisplay_getReverseAmountColor(amount, amountGreen, amountOrange)
+    if amount <= amountGreen then
+        return CAUIGumpLogicBase_getColorOptions().LightGreen
+    elseif amount <= amountOrange then
+        return CAUIGumpLogicBase_getColorOptions().LightOrange
+    else
+        return CAUIGumpLogicBase_getColorOptions().LightRed
+    end
+end
+
+function CAUIGumpStatsDisplay_getReversePercentageAmountColor(percentageAmount)
+    return CAUIGumpStatsDisplay_getReverseAmountColor(percentageAmount, 30, 70)
+end
+
+function CAUIGumpStatsDisplay_getBandagesAmountColor(bandagesAmount)
+    return CAUIGumpStatsDisplay_getAmountColor(bandagesAmount, 30, 100)
+end
+
+function CAUIGumpStatsDisplay_getTrappedPouchesAmountColor(bandagesAmount)
+    return CAUIGumpStatsDisplay_getAmountColor(bandagesAmount, 3, 7)
+end
+
+function CAUIGumpStatsDisplay_getPotionAmountColor(potionAmount)
+    return CAUIGumpStatsDisplay_getAmountColor(potionAmount, 2, 5)
+end
+
+function CAUIGumpStatsDisplay_getNightsightPotionAmountColor(potionAmount)
+    return CAUIGumpStatsDisplay_getAmountColor(potionAmount, 1, 2)
+end
+
+function CAUIGumpStatsDisplay_initRow1UI(mainWindow)
+    local row1PosY = CAUIGumpStatsDisplayConfig.PosYStart
+    CAUIGSD.Row1.CharLabel = mainWindow:AddLabel(CAUIGumpStatsDisplayLayout.Row1.CharLabelPosX, row1PosY, '')
+    CAUIGSD.Row1.HitPointsPercentageLabel = mainWindow:AddLabel(CAUIGumpStatsDisplayLayout.Row1.HitPointsPercentageLabelPosX, row1PosY, '')
+    CAUIGSD.Row1.StaminaPercentageLabel = mainWindow:AddLabel(CAUIGumpStatsDisplayLayout.Row1.StaminaPercentageLabelPosX, row1PosY, '')
+    CAUIGSD.Row1.WeightPercentageLabel = mainWindow:AddLabel(CAUIGumpStatsDisplayLayout.Row1.WeightPercentageLabelPosX, row1PosY, '')
+end
+
+function CAUIGumpStatsDisplay_updateCharLabel()
+    CAUIGSD.Row1.CharLabel:SetText('(CHAR)')
+    CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row1.CharLabel, CAUIGumpLogicBase_getColorOptions().Blue)
+end
+
+function CAUIGumpStatsDisplay_updateHitPointsPercentageLabel()
+    local hitPointsPercentage = math.floor(BaseLib_getHpPercentage(Player))
+    CAUIGSD.Row1.HitPointsPercentageLabel:SetText('HP: '..hitPointsPercentage..'%%')
+    CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row1.HitPointsPercentageLabel, CAUIGumpStatsDisplay_getPercentageAmountColor(hitPointsPercentage))
+end
+
+function CAUIGumpStatsDisplay_updateStaminaPercentageLabel()
+    local staminaPercentage = math.floor(BaseLib_getHpPercentage(Player))
+    CAUIGSD.Row1.StaminaPercentageLabel:SetText('ST: '..staminaPercentage..'%%')
+    CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row1.StaminaPercentageLabel, CAUIGumpStatsDisplay_getPercentageAmountColor(staminaPercentage))
+end
+
+function CAUIGumpStatsDisplay_updateWeightPercentageLabel()
+    local carryCapacityPercentage = math.floor(BaseLib_getCarryCapacityPercentage(Player))
+    CAUIGSD.Row1.WeightPercentageLabel:SetText('WT: '..carryCapacityPercentage..'%%')
+    CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row1.WeightPercentageLabel, CAUIGumpStatsDisplay_getReversePercentageAmountColor(carryCapacityPercentage))
+end
+
+function CAUIGumpStatsDisplay_updateRow1UI()
+    CAUIGumpStatsDisplay_updateCharLabel()
+    CAUIGumpStatsDisplay_updateHitPointsPercentageLabel()
+    CAUIGumpStatsDisplay_updateStaminaPercentageLabel()
+    CAUIGumpStatsDisplay_updateWeightPercentageLabel()
+end
+
+function CAUIGumpStatsDisplay_initRow2UI(mainWindow)
+    local row2PosY = CAUIGumpStatsDisplayConfig.PosYStart + CAUIGumpStatsDisplayStaticConfig.RowIncrementSizeY
+    CAUIGSD.Row2.ItemsLabel = mainWindow:AddLabel(CAUIGumpStatsDisplayLayout.Row2.ItemsLabelPosX, row2PosY, '')
+    CAUIGSD.Row2.BandagesLabel = mainWindow:AddLabel(CAUIGumpStatsDisplayLayout.Row2.BandagesLabelPosX, row2PosY, '')
+    CAUIGSD.Row2.TrappedPouchesLabel = mainWindow:AddLabel(CAUIGumpStatsDisplayLayout.Row2.TrappedPouchesLabelPosX, row2PosY, '')
+end
+
+function CAUIGumpStatsDisplay_updateItemsLabel()
+    CAUIGSD.Row2.ItemsLabel:SetText('(ITEM)')
+    CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row2.ItemsLabel, CAUIGumpLogicBase_getColorOptions().Blue)
+end
+
+function CAUIGumpStatsDisplay_updateBandagesLabel()
+    local numBandages = BaseLib_countAmountInInventory(CAUIGumpStatsDisplayStaticConfig.ItemsGraphicIDs.Bandage)
+    CAUIGSD.Row2.BandagesLabel:SetText('Band: '..numBandages)
+    CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row2.BandagesLabel, CAUIGumpStatsDisplay_getBandagesAmountColor(numBandages))
+end
+
+function CAUIGumpStatsDisplay_updateTrappedPouchesLabel()
+    local numTrappedPouches = BaseLib_countAmountInInventory(CAUIGumpStatsDisplayStaticConfig.ItemsGraphicIDs.TrappedPouch, CAUIGumpStatsDisplayStaticConfig.ItemsHues.TrappedPouch)
+    CAUIGSD.Row2.TrappedPouchesLabel:SetText('Pouch: '..numTrappedPouches)
+    CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row2.TrappedPouchesLabel, CAUIGumpStatsDisplay_getTrappedPouchesAmountColor(numTrappedPouches))
+end
+
+function CAUIGumpStatsDisplay_updateRow2UI()
+    CAUIGumpStatsDisplay_updateItemsLabel()
+    CAUIGumpStatsDisplay_updateBandagesLabel()
+    CAUIGumpStatsDisplay_updateTrappedPouchesLabel()
+end
+
+function CAUIGumpStatsDisplay_initRow3UI(mainWindow)
+    local row3PosY = CAUIGumpStatsDisplayConfig.PosYStart + 2*CAUIGumpStatsDisplayStaticConfig.RowIncrementSizeY
+    CAUIGSD.Row3.PotionsLabel = mainWindow:AddLabel(CAUIGumpStatsDisplayLayout.Row3.PotionsLabelPosX, row3PosY, '')
+    CAUIGSD.Row3.HealingPotionsLabel = mainWindow:AddLabel(CAUIGumpStatsDisplayLayout.Row3.HealingPotionsLabelPosX, row3PosY, '')
+    CAUIGSD.Row3.CurePotionsLabel = mainWindow:AddLabel(CAUIGumpStatsDisplayLayout.Row3.CurePotionsLabelPosX, row3PosY, '')
+    CAUIGSD.Row3.StaminaPotionsLabel = mainWindow:AddLabel(CAUIGumpStatsDisplayLayout.Row3.StaminaPotionsLabelPosX, row3PosY, '')
+end
+
+function CAUIGumpStatsDisplay_updatePotionsLabel()
+    CAUIGSD.Row3.PotionsLabel:SetText('(POTS)')
+    CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row3.PotionsLabel, CAUIGumpLogicBase_getColorOptions().Blue)
+end
+
+function CAUIGumpStatsDisplay_updateHealingPotionsLabel()
+    local numHealingPotions = BaseLib_countAmountInInventory(CAUIGumpStatsDisplayStaticConfig.ItemsGraphicIDs.HealingPotion)
+    CAUIGSD.Row3.HealingPotionsLabel:SetText('Heal: '..numHealingPotions)
+    CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row3.HealingPotionsLabel, CAUIGumpStatsDisplay_getPotionAmountColor(numHealingPotions))
+end
+
+function CAUIGumpStatsDisplay_updateCurePotionsLabel()
+    local numCurePotions = BaseLib_countAmountInInventory(CAUIGumpStatsDisplayStaticConfig.ItemsGraphicIDs.CurePotion)
+    CAUIGSD.Row3.CurePotionsLabel:SetText('Cure: '..numCurePotions)
+    CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row3.CurePotionsLabel, CAUIGumpStatsDisplay_getPotionAmountColor(numCurePotions))
+end
+
+function CAUIGumpStatsDisplay_updateStaminaPotionsLabel()
+    local numStaminaPotions = BaseLib_countAmountInInventory(CAUIGumpStatsDisplayStaticConfig.ItemsGraphicIDs.StaminaPotion)
+    CAUIGSD.Row3.StaminaPotionsLabel:SetText('Stam: '..numStaminaPotions)
+    CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row3.StaminaPotionsLabel, CAUIGumpStatsDisplay_getPotionAmountColor(numStaminaPotions))
+end
+
+function CAUIGumpStatsDisplay_updateRow3UI()
+    CAUIGumpStatsDisplay_updatePotionsLabel()
+    CAUIGumpStatsDisplay_updateHealingPotionsLabel()
+    CAUIGumpStatsDisplay_updateCurePotionsLabel()
+    CAUIGumpStatsDisplay_updateStaminaPotionsLabel()
+end
+
+function CAUIGumpStatsDisplay_initRow4UI(mainWindow)
+    local row4PosY = CAUIGumpStatsDisplayConfig.PosYStart + 3*CAUIGumpStatsDisplayStaticConfig.RowIncrementSizeY
+    CAUIGSD.Row4.AgilityPotionsLabel = mainWindow:AddLabel(CAUIGumpStatsDisplayLayout.Row4.AgilityPotionsLabelPosX, row4PosY, '')
+    CAUIGSD.Row4.StrengthPotionsLabel = mainWindow:AddLabel(CAUIGumpStatsDisplayLayout.Row4.StrengthPotionsLabelPosX, row4PosY, '')
+    CAUIGSD.Row4.NightsightPotionsLabel = mainWindow:AddLabel(CAUIGumpStatsDisplayLayout.Row4.NightsightPotionsLabelPosX, row4PosY, '')
+end
+
+function CAUIGumpStatsDisplay_updateAgilityPotionsLabel()
+    local numAgilityPotions = BaseLib_countAmountInInventory(CAUIGumpStatsDisplayStaticConfig.ItemsGraphicIDs.AgilityPotion)
+    CAUIGSD.Row4.AgilityPotionsLabel:SetText('Agi:  '..numAgilityPotions)
+    CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row4.AgilityPotionsLabel, CAUIGumpStatsDisplay_getPotionAmountColor(numAgilityPotions))
+end
+
+function CAUIGumpStatsDisplay_updateStrengthPotionsLabel()
+    local numStrengthPotions = BaseLib_countAmountInInventory(CAUIGumpStatsDisplayStaticConfig.ItemsGraphicIDs.StrengthPotion)
+    CAUIGSD.Row4.StrengthPotionsLabel:SetText('Str:  '..numStrengthPotions)
+    CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row4.StrengthPotionsLabel, CAUIGumpStatsDisplay_getPotionAmountColor(numStrengthPotions))
+end
+
+function CAUIGumpStatsDisplay_updateNightsightPotionsLabel()
+    local numNightsightPotions = BaseLib_countAmountInInventory(CAUIGumpStatsDisplayStaticConfig.ItemsGraphicIDs.NightsightPotion)
+    CAUIGSD.Row4.NightsightPotionsLabel:SetText('Nigh: '..numNightsightPotions)
+    CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row4.NightsightPotionsLabel, CAUIGumpStatsDisplay_getNightsightPotionAmountColor(numNightsightPotions))
+end
+
+function CAUIGumpStatsDisplay_updateRow4UI()
+    CAUIGumpStatsDisplay_updateAgilityPotionsLabel()
+    CAUIGumpStatsDisplay_updateStrengthPotionsLabel()
+    CAUIGumpStatsDisplay_updateNightsightPotionsLabel()
+end
+
+function CAUIGumpStatsDisplay_initRow5UI(mainWindow)
+    local row5PosY = CAUIGumpStatsDisplayConfig.PosYStart + 4*CAUIGumpStatsDisplayStaticConfig.RowIncrementSizeY
+    CAUIGSD.Row5.GatheringLabel = mainWindow:AddLabel(CAUIGumpStatsDisplayLayout.Row5.GatheringLabelPosX, row5PosY, '')
+    CAUIGSD.Row5.PickaxesLabel = mainWindow:AddLabel(CAUIGumpStatsDisplayLayout.Row5.PickaxesLabelPosX, row5PosY, '')
+    CAUIGSD.Row5.HatchetsLabel = mainWindow:AddLabel(CAUIGumpStatsDisplayLayout.Row5.HatchetsLabelPosX, row5PosY, '')
+    CAUIGSD.Row5.SkinningKnifesLabel = mainWindow:AddLabel(CAUIGumpStatsDisplayLayout.Row5.SkinningKnifesLabelPosX, row5PosY, '')
+end
+
+function CAUIGumpStatsDisplay_updateGatheringLabel()
+    CAUIGSD.Row5.GatheringLabel:SetText('(GATH)')
+    CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row5.GatheringLabel, CAUIGumpLogicBase_getColorOptions().Blue)
+end
+
+function CAUIGumpStatsDisplay_updatePickaxesLabel()
+    local numPickaxeCharges = IUGathering_getTotalAmountOfPickaxeCharges()
+    CAUIGSD.Row5.PickaxesLabel:SetText('PA: '..numPickaxeCharges)
+    CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row5.PickaxesLabel, CAUIGumpStatsDisplay_getGatheringPercentageAmountColor(numPickaxeCharges))
+end
+
+function CAUIGumpStatsDisplay_updateHatchetsLabel()
+    local numHatchetCharges = IUGathering_getTotalAmountOfHatchetCharges()
+    CAUIGSD.Row5.HatchetsLabel:SetText('HA: '..numHatchetCharges)
+    CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row5.HatchetsLabel, CAUIGumpStatsDisplay_getGatheringPercentageAmountColor(numHatchetCharges))
+end
+
+function CAUIGumpStatsDisplay_updateSkinningKnifesLabel()
+    local numSkinnCharges = IUGathering_getTotalAmountOfSkinningKnifeCharges()
+    CAUIGSD.Row5.SkinningKnifesLabel:SetText('SK: '..numSkinnCharges)
+    CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row5.SkinningKnifesLabel, CAUIGumpStatsDisplay_getGatheringPercentageAmountColor(numSkinnCharges))
+end
+
+function CAUIGumpStatsDisplay_updateRow5UI()
+    CAUIGumpStatsDisplay_updateGatheringLabel()
+    CAUIGumpStatsDisplay_updatePickaxesLabel()
+    CAUIGumpStatsDisplay_updateHatchetsLabel()
+    CAUIGumpStatsDisplay_updateSkinningKnifesLabel()
+end
+
+function CAUIGumpStatsDisplay_initRow6UI(mainWindow)
+    local row6PosY = CAUIGumpStatsDisplayConfig.PosYStart + 5*CAUIGumpStatsDisplayStaticConfig.RowIncrementSizeY
+    CAUIGSD.Row6.HandsLabel = mainWindow:AddLabel(CAUIGumpStatsDisplayLayout.Row6.HandsLabelPosX, row6PosY, '')
+    CAUIGSD.Row6.WeaponDurabilityLabel = mainWindow:AddLabel(CAUIGumpStatsDisplayLayout.Row6.WeaponDurabilityLabelPosX, row6PosY, '')
+    CAUIGSD.Row6.ShieldDurabilityLabel = mainWindow:AddLabel(CAUIGumpStatsDisplayLayout.Row6.ShieldLabelPosX, row6PosY, '')
+end
+
+function CAUIGumpStatsDisplay_updateHandsLabel()
+    CAUIGSD.Row6.HandsLabel:SetText('(WEAP)')
+    CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row6.HandsLabel, CAUIGumpLogicBase_getColorOptions().Blue)
+end
+
+function CAUIGumpStatsDisplay_updateWeaponDurabilityLabel()
+    local weaponDurabilityPercentage = IUWeapons_getEquipedWeaponDurabilityPercentage()
+    if not weaponDurabilityPercentage then
+        CAUIGSD.Row6.WeaponDurabilityLabel:SetText('WP:  nil')
+        CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row6.WeaponDurabilityLabel, CAUIGumpLogicBase_getColorOptions().LightRed)
+    else
+        local displayPercentage = math.floor(weaponDurabilityPercentage)
+        CAUIGSD.Row6.WeaponDurabilityLabel:SetText('WP:  '..displayPercentage..'%%')
+        CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row6.WeaponDurabilityLabel, CAUIGumpStatsDisplay_getPercentageAmountColor(displayPercentage))
+    end
+end
+
+function CAUIGumpStatsDisplay_updateShieldDurabilityLabel()
+    local shieldDurabilityPercentage = IUWeapons_getEquipedShieldDurabilityPercentage()
+    if not shieldDurabilityPercentage then
+        CAUIGSD.Row6.ShieldDurabilityLabel:SetText('SH: nil')
+        CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row6.ShieldDurabilityLabel, CAUIGumpLogicBase_getColorOptions().LightRed)
+    else
+        local displayPercentage = math.floor(shieldDurabilityPercentage)
+        CAUIGSD.Row6.ShieldDurabilityLabel:SetText('SH: '..displayPercentage..'%%')
+        CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row6.ShieldDurabilityLabel, CAUIGumpStatsDisplay_getPercentageAmountColor(displayPercentage))
+    end
+end
+
+function CAUIGumpStatsDisplay_updateRow6UI()
+    CAUIGumpStatsDisplay_updateHandsLabel()
+    CAUIGumpStatsDisplay_updateWeaponDurabilityLabel()
+    CAUIGumpStatsDisplay_updateShieldDurabilityLabel()
+end
+
+function CAUIGumpStatsDisplay_initRow7UI(mainWindow)
+    local row7PosY = CAUIGumpStatsDisplayConfig.PosYStart + 6*CAUIGumpStatsDisplayStaticConfig.RowIncrementSizeY
+    CAUIGSD.Row7.ArmourLabel = mainWindow:AddLabel(CAUIGumpStatsDisplayLayout.Row7.ArmourLabelPosX, row7PosY, '')
+    CAUIGSD.Row7.ArmourAverageDurabilityLabel = mainWindow:AddLabel(CAUIGumpStatsDisplayLayout.Row7.ArmourAverageDurabilityLabelPosX, row7PosY, '')
+    CAUIGSD.Row7.ArmourWorstPieceDurabilityLabel = mainWindow:AddLabel(CAUIGumpStatsDisplayLayout.Row7.ArmourWorstPieceDurabilityLabelPosX, row7PosY, '')
+end
+
+function CAUIGumpStatsDisplay_updateArmourLabel()
+    CAUIGSD.Row7.ArmourLabel:SetText('(ARMO)')
+    CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row7.ArmourLabel, CAUIGumpLogicBase_getColorOptions().Blue)
+end
+
+function CAUIGumpStatsDisplay_updateArmourAverageDurabilityLabel()
+    local armourAverageDurabilityPercentage = IUArmour_getEquipedArmourAverageDurabilityPercentage()
+    if not armourAverageDurabilityPercentage then
+        CAUIGSD.Row7.ArmourAverageDurabilityLabel:SetText('All: nil')
+        CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row7.ArmourAverageDurabilityLabel, CAUIGumpLogicBase_getColorOptions().LightRed)
+    else
+        CAUIGSD.Row7.ArmourAverageDurabilityLabel:SetText('All: '..armourAverageDurabilityPercentage..'%%')
+        CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row7.ArmourAverageDurabilityLabel, CAUIGumpStatsDisplay_getPercentageAmountColor(armourAverageDurabilityPercentage))
+    end
+end
+
+function CAUIGumpStatsDisplay_updateArmourWorstPieceDurabilityLabel()
+    local worstArmourDurabilityPercentage = IUArmour_getEquipedArmourWorstDurabilityPercentageItem()
+    if not worstArmourDurabilityPercentage then
+        CAUIGSD.Row7.ArmourWorstPieceDurabilityLabel:SetText('Worst: nil')
+        CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row7.ArmourWorstPieceDurabilityLabel, CAUIGumpLogicBase_getColorOptions().LightRed)
+    else
+        CAUIGSD.Row7.ArmourWorstPieceDurabilityLabel:SetText('Worst: '..worstArmourDurabilityPercentage..'%%')
+        CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row7.ArmourWorstPieceDurabilityLabel, CAUIGumpStatsDisplay_getPercentageAmountColor(worstArmourDurabilityPercentage))
+    end
+end
+
+function CAUIGumpStatsDisplay_updateRow7UI()
+    CAUIGumpStatsDisplay_updateArmourLabel()
+    CAUIGumpStatsDisplay_updateArmourAverageDurabilityLabel()
+    CAUIGumpStatsDisplay_updateArmourWorstPieceDurabilityLabel()
+end
+
+function CAUIGumpStatsDisplay_updateUI()
+    CAUIGumpStatsDisplay_updateRow1UI()
+    CAUIGumpStatsDisplay_updateRow2UI()
+    CAUIGumpStatsDisplay_updateRow3UI()
+    CAUIGumpStatsDisplay_updateRow4UI()
+    CAUIGumpStatsDisplay_updateRow5UI()
+    CAUIGumpStatsDisplay_updateRow6UI()
+    CAUIGumpStatsDisplay_updateRow7UI()
+end
+
+function CAUIGumpStatsDisplay_processUIInteractions()
+
+    local currentTickTime = CATime_getCurrentTickTime()
+    local exceedsDuration = CATime_exceedsDuration(CAUIGumpStatsDisplayState.LastRefreshTime, currentTickTime, CAUIGumpStatsDisplayStaticConfig.RefreshRate)
+    if not exceedsDuration then
+        return
+    end
+    CAUIGumpStatsDisplayState.LastRefreshTime = currentTickTime
+    CALog_debug('Refreshing Stats Display...')
+
+    CAUIGumpStatsDisplay_updateUI()
+end
+
+function CAUIGumpStatsDisplay_updateCAConfigToCurrentUIConfig(CAConfig)
+    --- nothing to do
+end
+
+function CAUIGumpStatsDisplay_initUI(mainWindow)
+
+    CALog_debug('Creating Stats Display UI...')
+    CAUIGumpStatsDisplay_initRow1UI(mainWindow)
+    CAUIGumpStatsDisplay_initRow2UI(mainWindow)
+    CAUIGumpStatsDisplay_initRow3UI(mainWindow)
+    CAUIGumpStatsDisplay_initRow4UI(mainWindow)
+    CAUIGumpStatsDisplay_initRow5UI(mainWindow)
+    CAUIGumpStatsDisplay_initRow6UI(mainWindow)
+    CAUIGumpStatsDisplay_initRow7UI(mainWindow)
+
+    CALog_debug('Doing initialUpdate for Stats Display UI...')
+    CAUIGumpStatsDisplay_updateUI()
 end
 
 CAUIGumpRun_CAUIGumpRunLayout = {
@@ -4735,6 +5413,7 @@ function CAUIGump_processUIGumpInteractions()
     local nightsightUIEnabled = CAUIGumpBuffs_getEnableNightsight()
 
     CAUIGumpMainRow_processUIInteractions()        --- Main Row
+    CAUIGumpStatsDisplay_processUIInteractions()          --- Stats
     CAUIGumpRun_processUIInteractions()            --- Run
     CAUIGumpCommands_processUIInteractions()       --- Commands
     CAUIGumpAttack_processUIInteractions()         --- Attack
@@ -4749,6 +5428,7 @@ function CAUIGump_updateCombatAssistantConfig(CAConfig)
 
     --- Override UI values to CA Config
     CAUIGumpMainRow_updateCAConfigToCurrentUIConfig(CAConfig)      --- Main Row
+    CAUIGumpStatsDisplay_updateCAConfigToCurrentUIConfig(CAConfig)        --- Stats
     CAUIGumpCommands_updateCAConfigToCurrentUIConfig(CAConfig)     --- Commands
     CAUIGumpAttack_updateCAConfigToCurrentUIConfig(CAConfig)       --- Attack
     CAUIGumpHeal_updateCAConfigToCurrentUIConfig(CAConfig)         --- Heal
@@ -4775,15 +5455,21 @@ end
 function CAUIGump_initMainWindow()
 
     CALog_debug('Initializing main gump...')
-    CAUI.mainWindow = UI.CreateWindow('CAUI.mainWindow', 'SAGAS Combat Assistant')
+    CAUI.mainWindow = UI.CreateWindow('CAUI.mainWindow', 'JB9\'s SAGAS Combat Assistants')
     if not CAUI.mainWindow then
         CALog_debug('Failed to create main gump!')
         return
     end
 
     CALog_debug('Initializing Main Window...')
+    CAUIGumpStatsDisplay_setPosYStart(CAUIGumpMainRow_getTotalSizeY())
+    modulesRowPosYStart = CAUIGumpMainRow_getTotalSizeY() + CAUIGumpStatsDisplay_getTotalSizeY()
+    CAUIGumpLayoutBase_setModulesRowPosYStart(modulesRowPosYStart)
+
+    CALog_debug('Initializing Main Window...')
     furthestElementX = CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigButtonPosX + CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigButtonSizeX
-    furthestElementY = CAUIGumpLayoutBase_getLayoutConstants().ModuleRowPosYStart + CAUIGumpLayoutBase_getLayoutConstants().ModuleRowPosYIncrement * (CAUIMainWindowLayout.NumberOfModules -1) + CAUIGumpLayoutBase_getLayoutConstants().ModuleEnableButtonSizeY
+    modulesSizeY = CAUIGumpLayoutBase_getLayoutConstants().ModuleRowPosYIncrement * (CAUIMainWindowLayout.NumberOfModules -1) + CAUIGumpLayoutBase_getLayoutConstants().ModuleEnableButtonSizeY
+    furthestElementY = CAUIGumpLayoutBase_getModulesRowPosYStart() + modulesSizeY
     CAUI.mainWindow:SetPosition(CAUIMainWindowLayout.StartPosX, CAUIMainWindowLayout.StartPosY)
     CAUI.mainWindow:SetSize(furthestElementX + CAUIMainWindowLayout.SizeXOffset, furthestElementY + CAUIMainWindowLayout.SizeYOffset)
 
@@ -4792,6 +5478,7 @@ end
 
 function CAUIGump_initModules()
     CAUIGumpMainRow_initUI(CAUI.mainWindow)        --- Main Row
+    CAUIGumpStatsDisplay_initUI(CAUI.mainWindow)          --- Stats
     CAUIGumpRun_initUI(CAUI.mainWindow, 1)         --- Run
     CAUIGumpCommands_initUI(CAUI.mainWindow, 2)    --- Commands
     CAUIGumpAttack_initUI(CAUI.mainWindow, 3)      --- Attack

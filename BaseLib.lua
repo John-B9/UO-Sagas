@@ -45,9 +45,10 @@ local function tableContains_(tbl, val)
     return false
 end
 
-local function findInInventory_(itemTypeID)
+local function findInInventory_(itemTypeID, huesToInclude)
 
-    local items = Items.FindByFilter({ graphics = itemTypeID, onground = false })
+    local filter = { graphics = itemTypeID, onground = false, hues = huesToInclude }
+    local items = Items.FindByFilter(filter)
     if not items or #items == 0 then
         return nil
     end
@@ -60,6 +61,20 @@ local function findInInventory_(itemTypeID)
     end
 
     return items
+end
+
+local function countAmountInInventory_(itemTypeID, huesToInclude)
+    local items = findInInventory_(itemTypeID, huesToInclude)
+    if not items or #items == 0 then
+        return 0
+    end
+
+    local totalAmount = 0
+    for _, item in ipairs(items) do
+        totalAmount = totalAmount + item.Amount
+    end
+
+    return totalAmount
 end
 
 local function findInInventoryGetFirst_(itemTypeID)
@@ -130,6 +145,14 @@ local function getHpPercentage_(player)
     return (player.Hits / player.HitsMax) * 100
 end
 
+local function getStaminaPercentage_(player)
+    return(Player.Stam / Player.MaxStam) * 100
+end
+
+local function getCarryCapacityPercentage_(player)
+    return(Player.Weight / Player.MaxWeight) * 100
+end
+
 --------------
 --- Export ---
 --------------
@@ -139,12 +162,15 @@ local Obj = {
     equalsAnyInTable = equalsAnyInTable_,
     tableContains = tableContains_,
     findInInventory = findInInventory_,
+    countAmountInInventory = countAmountInInventory_,
     findInInventoryGetFirst = findInInventoryGetFirst_,
     getSkillValue = getSkillValue_,
     printIfDebug = printIfDebug_,
     findItemOnGround = findItemOnGround_,
     findItemOnGroundPickAndDropInBackpack = findItemOnGroundPickAndDropInBackpack_,
-    getHpPercentage = getHpPercentage_
+    getHpPercentage = getHpPercentage_,
+    getStaminaPercentage = getStaminaPercentage_,
+    getCarryCapacityPercentage = getCarryCapacityPercentage_
 }
 
 return Obj

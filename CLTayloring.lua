@@ -33,6 +33,9 @@ local function postWork(config_)
     if not taylorItem then
         Console.debug("No configured craft item!")
         return true
+    elseif taylorItem.name == "Oil Cloth" then
+        Console.debug("We wont cut Oil Cloths: this would result in cutting regular cloth in our inventory!")
+        return true
     end
 
     local itemToCut = bl.findInInventory(taylorItem.graphic_id)

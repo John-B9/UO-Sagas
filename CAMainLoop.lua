@@ -89,8 +89,10 @@ local function mainLoopInit_(config)
 
     --- Configure and Greet
     configure_(config)
-    cal.mainInfo("Sagas Combat Assistant")
-    cal.debug("Sagas Combat Assistant - Started")
+    cal.mainInfo('JB9\'s')
+    cal.mainInfo('SAGAS Combat Assistant')
+    cal.mainInfo('Dexxer Gatherer')
+    cal.debug("Dexxer Gatherer Combat Assistant - Started")
 
     --- Start with a clean journal
     Journal.Clear()

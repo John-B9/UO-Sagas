@@ -43,7 +43,7 @@ GatheringLumberjackingConfig = {
 -----------------
 
 local function setLogHuesToKeep_(hues)
-    GatheringFSMState.LogHuesToKeep = hues
+    GatheringLumberjackingConfig.LogHuesToKeep = hues
 end
 
 -----------------

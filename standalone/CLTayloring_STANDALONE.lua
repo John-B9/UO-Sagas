@@ -42,9 +42,10 @@ function BaseLib_tableContains(tbl, val)
     return false
 end
 
-function BaseLib_findInInventory(itemTypeID)
+function BaseLib_findInInventory(itemTypeID, huesToInclude)
 
-    local items = Items.FindByFilter({ graphics = itemTypeID, onground = false })
+    local filter = { graphics = itemTypeID, onground = false, hues = huesToInclude }
+    local items = Items.FindByFilter(filter)
     if not items or #items == 0 then
         return nil
     end
@@ -56,6 +57,20 @@ function BaseLib_findInInventory(itemTypeID)
     end
 
     return items
+end
+
+function BaseLib_countAmountInInventory(itemTypeID, huesToInclude)
+    local items = BaseLib_findInInventory(itemTypeID, huesToInclude)
+    if not items or #items == 0 then
+        return 0
+    end
+
+    totalAmount = 0
+    for _, item in ipairs(items) do
+        totalAmount = totalAmount + item.Amount
+    end
+
+    return totalAmount
 end
 
 function BaseLib_findInInventoryGetFirst(itemTypeID)
@@ -126,6 +141,14 @@ function BaseLib_getHpPercentage(player)
     return (player.Hits / player.HitsMax) * 100
 end
 
+function BaseLib_getStaminaPercentage(player)
+    return(Player.Stam / Player.MaxStam) * 100
+end
+
+function BaseLib_getCarryCapacityPercentage(player)
+    return(Player.Weight / Player.MaxWeight) * 100
+end
+
 -- End of: BaseLib
 -- ========================================
 
@@ -137,10 +160,13 @@ CLLib_IPLib_debugEnabled = false
 
 function IPLib_getItemSingleValueProperty(item, singleValuePropertyRegexStr)
     BaseLib_printIfDebug(CLLib_IPLib_debugEnabled, item.Properties)
-    local cleanProperties = string.gsub(item.Properties, "<.->", "")
+    if not item.Properties then
+        return nil
+    end
+    cleanProperties = string.gsub(item.Properties, "<.->", "")
     BaseLib_printIfDebug(CLLib_IPLib_debugEnabled, cleanProperties)
-    local regexMatchIter = string.gmatch(cleanProperties, singleValuePropertyRegexStr)
-    local propertyVal = regexMatchIter()
+    regexMatchIter = string.gmatch(cleanProperties, singleValuePropertyRegexStr)
+    propertyVal = regexMatchIter()
     if propertyVal == nil then
         BaseLib_printIfDebug(CLLib_IPLib_debugEnabled, "Single Value Property = (nil)")
         return nil
@@ -151,6 +177,9 @@ end
 
 function IPLib_getItemSingleValuePropertyNumber(item, singleValuePropertyRegexStr)
     local propertyVal = IPLib_getItemSingleValueProperty(item, singleValuePropertyRegexStr)
+    if not propertyVal then
+        return 0
+    end
     return tonumber(propertyVal)
 end
 
@@ -171,9 +200,12 @@ end
 
 function IPLib_getItemDoubleValueProperty(item, doubleValuePropertyRegexStr)
     BaseLib_printIfDebug(CLLib_IPLib_debugEnabled, item.Properties)
-    local cleanProperties = string.gsub(item.Properties, "<.->", "")
+    if not item.Properties then
+        return nil
+    end
+    cleanProperties = string.gsub(item.Properties, "<.->", "")
     BaseLib_printIfDebug(CLLib_IPLib_debugEnabled, cleanProperties)
-    local regexMatchIter = string.gmatch(cleanProperties, doubleValuePropertyRegexStr)
+    regexMatchIter = string.gmatch(cleanProperties, doubleValuePropertyRegexStr)
     local lPropertyVal, rPropertyVal = regexMatchIter()
     if lPropertyVal == nil or rPropertyVal == nil then
         BaseLib_printIfDebug(CLLib_IPLib_debugEnabled, "Double Value Property = (nil)")
@@ -191,6 +223,14 @@ end
 durability_regex_str = "Durability: (%d+)/(%d+)"
 function IPLib_getDurability(item)
     return IPLib_getItemDoubleValueProperty(item, durability_regex_str)
+end
+
+function IPLib_getDurabilityPercentage(item)
+    local durabilityProperty = IPLib_getDurability(item)
+    if not durabilityProperty or durabilityProperty[2] == 0 then
+        return nil
+    end
+    return (durabilityProperty[1]/durabilityProperty[2]) * 100
 end
 
 function IPLib_getItemWithBestPropertyValue_singleID(itemID, propertyGetter, propertyFieldRegexStr, comparePredicate, itemAcceptPredicate)
@@ -473,6 +513,9 @@ function postWork(config_)
     local taylorItem = CLLib_getItemToCraft(config_)
     if not taylorItem then
         Console.debug("No configured craft item!")
+        return true
+    elseif taylorItem.name == "Oil Cloth" then
+        Console.debug("We wont cut Oil Cloths: this would result in cutting regular cloth in our inventory!")
         return true
     end
 

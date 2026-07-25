@@ -15,15 +15,23 @@ local cat = Import('CATime')
 -----------------
 
 local ColorOptions = {
-    Green = 1,
-    Orange = 2,
-    Red = 3
+    LightGreen = 1,
+    Green = 2,
+    LightOrange = 3,
+    Orange = 4,
+    LightRed = 5,
+    Red = 6,
+    Blue = 7
 }
 
 local ColorValues = {
-    { 0,   1, 0, 1 },
-    { 1, 0.5, 0, 1 },
-    { 1,   0, 0, 1 }
+    {    0, 0.75,   0,   1 },
+    {    0,    1,   0,   1 },
+    { 0.75, 0.75,   0,   1 },
+    {    1,  0.5,   0,   1 },
+    { 0.65,    0,   0,   1 },
+    {    1,    0,   0,   1 },
+    {  0.2,  0.8,   1,   1 }
 }
 
 CAUIGumpLogicBaseState = {

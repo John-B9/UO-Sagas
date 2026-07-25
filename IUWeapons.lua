@@ -6,10 +6,11 @@
 ---              another script
 --- 
 ---              Utility methods for weapons:
+---               - Wrapers for getting equiped weapon properties
 ---               - Disarm player if weapon in hand durability is low
 ----------------------------------------------------------------------
 
-local il = Import('IPLib')
+local ipl = Import('IPLib')
 
 -----------------
 --- Variables ---
@@ -22,25 +23,62 @@ local disarm_wait_time = 1000
 -- Functions --
 ---------------
 
+local function getEquipedShield_()
+    local shield = Items.FindByLayer(2)
+    if shield and shield.Name and string.find(shield.Name, "Shield") then
+        return shield
+    end
+    return nil
+end
+
+local function getEquipedShieldDurabilityPercentage_()
+    local shield = getEquipedShield_()
+    if not shield then
+        return nil
+    end
+    return ipl.getDurabilityPercentage(shield)
+end
+
+local function getEquipedWeapon_()
+    local weapon = Items.FindByLayer(1)
+    if not weapon then
+        local secondHandItem = Items.FindByLayer(2)
+        if secondHandItem and secondHandItem.Name and not string.find(secondHandItem.Name, "Shield") then
+            weapon = Items.FindByLayer(2)
+        end
+    end
+    return weapon
+end
+
+local function getEquipedWeaponDurabilityPercentage_()
+    local weapon = getEquipedWeapon_()
+    if not weapon then
+        return nil
+    end
+    return ipl.getDurabilityPercentage(weapon)
+end
+
+local function getFirstOrSecondHandEquipedItem_()
+    local weapon = Items.FindByLayer(1)
+    if not weapon then
+        weapon = Items.FindByLayer(2)
+    end
+    return weapon
+end
+
 local function disarmPlayerIfWeaponDurabilityBellowThreshould_(durabilityThreshould, disarmWaitTime)
     local disarmedPlayer = false
     local handToUnequip = "left"
-    local weapon = Items.FindByLayer(1)
-    if not weapon then
-        handToUnequip = "right"
-        weapon = Items.FindByLayer(2)
-    end
-
+    local weapon = getFirstOrSecondHandEquipedItem_()
     if weapon then
-        local durability = il.getDurability(weapon)[1]
-        if il.getDurability(weapon)[1] <= durabilityThreshould then
+        local durability = ipl.getDurability(weapon)[1]
+        if ipl.getDurability(weapon)[1] <= durabilityThreshould then
             Player.ClearHands(handToUnequip)
             -- Wait for hands to be cleared
             Pause(disarmWaitTime)
             disarmedPlayer = true
         end
     end
-
     return disarmedPlayer
 end
 
@@ -53,6 +91,10 @@ end
 --------------
 
 local Obj = {
+    getEquipedShield = getEquipedShield_,
+    getEquipedShieldDurabilityPercentage = getEquipedShieldDurabilityPercentage_,
+    getEquipedWeapon = getEquipedWeapon_,
+    getEquipedWeaponDurabilityPercentage = getEquipedWeaponDurabilityPercentage_,
     disarmPlayerIfWeaponDurabilityBellowThreshould = disarmPlayerIfWeaponDurabilityBellowThreshould_,
     disarmPlayerIfWeaponDurabilityTooLow = disarmPlayerIfWeaponDurabilityTooLow_
 }
