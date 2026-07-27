@@ -1,8 +1,8 @@
 ----------------------------------------------------------------------
---- Combat Assistant (CA) Config Dexer
+--- Combat Assistant (CA) Config Dexxer
 --- Author: JohnB9
 ---
---- Version: 1.0.0  - Combat Bot Dexer Config and Run function
+--- Version: 1.0.0  - Combat Bot Dexxer Config and Run function
 ---
 --- Description: If you import, you'll have access to the 'run' method 
 ---              to lunch the combat bot, and to the configuration for 
@@ -100,7 +100,7 @@ local ScavengerLootTable = {  --- ScavengerLootTable: add here the graphic IDs o
     --- (lowest priority)
 }
 
-local DexerMainLoopConfig = {
+local DexxerMainLoopConfig = {
     time = {
         ActionWaitTime = 1000,  --- in milliseconds, how long to wait for actions like using items, targeting etc.
                                 --- Adjust ActionWaitTime if you experience issues, set it longer, ex. 1500 on high ping
@@ -207,8 +207,11 @@ local DexerMainLoopConfig = {
         }
     },
     userCommands = {
-        Enable = true,  --- Parse and process user commands (via journal)
-        CommandStringPrefix = "(DEXER)"
+        Enable = true,                                  --- Parse and process user commands (via journal)
+        LumberjackSwapMainWeaponGraphicID = 0x0F4B,     --- Double Axe
+        ---MinerSwapMainWeaponGraphicID = 0x1439,       --- War Hammer
+        MinerSwapMainWeaponGraphicID = 0x13B0,          --- War Axe
+        CommandStringPrefix = "(DEXXER)"
     }
 }
 
@@ -218,21 +221,21 @@ local DexerMainLoopConfig = {
 
 
 local function run_()
-    caml.mainLoop(DexerMainLoopConfig)
+    caml.mainLoop(DexxerMainLoopConfig)
 end
 
 local function runUiGump_()
-    cauig.runGump(DexerMainLoopConfig)
+    cauig.runGump(DexxerMainLoopConfig)
 end
 
 local function runWithCommandsDisabled_()
-    DexerMainLoopConfig.userCommands.Enable = false
-    caml.mainLoop(DexerMainLoopConfig)
+    DexxerMainLoopConfig.userCommands.Enable = false
+    caml.mainLoop(DexxerMainLoopConfig)
 end
 
 local function runWithBuffsDisabled_()
-    DexerMainLoopConfig.modules.Buffs.Enable = false
-    caml.mainLoop(DexerMainLoopConfig)
+    DexxerMainLoopConfig.modules.Buffs.Enable = false
+    caml.mainLoop(DexxerMainLoopConfig)
 end
 
 --------------

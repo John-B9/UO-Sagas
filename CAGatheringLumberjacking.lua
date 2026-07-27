@@ -57,7 +57,7 @@ end
 local function equipHatchet_()
     local hatchet = Items.FindByLayer(2)
     if hatchet == nil or hatchet.Graphic ~= GatheringLumberjackingStaticConfig.HatchetGraphicID then
-        iuls.lumberjackSwap(ipmp.itemIsOfIron, nil)
+        iuls.lumberjackSwap(ipmp.itemIsOfIron)
         hatchet = Items.FindByLayer(2)
         Pause(cat.getActionWaitTime())
     end

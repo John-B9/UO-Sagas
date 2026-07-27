@@ -33,9 +33,15 @@ local function equipHatchet_()
     ipl.equipItemWithLessUsesRemaining(hatchet_type_id, hatchet.Name, hatchetAcceptPredicate)
 end
 
-local function equipAxe_()
-    local axe = Items.FindByType(double_axe_type_id)
-    Player.Equip(axe.Serial)
+LumberjackWeaponToEquipGraphicID = double_axe_type_id
+
+local function setWeaponToEquipGraphicID_(weaponGraphicID)
+    LumberjackWeaponToEquipGraphicID = weaponGraphicID
+end
+
+local function equipWeapon_()
+    local weapon = Items.FindByType(LumberjackWeaponToEquipGraphicID)
+    ipl.equipItemWithLessDurability(LumberjackWeaponToEquipGraphicID, weapon.Name)
     if postSwapCallback then
         Pause(500)
         postSwapCallback()
@@ -44,10 +50,11 @@ end
 
 local config = {
     first = { serial = hatchet_type_id, equip = equipHatchet_, acceptPredicate = nil },
-    second = { serial = double_axe_type_id, equip = equipAxe_, acceptPredicate = nil }
+    second = { serial = double_axe_type_id, equip = equipWeapon_, acceptPredicate = nil }
 }
 
 local function lumberjackSwap_(hatchetAcceptPredicate_, callback)
+    config.second.serial = LumberjackWeaponToEquipGraphicID
     config.first.acceptPredicate = hatchetAcceptPredicate_
     hatchetAcceptPredicate = hatchetAcceptPredicate_
     postSwapCallback = callback
@@ -59,6 +66,7 @@ end
 --------------
 
 local Obj = {
+    setWeaponToEquipGraphicID = setWeaponToEquipGraphicID_,
     lumberjackSwap = lumberjackSwap_
 }
 

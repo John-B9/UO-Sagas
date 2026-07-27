@@ -56,7 +56,7 @@ end
 local function equipPickaxe_()
     local pickaxe = Items.FindByLayer(1)
     if pickaxe == nil or pickaxe.Graphic ~= GatheringMiningStaticConfig.PickaxeGraphicID then
-        iums.minerSwap(ipmp.itemIsOfIron, nil)
+        iums.minerSwap(ipmp.itemIsOfIron)
         pickaxe = Items.FindByLayer(1)
         Pause(cat.getActionWaitTime())
     end

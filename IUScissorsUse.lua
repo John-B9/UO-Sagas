@@ -2,11 +2,11 @@
 --- IU (Item Usage) Scissors Use
 --- Author: JohnB9
 ---
---- Description: Uses scissors and resumes dexer combat bot
+--- Description: Uses scissors and resumes Dexxer combat bot
 ----------------------------------------------------------------------
 
 local ius = Importn('IUScissors')
-local cacd = Import('CAConfigDexer')
+local cacd = Import('CAConfigDexxer')
 
 -----------
 --- Run ---

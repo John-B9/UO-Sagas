@@ -15,12 +15,12 @@
 ---               - you would distribute the usages over all hatchets
 ---                 in your inventory otherwise
 --- 
----              Sends Combat Bot Dexer run as callback for after swap
+---              Sends Combat Bot Dexxer run as callback for after swap
 ----------------------------------------------------------------------
 
 local ipmp = Import('IPMaterialPredicates')
 local iuls = Import('IUlumberjackSwap')
-local cacd = Import('CAConfigDexer')
+local cacd = Import('CAConfigDexxer')
 
 -----------
 --- Run ---

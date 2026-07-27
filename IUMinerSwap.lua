@@ -21,7 +21,6 @@ local iusiih = Import('IUSwapItemInHand')
 
 local pickaxe_type_id = 3718
 local war_axe_type_id = 5040
-local war_hammer_type_id = 5177
 local pickaxeAcceptPredicate = nil
 local postSwapCallback = nil
 
@@ -34,31 +33,28 @@ local function equipPickaxe_()
     ipl.equipItemWithLessUsesRemaining(pickaxe_type_id, pickaxe.Name, pickaxeAcceptPredicate)
 end
 
-local function equipWarAxeAndFight_()
-    local war_axe = Items.FindByType(war_axe_type_id)
-    ipl.equipItemWithLessDurability(war_axe_type_id, war_axe.Name)
+MinerWeaponToEquipGraphicID = war_axe_type_id
+
+local function setWeaponToEquipGraphicID_(weaponGraphicID)
+    MinerWeaponToEquipGraphicID = weaponGraphicID
+end
+
+local function equipWeapon_()
+    local weapon = Items.FindByType(MinerWeaponToEquipGraphicID)
+    ipl.equipItemWithLessDurability(MinerWeaponToEquipGraphicID, weapon.Name)
     if postSwapCallback then
         Pause(500)
         postSwapCallback()
     end
 end
 
-local function equipWarHammerAndFight_()
-    local war_axe = Items.FindByType(war_hammer_type_id)
-    ipl.equipItemWithLessDurability(war_hammer_type_id, war_axe.Name)
-    Pause(500)
-    if postSwapCallback then
-        postSwapCallback()
-    end
-end
-
 local config = {
     first = { serial = pickaxe_type_id, equip = equipPickaxe_ , acceptPredicate = nil},
-    second = { serial = war_axe_type_id, equip = equipWarAxeAndFight_ , acceptPredicate = nil }
-    --second = { serial = war_hammer_type_id, equip = equipWarHammerAndFight, acceptPredicate = nil  }
+    second = { serial = war_axe_type_id, equip = equipWeapon_ , acceptPredicate = nil }
 }
 
 local function minerSwap_(pickaxeAcceptPredicate_, callback)
+    config.second.serial = MinerWeaponToEquipGraphicID
     config.first.acceptPredicate = pickaxeAcceptPredicate_
     pickaxeAcceptPredicate = pickaxeAcceptPredicate_
     postSwapCallback = callback
@@ -70,6 +66,7 @@ end
 --------------
 
 local Obj = {
+    setWeaponToEquipGraphicID = setWeaponToEquipGraphicID_,
     minerSwap = minerSwap_
 }
 

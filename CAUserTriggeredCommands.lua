@@ -44,8 +44,8 @@
 local cal = Import('CALog')
 local cat = Import('CATime')
 local ipmp = Import('IPMaterialPredicates')
-local iums = Import('IUMinerSwap')
 local iuls = Import('IULumberjackSwap')
+local iums = Import('IUMinerSwap')
 local iuski = Import('IUSkinn')
 local iusci = Import('IUScissors')
 local iuidw = Import('IUIDWand')
@@ -57,9 +57,11 @@ local cag = Import('CAGathering')
 
 UserTriggeredCommandsConfig = {
     Enable = false,
-    CommandStringPrefix = ""    --- The Log Prefix that commands are expecting as comming from you
-    --Password = ""             --- For security: so others can't interract with your combat assistant!
-                                --- Set and never share it
+    LumberjackSwapMainWeaponGraphicID = 3915,   --- Weapon Graphic ID to use with "Lumberjack Swap" commands (Double Axe)
+    MinerSwapMainWeaponGraphicID = 5040,        --- Weapon Graphic ID to use with "Miner Swap" commands (War Axe)
+    CommandStringPrefix = ""                    --- The Log Prefix that commands are expecting as comming from you
+    --Password = ""                             --- For security: so others can't interract with your combat assistant!
+                                                --- Set and never share it
 }
 
 -----------------
@@ -77,6 +79,10 @@ end
 local function setConfig_(config)
     setEnable_(config.Enable)
     setCommandStringPrefix_(config.CommandStringPrefix)
+    UserTriggeredCommandsConfig.LumberjackSwapMainWeaponGraphicID = config.LumberjackSwapMainWeaponGraphicID
+    UserTriggeredCommandsConfig.MinerSwapMainWeaponGraphicID = config.MinerSwapMainWeaponGraphicID
+    iuls.setWeaponToEquipGraphicID(UserTriggeredCommandsConfig.LumberjackSwapMainWeaponGraphicID)
+    iums.setWeaponToEquipGraphicID(UserTriggeredCommandsConfig.MinerSwapMainWeaponGraphicID)
 end
 
 ----------------
@@ -84,19 +90,19 @@ end
 ----------------
 
 local function minerSwapIron_()
-    iums.minerSwap(ipmp.itemIsOfIron, nil)
+    iums.minerSwap(ipmp.itemIsOfIron)
 end
 
 local function minerSwapCopper_()
-    iums.minerSwap(ipmp.itemIsOfCopper, nil)
+    iums.minerSwap(ipmp.itemIsOfCopper)
 end
 
 local function lumberjackSwapIron_()
-    iuls.lumberjackSwap(ipmp.itemIsOfIron, nil)
+    iuls.lumberjackSwap(ipmp.itemIsOfIron)
 end
 
 local function lumberjackSwapCopper_()
-    iuls.lumberjackSwap(ipmp.itemIsOfCopper, nil)
+    iuls.lumberjackSwap(ipmp.itemIsOfCopper)
 end
 
 local function useSkinningKnife_()

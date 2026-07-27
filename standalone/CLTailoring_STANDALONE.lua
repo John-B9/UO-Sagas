@@ -494,8 +494,8 @@ end
 --- Variables ---
 -----------------
 
---- Tayloring items by skill range
-TAYLORING_ITEMS = {
+--- Tailoring items by skill range
+TAILORING_ITEMS = {
     { name = "Doublet",   		   minSkill =   0.0, maxSkill =  20.6, category =  8, craft =  3,  final =  2, graphic_id = 8059 },
     { name = "Kilt",   		       minSkill =  20.7, maxSkill =  24.7, category = 15, craft = 17,  final = 21, graphic_id = 5431 },
     { name = "Short Pants",        minSkill =  24.8, maxSkill =  44.9, category = 15, craft =  3,  final =  2, graphic_id = 5422 },
@@ -542,10 +542,10 @@ end
 --- User Settings
 config = {
     TOOL_ID = 0x0F9D,              --- Sewing Kit
-    GUMP_ID = 2653346093,          --- Gump ID used by Tayloring
+    GUMP_ID = 2653346093,          --- Gump ID used by Tailoring
     MAKE_LAST_BUTTON_ID = 21,      --- "Make Last" button
     SKILL_TO_LEVEL = "Tailoring",
-    ITEMS = TAYLORING_ITEMS,
+    ITEMS = TAILORING_ITEMS,
     PREWORK_FUNCTION = nil,
     POSTWORK_FUNCTION = postWork
 }

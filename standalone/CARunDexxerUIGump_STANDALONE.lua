@@ -1,11 +1,12 @@
 ----------------------------------------------------------------------
---- Combat Assistant (CA) Run Dexer
+--- Combat Assistant (CA) Run Dexxer User Interface Gump
 --- Author: JohnB9
 ---
---- Version: 1.0.0  - Run Combat Bot with Dexer Config
+--- Version: 1.0.0  - Run Combat Bot User Interface with Dexxer Config
+---                   base configuration
 ---
---- Description: Running this script will run Combat Bot with a Dexer
----              main loop configuration
+--- Description: Running this script will run Combat Bot User Interface
+---              starting with a Dexxer main loop configuration
 ----------------------------------------------------------------------
 
 -----------
@@ -13,7 +14,7 @@
 -----------
 
 -- ========================================
--- Imported: CAConfigDexer
+-- Imported: CAConfigDexxer
 -- ========================================
 
 LogConfig = {
@@ -2785,7 +2786,7 @@ function IPMaterialPredicates_itemIsOfValorite(item)
     return false
 end
 
-IUMinerSwap_IUSwapItemInHand_debugEnabled = true
+IULumberjackSwap_IUSwapItemInHand_debugEnabled = true
 
 function IUSwapItemInHand_swapItemInHand(config, callback)
 
@@ -2802,7 +2803,7 @@ function IUSwapItemInHand_swapItemInHand(config, callback)
     equipItemOfFirstType = true
     if item_in_hand ~= nil then
 
-        BaseLib_printIfDebug(IUMinerSwap_IUSwapItemInHand_debugEnabled, "Have item in hand")
+        BaseLib_printIfDebug(IULumberjackSwap_IUSwapItemInHand_debugEnabled, "Have item in hand")
 
         Player.PickUp(item_in_hand.Serial)
         Player.DropInBackpack()
@@ -2815,9 +2816,9 @@ function IUSwapItemInHand_swapItemInHand(config, callback)
             itemInHandMatchesFirstType = (a ~= nil or b ~= nil)
         end
         itemInHandVerifiesFirstTypeAcceptPredicate = not config.first.acceptPredicate or config.first.acceptPredicate(item_in_hand)
-        BaseLib_printIfDebug(IUMinerSwap_IUSwapItemInHand_debugEnabled, "Have first type item: "..tostring(first_item ~= nil))
-        BaseLib_printIfDebug(IUMinerSwap_IUSwapItemInHand_debugEnabled, "Item in hand of first type: "..tostring(itemInHandMatchesFirstType))
-        BaseLib_printIfDebug(IUMinerSwap_IUSwapItemInHand_debugEnabled, "Item in hand of first type and verifies first type accept predicate evaluation: "..tostring(itemInHandVerifiesFirstTypeAcceptPredicate))
+        BaseLib_printIfDebug(IULumberjackSwap_IUSwapItemInHand_debugEnabled, "Have first type item: "..tostring(first_item ~= nil))
+        BaseLib_printIfDebug(IULumberjackSwap_IUSwapItemInHand_debugEnabled, "Item in hand of first type: "..tostring(itemInHandMatchesFirstType))
+        BaseLib_printIfDebug(IULumberjackSwap_IUSwapItemInHand_debugEnabled, "Item in hand of first type and verifies first type accept predicate evaluation: "..tostring(itemInHandVerifiesFirstTypeAcceptPredicate))
 
         if first_item == nil or (itemInHandMatchesFirstType and itemInHandVerifiesFirstTypeAcceptPredicate) then
             equipItemOfFirstType = false
@@ -2826,11 +2827,11 @@ function IUSwapItemInHand_swapItemInHand(config, callback)
     end
 
     if first_item ~= nil and equipItemOfFirstType == true then
-        BaseLib_printIfDebug(IUMinerSwap_IUSwapItemInHand_debugEnabled, "Equip First")
+        BaseLib_printIfDebug(IULumberjackSwap_IUSwapItemInHand_debugEnabled, "Equip First")
         config.first.equip()
         Pause(500)
     elseif second_item ~= nil then
-        BaseLib_printIfDebug(IUMinerSwap_IUSwapItemInHand_debugEnabled, "Equip Second")
+        BaseLib_printIfDebug(IULumberjackSwap_IUSwapItemInHand_debugEnabled, "Equip Second")
         config.second.equip()
         Pause(500)
     end
@@ -2841,77 +2842,80 @@ function IUSwapItemInHand_swapItemInHand(config, callback)
 
 end
 
-pickaxe_type_id = 3718
-war_axe_type_id = 5040
-war_hammer_type_id = 5177
-pickaxeAcceptPredicate = nil
+hatchet_type_id = 3907
+double_axe_type_id = 3915
+hatchetAcceptPredicate = nil
 postSwapCallback = nil
 
-function IUMinerSwap_equipPickaxe()
-    local pickaxe = Items.FindByType(pickaxe_type_id)
-    IPLib_equipItemWithLessUsesRemaining(pickaxe_type_id, pickaxe.Name, pickaxeAcceptPredicate)
+function IULumberjackSwap_equipHatchet()
+    local hatchet = Items.FindByType(hatchet_type_id)
+    IPLib_equipItemWithLessUsesRemaining(hatchet_type_id, hatchet.Name, hatchetAcceptPredicate)
 end
 
-function IUMinerSwap_equipWarAxeAndFight()
-    local war_axe = Items.FindByType(war_axe_type_id)
-    IPLib_equipItemWithLessDurability(war_axe_type_id, war_axe.Name)
+LumberjackWeaponToEquipGraphicID = double_axe_type_id
+
+function IULumberjackSwap_setWeaponToEquipGraphicID(weaponGraphicID)
+    LumberjackWeaponToEquipGraphicID = weaponGraphicID
+end
+
+function IULumberjackSwap_equipWeapon()
+    local weapon = Items.FindByType(LumberjackWeaponToEquipGraphicID)
+    IPLib_equipItemWithLessDurability(LumberjackWeaponToEquipGraphicID, weapon.Name)
     if postSwapCallback then
         Pause(500)
-        postSwapCallback()
-    end
-end
-
-function IUMinerSwap_equipWarHammerAndFight()
-    local war_axe = Items.FindByType(war_hammer_type_id)
-    IPLib_equipItemWithLessDurability(war_hammer_type_id, war_axe.Name)
-    Pause(500)
-    if postSwapCallback then
         postSwapCallback()
     end
 end
 
 config = {
-    first = { serial = pickaxe_type_id, equip = IUMinerSwap_equipPickaxe , acceptPredicate = nil},
-    second = { serial = war_axe_type_id, equip = IUMinerSwap_equipWarAxeAndFight , acceptPredicate = nil }
-    --second = { serial = war_hammer_type_id, equip = equipWarHammerAndFight, acceptPredicate = nil  }
+    first = { serial = hatchet_type_id, equip = IULumberjackSwap_equipHatchet, acceptPredicate = nil },
+    second = { serial = double_axe_type_id, equip = IULumberjackSwap_equipWeapon, acceptPredicate = nil }
 }
 
-function IUMinerSwap_minerSwap(pickaxeAcceptPredicate_, callback)
-    config.first.acceptPredicate = pickaxeAcceptPredicate_
-    pickaxeAcceptPredicate = pickaxeAcceptPredicate_
+function IULumberjackSwap_lumberjackSwap(hatchetAcceptPredicate_, callback)
+    config.second.serial = LumberjackWeaponToEquipGraphicID
+    config.first.acceptPredicate = hatchetAcceptPredicate_
+    hatchetAcceptPredicate = hatchetAcceptPredicate_
     postSwapCallback = callback
     IUSwapItemInHand_swapItemInHand(config, callback)
 end
 
-IULumberjackSwap_hatchet_type_id = 3907
-IULumberjackSwap_double_axe_type_id = 3915
-IULumberjackSwap_hatchetAcceptPredicate = nil
-IULumberjackSwap_postSwapCallback = nil
+IUMinerSwap_pickaxe_type_id = 3718
+IUMinerSwap_war_axe_type_id = 5040
+IUMinerSwap_pickaxeAcceptPredicate = nil
+IUMinerSwap_postSwapCallback = nil
 
-function IULumberjackSwap_equipHatchet()
-    local hatchet = Items.FindByType(IULumberjackSwap_hatchet_type_id)
-    IPLib_equipItemWithLessUsesRemaining(IULumberjackSwap_hatchet_type_id, hatchet.Name, IULumberjackSwap_hatchetAcceptPredicate)
+function IUMinerSwap_equipPickaxe()
+    local pickaxe = Items.FindByType(IUMinerSwap_pickaxe_type_id)
+    IPLib_equipItemWithLessUsesRemaining(IUMinerSwap_pickaxe_type_id, pickaxe.Name, IUMinerSwap_pickaxeAcceptPredicate)
 end
 
-function IULumberjackSwap_equipAxe()
-    local axe = Items.FindByType(IULumberjackSwap_double_axe_type_id)
-    Player.Equip(axe.Serial)
-    if IULumberjackSwap_postSwapCallback then
+MinerWeaponToEquipGraphicID = IUMinerSwap_war_axe_type_id
+
+function IUMinerSwap_setWeaponToEquipGraphicID(weaponGraphicID)
+    MinerWeaponToEquipGraphicID = weaponGraphicID
+end
+
+function IUMinerSwap_equipWeapon()
+    local weapon = Items.FindByType(MinerWeaponToEquipGraphicID)
+    IPLib_equipItemWithLessDurability(MinerWeaponToEquipGraphicID, weapon.Name)
+    if IUMinerSwap_postSwapCallback then
         Pause(500)
-        IULumberjackSwap_postSwapCallback()
+        IUMinerSwap_postSwapCallback()
     end
 end
 
-IULumberjackSwap_config = {
-    first = { serial = IULumberjackSwap_hatchet_type_id, equip = IULumberjackSwap_equipHatchet, acceptPredicate = nil },
-    second = { serial = IULumberjackSwap_double_axe_type_id, equip = IULumberjackSwap_equipAxe, acceptPredicate = nil }
+IUMinerSwap_config = {
+    first = { serial = IUMinerSwap_pickaxe_type_id, equip = IUMinerSwap_equipPickaxe , acceptPredicate = nil},
+    second = { serial = IUMinerSwap_war_axe_type_id, equip = IUMinerSwap_equipWeapon , acceptPredicate = nil }
 }
 
-function IULumberjackSwap_lumberjackSwap(hatchetAcceptPredicate_, callback)
-    IULumberjackSwap_config.first.acceptPredicate = hatchetAcceptPredicate_
-    IULumberjackSwap_hatchetAcceptPredicate = hatchetAcceptPredicate_
-    IULumberjackSwap_postSwapCallback = callback
-    IUSwapItemInHand_swapItemInHand(IULumberjackSwap_config, callback)
+function IUMinerSwap_minerSwap(pickaxeAcceptPredicate_, callback)
+    IUMinerSwap_config.second.serial = MinerWeaponToEquipGraphicID
+    IUMinerSwap_config.first.acceptPredicate = pickaxeAcceptPredicate_
+    IUMinerSwap_pickaxeAcceptPredicate = pickaxeAcceptPredicate_
+    IUMinerSwap_postSwapCallback = callback
+    IUSwapItemInHand_swapItemInHand(IUMinerSwap_config, callback)
 end
 
 function IUIDWand_useIdWand(callback)
@@ -3101,7 +3105,7 @@ end
 function CAGatheringLumberjacking_equipHatchet()
     local hatchet = Items.FindByLayer(2)
     if hatchet == nil or hatchet.Graphic ~= GatheringLumberjackingStaticConfig.HatchetGraphicID then
-        IULumberjackSwap_lumberjackSwap(IPMaterialPredicates_itemIsOfIron, nil)
+        IULumberjackSwap_lumberjackSwap(IPMaterialPredicates_itemIsOfIron)
         hatchet = Items.FindByLayer(2)
         Pause(CATime_getActionWaitTime())
     end
@@ -3209,7 +3213,7 @@ end
 function CAGatheringMining_equipPickaxe()
     local pickaxe = Items.FindByLayer(1)
     if pickaxe == nil or pickaxe.Graphic ~= CAGatheringMining_GatheringMiningStaticConfig.PickaxeGraphicID then
-        IUMinerSwap_minerSwap(IPMaterialPredicates_itemIsOfIron, nil)
+        IUMinerSwap_minerSwap(IPMaterialPredicates_itemIsOfIron)
         pickaxe = Items.FindByLayer(1)
         Pause(CATime_getActionWaitTime())
     end
@@ -3320,9 +3324,11 @@ end
 
 UserTriggeredCommandsConfig = {
     Enable = false,
-    CommandStringPrefix = ""    --- The Log Prefix that commands are expecting as comming from you
-    --Password = ""             --- For security: so others can't interract with your combat assistant!
-                                --- Set and never share it
+    LumberjackSwapMainWeaponGraphicID = 3915,   --- Weapon Graphic ID to use with "Lumberjack Swap" commands (Double Axe)
+    MinerSwapMainWeaponGraphicID = 5040,        --- Weapon Graphic ID to use with "Miner Swap" commands (War Axe)
+    CommandStringPrefix = ""                    --- The Log Prefix that commands are expecting as comming from you
+    --Password = ""                             --- For security: so others can't interract with your combat assistant!
+                                                --- Set and never share it
 }
 
 function CAUserTriggeredCommands_setEnable(val)
@@ -3336,22 +3342,26 @@ end
 function CAUserTriggeredCommands_setConfig(config)
     CAUserTriggeredCommands_setEnable(config.Enable)
     CAUserTriggeredCommands_setCommandStringPrefix(config.CommandStringPrefix)
+    UserTriggeredCommandsConfig.LumberjackSwapMainWeaponGraphicID = config.LumberjackSwapMainWeaponGraphicID
+    UserTriggeredCommandsConfig.MinerSwapMainWeaponGraphicID = config.MinerSwapMainWeaponGraphicID
+    IULumberjackSwap_setWeaponToEquipGraphicID(UserTriggeredCommandsConfig.LumberjackSwapMainWeaponGraphicID)
+    IUMinerSwap_setWeaponToEquipGraphicID(UserTriggeredCommandsConfig.MinerSwapMainWeaponGraphicID)
 end
 
 function CAUserTriggeredCommands_minerSwapIron()
-    IUMinerSwap_minerSwap(IPMaterialPredicates_itemIsOfIron, nil)
+    IUMinerSwap_minerSwap(IPMaterialPredicates_itemIsOfIron)
 end
 
 function CAUserTriggeredCommands_minerSwapCopper()
-    IUMinerSwap_minerSwap(IPMaterialPredicates_itemIsOfCopper, nil)
+    IUMinerSwap_minerSwap(IPMaterialPredicates_itemIsOfCopper)
 end
 
 function CAUserTriggeredCommands_lumberjackSwapIron()
-    IULumberjackSwap_lumberjackSwap(IPMaterialPredicates_itemIsOfIron, nil)
+    IULumberjackSwap_lumberjackSwap(IPMaterialPredicates_itemIsOfIron)
 end
 
 function CAUserTriggeredCommands_lumberjackSwapCopper()
-    IULumberjackSwap_lumberjackSwap(IPMaterialPredicates_itemIsOfCopper, nil)
+    IULumberjackSwap_lumberjackSwap(IPMaterialPredicates_itemIsOfCopper)
 end
 
 function CAUserTriggeredCommands_useSkinningKnife()
@@ -5588,7 +5598,7 @@ ScavengerLootTable = {  --- ScavengerLootTable: add here the graphic IDs of item
     --- (lowest priority)
 }
 
-DexerMainLoopConfig = {
+DexxerMainLoopConfig = {
     time = {
         ActionWaitTime = 1000,  --- in milliseconds, how long to wait for actions like using items, targeting etc.
                                 --- Adjust ActionWaitTime if you experience issues, set it longer, ex. 1500 on high ping
@@ -5695,30 +5705,33 @@ DexerMainLoopConfig = {
         }
     },
     userCommands = {
-        Enable = true,  --- Parse and process user commands (via journal)
-        CommandStringPrefix = "(DEXER)"
+        Enable = true,                                  --- Parse and process user commands (via journal)
+        LumberjackSwapMainWeaponGraphicID = 0x0F4B,     --- Double Axe
+        ---MinerSwapMainWeaponGraphicID = 0x1439,       --- War Hammer
+        MinerSwapMainWeaponGraphicID = 0x13B0,          --- War Axe
+        CommandStringPrefix = "(DEXXER)"
     }
 }
 
-function CAConfigDexer_run()
-    CAMainLoop_mainLoop(DexerMainLoopConfig)
+function CAConfigDexxer_run()
+    CAMainLoop_mainLoop(DexxerMainLoopConfig)
 end
 
-function CAConfigDexer_runUiGump()
-    CAUIGump_runGump(DexerMainLoopConfig)
+function CAConfigDexxer_runUiGump()
+    CAUIGump_runGump(DexxerMainLoopConfig)
 end
 
-function CAConfigDexer_runWithCommandsDisabled()
-    DexerMainLoopConfig.userCommands.Enable = false
-    CAMainLoop_mainLoop(DexerMainLoopConfig)
+function CAConfigDexxer_runWithCommandsDisabled()
+    DexxerMainLoopConfig.userCommands.Enable = false
+    CAMainLoop_mainLoop(DexxerMainLoopConfig)
 end
 
-function CAConfigDexer_runWithBuffsDisabled()
-    DexerMainLoopConfig.modules.Buffs.Enable = false
-    CAMainLoop_mainLoop(DexerMainLoopConfig)
+function CAConfigDexxer_runWithBuffsDisabled()
+    DexxerMainLoopConfig.modules.Buffs.Enable = false
+    CAMainLoop_mainLoop(DexxerMainLoopConfig)
 end
 
--- End of: CAConfigDexer
+-- End of: CAConfigDexxer
 -- ========================================
 
-CAConfigDexer_run()
+CAConfigDexxer_runUiGump()

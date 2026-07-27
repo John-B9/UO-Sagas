@@ -10,22 +10,22 @@ When I have something that is clean enough and wothy of sharing, I will add it h
 
  - **CA (Combat Assistant)**: A fully automatic combat assistant (auto bandage, potions, buffs, debuffs, escape, rearm, find players, scavenge, user triggered commands and more...):
    - [CAMainLoop](https://github.com/John-B9/UO-Sagas/blob/main/CAMainLoop.lua) (needs a config)
-   - [CARunDexer](https://github.com/John-B9/UO-Sagas/blob/main/CARunDexer.lua) (run with [CAConfigDexer](https://github.com/John-B9/UO-Sagas/blob/main/CAConfigDexer.lua), change what you want there)
-   - [CARunDexerUIGump](https://github.com/John-B9/UO-Sagas/blob/main/CARunDexerUIGump.lua) (UI Gump: start/stop, enable/disable buffs and commands)
+   - [CARunDexxer](https://github.com/John-B9/UO-Sagas/blob/main/CARunDexxer.lua) (run with [CAConfigDexxer](https://github.com/John-B9/UO-Sagas/blob/main/CAConfigDexxer.lua), change what you want there)
+   - [CARunDexxerUIGump](https://github.com/John-B9/UO-Sagas/blob/main/CARunDexxerUIGump.lua) (UI Gump: start/stop, enable/disable buffs and commands)
    - [CAUserTriggeredCommands](https://github.com/John-B9/UO-Sagas/blob/main/CAUserTriggeredCommands.lua) (specify commands and actions; interact with the combat assistant via "Say")
  - **CL (Crafting Leveling)**: Repeat crafting to level up all crafting skill [[CLTinkering](https://github.com/John-B9/UO-Sagas/blob/main/CLTinkering.lua), [CLSmithing](https://github.com/John-B9/UO-Sagas/blob/main/CLSmithing.lua), ...]
  - **IO (Item Organization)**: Generic functions (drop item in trash, and more...) [[IODropTrash](https://github.com/John-B9/UO-Sagas/blob/main/IODropTrash.lua), ...]
  - **IP (Item Properties)**: API to access item properties, like durability and charges
- - **IU (Item Usage)**: QOL scripts for item usage + QOL scripts focused on dexer gatherers, swaping between a gather/combat mode (_integrated with Combat Bot_):
+ - **IU (Item Usage)**: QOL scripts for item usage + QOL scripts focused on Dexxer gatherers, swaping between a gather/combat mode (_integrated with Combat Bot_):
    - [IUIDWandRun](https://github.com/John-B9/UO-Sagas/blob/main/IUIDWandRun.lua), [IUSkinnUse](https://github.com/John-B9/UO-Sagas/blob/main/IUSkinnUse.lua), [IUScissorsUse](https://github.com/John-B9/UO-Sagas/blob/main/IUScissorsUse.lua):
      - You choose the target, combat bot is resumed
-     - _CB triggered commands_: **"(DEXER) ID Wand"**, **"(DEXER) Skinn"**, **"(DEXER) Scissors"**
+     - _CB triggered commands_: **"(Dexxer) ID Wand"**, **"(Dexxer) Skinn"**, **"(Dexxer) Scissors"**
    - [IULumberjackSwapIron](https://github.com/John-B9/UO-Sagas/blob/main/IULumberjackSwapIron.lua):
      - Swap between hatchet/axe, run combat bot if axe equiped
-     - _CB triggered commands_: **"(DEXER) Lumberjack Swap Iron"**, **"(DEXER) Lumberjack Swap Copper"**
+     - _CB triggered commands_: **"(Dexxer) Lumberjack Swap Iron"**, **"(Dexxer) Lumberjack Swap Copper"**
    - [IUMinerSwapIron](https://github.com/John-B9/UO-Sagas/blob/main/IUMinerSwapIron.lua):
      - Swap between pickaxe/waraxe, run combat bot if waraxe equiped
-     - _CB triggered commands_: **"(DEXER) Miner Swap Iron"**, **"(DEXER) Miner Swap Copper"**
+     - _CB triggered commands_: **"(Dexxer) Miner Swap Iron"**, **"(Dexxer) Miner Swap Copper"**
 
 See more feature details in [documentation](https://github.com/John-B9/UO-Sagas/blob/main/documentation/README.md).
 

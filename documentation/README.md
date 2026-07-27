@@ -16,16 +16,16 @@ A fully automatic combat assistant with QOL:
  - Apply debuffs: peacemaking
  - Player Detection
  - Scavenging
- - Config for Dexer
+ - Config for Dexxer
 
 Based on https://uoaddicts.com/script/halesluker-s-sagas-bot-cmb5kn6y, but modularized and extended
 
 The Combat Assistant is also integrated with other methods in the (Item Usage) Lib, via user triggered commands
 
 **To launch the Combat Assistant:**
- - Select parameters in **CAConfigDexer**
- - Run **CARunDexer**
- - Run **CARunDexerNoCommands** to run with user triggered commands disabled
+ - Select parameters in **CAConfigDexxer**
+ - Run **CARunDexxer**
+ - Run **CARunDexxerNoCommands** to run with user triggered commands disabled
 
 ## CL (Crafting Leveling) Lib
 
@@ -33,7 +33,7 @@ A generic lib for repeated crafting towards leveling up a skill
 
 Based on Rum Runner scipt, modularized and extended
 
-### CLBowcraftFletching, CLCarpentry, CLCooking, CLSmithing, CLTayloring
+### CLBowcraftFletching, CLCarpentry, CLCooking, CLSmithing, CLTailoring
 
 Individual scripts to level up each crafting skill:
  - Hava an already defined list with crafting items for every skill range
@@ -75,12 +75,12 @@ Utility functions to use items:
  - **IUScissorsUse**: use scissors (and continue combat bot)
  - **IUSkinnUse**: use skinning knife (and continue combat bot)
  
-QOL utility functions to use items for a Dexer gather (for a good switch between
+QOL utility functions to use items for a Dexxer gather (for a good switch between
 minning/lumberjacking and fighting):
- - **IUMinerSwapIron/IUMinerSwapCopper** Swap miner pickaxe and waraxe (and continue dexer combat bot)
+ - **IUMinerSwapIron/IUMinerSwapCopper** Swap miner pickaxe and waraxe (and continue Dexxer combat bot)
     - iron (use for regular ore)
     - and bronse (use to not fail on valorite veigns)
- - **IULumberjackSwapIron/IULumberjackSwapCopper** Swap lumbejack hatchet and axe (and continue dexer combat bot)
+ - **IULumberjackSwapIron/IULumberjackSwapCopper** Swap lumbejack hatchet and axe (and continue Dexxer combat bot)
     - iron (use for regular ore)
     - and bronse (use to not fail on valorite veigns)
 
@@ -96,7 +96,7 @@ Use the skinning knife in backpack with less charges, wait for target, but resum
 
 ### IUMinerSwap
 
-QOL for the dexer miner:
+QOL for the Dexxer miner:
  - easy swap between pickaxe and waraxe (easy transition between minning and fighting)
  - clean inventory (always mine with lowest durability pickaxe)
  - choose between iron (regular veigns) and bronse (to not fail on valorite veigns) pickaxe
@@ -104,7 +104,7 @@ QOL for the dexer miner:
 
 ### IULumberjackSwap
 
-QOL for the dexer lumberjack:
+QOL for the Dexxer lumberjack:
  - easy swap between hatchet and axe (easy transition between lumberjacking and fighting)
  - clean inventory (always lumberjack with lowest durability hatchet)
  - choose between iron (regular trees) and bronse (to not fail on valorite trees) hatchet
