@@ -30,7 +30,7 @@ local postSwapCallback = nil
 
 local function equipHatchet_()
     local hatchet = Items.FindByType(hatchet_type_id)
-    ipl.equipItemWithLessUsesRemaining(hatchet_type_id, hatchet.Name, hatchetAcceptPredicate)
+    local success = ipl.equipItemWithLessUsesRemaining(hatchet_type_id, hatchet.Name, hatchetAcceptPredicate)
 end
 
 LumberjackWeaponToEquipGraphicID = double_axe_type_id
@@ -41,7 +41,7 @@ end
 
 local function equipWeapon_()
     local weapon = Items.FindByType(LumberjackWeaponToEquipGraphicID)
-    ipl.equipItemWithLessDurability(LumberjackWeaponToEquipGraphicID, weapon.Name)
+    local success = ipl.equipItemWithLessDurability(LumberjackWeaponToEquipGraphicID, weapon.Name)
     if postSwapCallback then
         Pause(500)
         postSwapCallback()
@@ -58,7 +58,7 @@ local function lumberjackSwap_(hatchetAcceptPredicate_, callback)
     config.first.acceptPredicate = hatchetAcceptPredicate_
     hatchetAcceptPredicate = hatchetAcceptPredicate_
     postSwapCallback = callback
-    iusiih.swapItemInHand(config, callback)
+    iusiih.swapItemInHandWithRetry(config, callback)
 end
 
 --------------

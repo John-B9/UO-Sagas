@@ -4,7 +4,7 @@
 
 This is the code base of the scripts I've developed and use in the UO Sagas in-game assistant.
 
-When I have something that is clean enough and wothy of sharing, I will add it here (Enjoy!).
+When I have something that is clean enough and worthy of sharing, I will add it here (Enjoy!).
 
 ## Features (summary)
 

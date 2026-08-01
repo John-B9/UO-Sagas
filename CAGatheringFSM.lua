@@ -86,6 +86,9 @@ end
 
 local function dropUnwantedMaterials_(materialGraphicID, materialHuesToKeep)
     local materials = bl.findInInventory(materialGraphicID)
+    if #materials == 0 then
+        return
+    end
     for _, material in ipairs(materials) do
         local keepMaterial = bl.tableContains(materialHuesToKeep, material.Hue)
         if not keepMaterial then

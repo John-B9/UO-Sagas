@@ -221,7 +221,7 @@ local function updateHitPointsPercentageLabel_()
 end
 
 local function updateStaminaPercentageLabel_()
-    local staminaPercentage = math.floor(bl.getHpPercentage(Player))
+    local staminaPercentage = math.floor(bl.getStaminaPercentage(Player))
     CAUIGSD.Row1.StaminaPercentageLabel:SetText('ST: '..staminaPercentage..'%%')
     cauiglogicb.setLabelColor(CAUIGSD.Row1.StaminaPercentageLabel, getPercentageAmountColor_(staminaPercentage))
 end

@@ -187,8 +187,7 @@ local function equipItemWithLessSinglePropertyValue_(itemID, fieldStr, itemName,
         Messages.Print("Missing " .. itemName .. "...", 69, Player.Serial)
         return nil
     end
-    Player.Equip(itemToEquip.Serial)
-    return itemToEquip
+    return Player.Equip(itemToEquip.Serial)
 end
 
 ----------------------------------------------
@@ -233,8 +232,7 @@ local function equipItemWithLessDoublePropertyFirstValue_(itemID, fieldStr, item
         Messages.Print("Missing " .. itemName .. "...", 69, Player.Serial)
         return nil
     end
-    Player.Equip(itemToEquip.Serial)
-    return itemToEquip
+    return Player.Equip(itemToEquip.Serial)
 end
 
 ----------------------------------------------

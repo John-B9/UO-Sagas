@@ -306,8 +306,7 @@ function IPLib_equipItemWithLessSinglePropertyValue(itemID, fieldStr, itemName, 
         Messages.Print("Missing " .. itemName .. "...", 69, Player.Serial)
         return nil
     end
-    Player.Equip(itemToEquip.Serial)
-    return itemToEquip
+    return Player.Equip(itemToEquip.Serial)
 end
 
 function IPLib_getItemWithLessUsesRemaining(itemID, itemAcceptPredicate)
@@ -344,8 +343,7 @@ function IPLib_equipItemWithLessDoublePropertyFirstValue(itemID, fieldStr, itemN
         Messages.Print("Missing " .. itemName .. "...", 69, Player.Serial)
         return nil
     end
-    Player.Equip(itemToEquip.Serial)
-    return itemToEquip
+    return Player.Equip(itemToEquip.Serial)
 end
 
 function IPLib_getItemWithLessContent(itemID)

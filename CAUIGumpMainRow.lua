@@ -2,7 +2,7 @@
 --- Combat Assistant (CA) User Interface (UI) Gump Main Row
 --- Author: JohnB9
 ---
---- Version: 1.0.0  - 
+--- Version: 1.0.0  -
 ---
 --- Description: UI for Main Row
 ----------------------------------------------------------------------
@@ -19,7 +19,7 @@ local cagm = Import('CAGatheringMining')
 
 local CAUIGumpMainRowLayout = {
     TitleLabelPosX = 10,
-    TitleLabelPosY = 40,
+    TitleLabelPosY = 30,
     ConfigButtonPosX = 175,
     ConfigButtonPosY = 35,
     ConfigButtonSizeX = 85,
@@ -39,6 +39,13 @@ local CAUIGMR = {
         miningGatheringModeButton = nil
     }
 }
+
+local ConfigButtonClosedString = 'CONFIG (+)'
+local ConfigButtonOpenString = 'CONFIG (-)'
+local titleLabelString =
+'  ___________________\n'..
+'_/( Dexxer Gatherer )\\_\n'..
+'¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯'
 
 -----------------
 --- Constants ---
@@ -202,11 +209,11 @@ end
 local closeMainConfigWindow_ = nil
 
 local function updateMainConfigWindow_(targetValue, closeOtherCWs)
-    CAUIGumpMainRowState.MainConfigClosed = cauiglogicb.onConfigMenuButtonPressed(not targetValue, CAUIGMR.configButton, CAUIGMR.Config.window, 'Main Config', closeOtherCWs, closeMainConfigWindow_, 'CONFIG (+)', 'CONFIG (-)')
+    CAUIGumpMainRowState.MainConfigClosed = cauiglogicb.onConfigMenuButtonPressed(not targetValue, CAUIGMR.configButton, CAUIGMR.Config.window, 'Main Config', closeOtherCWs, closeMainConfigWindow_, ConfigButtonClosedString, ConfigButtonOpenString)
 end
 
 closeMainConfigWindow_ = function ()
-    updateMainConfigWindow_(true, false)
+updateMainConfigWindow_(true, false)
 end
 
 local function processConfigMenuButtonInteractions_()
@@ -264,7 +271,7 @@ local function updateCAConfigToCurrentUIConfig_(CAConfig)
     armDisarmConfig.Enable = armDisarmEnabled
     armDisarmConfig.AutoRearmOnMove = armDisarmEnabled and rearmOnMove
     armDisarmConfig.AutoRearmWithDelay = armDisarmEnabled and rearmOnDelay
-    
+
     local skinningConfig = CAConfig.modules.Skinning
     local skinningEnabled = CAUIGumpMainRowState.SkinningGatheringMode ~= GatheringModeValues.None
     skinningConfig.Enable = skinningEnabled
@@ -276,27 +283,27 @@ end
 
 local function initUI_(mainWindow)
     cal.debug('Creating Main Row UI...')
-    CAUIGMR.titleLabel = mainWindow:AddLabel(CAUIGumpMainRowLayout.TitleLabelPosX, CAUIGumpMainRowLayout.TitleLabelPosY, ' _/ Dexxer Gatherer \\_')
+    CAUIGMR.titleLabel = mainWindow:AddLabel(CAUIGumpMainRowLayout.TitleLabelPosX, CAUIGumpMainRowLayout.TitleLabelPosY, titleLabelString)
     CAUIGMR.titleLabel:SetColor(0.2, 0.8, 1, 1)
-    CAUIGMR.configButton = mainWindow:AddButton(CAUIGumpMainRowLayout.ConfigButtonPosX, CAUIGumpMainRowLayout.ConfigButtonPosY, 'CONFIG (+)', CAUIGumpMainRowLayout.ConfigButtonSizeX, CAUIGumpMainRowLayout.ConfigButtonSizeY)
+    CAUIGMR.configButton = mainWindow:AddButton(CAUIGumpMainRowLayout.ConfigButtonPosX, CAUIGumpMainRowLayout.ConfigButtonPosY, ConfigButtonClosedString, CAUIGumpMainRowLayout.ConfigButtonSizeX, CAUIGumpMainRowLayout.ConfigButtonSizeY)
     CAUIGMR.Config.window = cauiglayoutb.createModuleConfigWindow('MainConfigWindow', 'Main Config', 5, 1)
     cauiglogicb.registerSharedVisibilityConfigWindowsCloseFunction(closeMainConfigWindow_)
-    CAUIGMR.Config.configWindowTimeoutModeButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 1, ConfigWindowTimeoutModeStrings[CAUIGumpMainRowState.ConfigWindowTimeoutMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    CAUIGMR.Config.rearmButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 2, RearmModeStrings[CAUIGumpMainRowState.RearmMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    CAUIGMR.Config.skinningGatheringModeButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 3, SkinningGatheringModeStrings[CAUIGumpMainRowState.SkinningGatheringMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    CAUIGMR.Config.lumberjackingGatheringModeButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 4, LumberjackingGatheringModeStrings[CAUIGumpMainRowState.LumberjackingGatheringMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    CAUIGMR.Config.miningGatheringModeButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 5, MiningGatheringModeStrings[CAUIGumpMainRowState.MiningGatheringMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-end
+        CAUIGMR.Config.configWindowTimeoutModeButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 1, ConfigWindowTimeoutModeStrings[CAUIGumpMainRowState.ConfigWindowTimeoutMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+        CAUIGMR.Config.rearmButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 2, RearmModeStrings[CAUIGumpMainRowState.RearmMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+        CAUIGMR.Config.skinningGatheringModeButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 3, SkinningGatheringModeStrings[CAUIGumpMainRowState.SkinningGatheringMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+        CAUIGMR.Config.lumberjackingGatheringModeButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 4, LumberjackingGatheringModeStrings[CAUIGumpMainRowState.LumberjackingGatheringMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+        CAUIGMR.Config.miningGatheringModeButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 5, MiningGatheringModeStrings[CAUIGumpMainRowState.MiningGatheringMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    end
 
---------------
---- Export ---
---------------
+    --------------
+    --- Export ---
+    --------------
 
-local Obj = {
-    getTotalSizeY = getTotalSizeY_,
-    updateCAConfigToCurrentUIConfig = updateCAConfigToCurrentUIConfig_,
-    processUIInteractions = processUIInteractions_,
-    initUI = initUI_
-}
+    local Obj = {
+        getTotalSizeY = getTotalSizeY_,
+        updateCAConfigToCurrentUIConfig = updateCAConfigToCurrentUIConfig_,
+        processUIInteractions = processUIInteractions_,
+        initUI = initUI_
+    }
 
-return Obj
+    return Obj

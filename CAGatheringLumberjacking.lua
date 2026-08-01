@@ -25,6 +25,7 @@ local GatheringLumberjackingStaticConfig = {
 }
 
 GatheringLumberjackingConfig = {
+    HatchetMaterialType = nil,
     LogHuesToKeep = {
         --- 0x0000,         --- Regular
         --- 0x0973,         --- Dull Copper
@@ -42,6 +43,10 @@ GatheringLumberjackingConfig = {
 --- Accessors ---
 -----------------
 
+local function setHatchetMaterialType_(materialType)
+    GatheringLumberjackingConfig.HatchetMaterialType = materialType
+end
+
 local function setLogHuesToKeep_(hues)
     GatheringLumberjackingConfig.LogHuesToKeep = hues
 end
@@ -57,7 +62,7 @@ end
 local function equipHatchet_()
     local hatchet = Items.FindByLayer(2)
     if hatchet == nil or hatchet.Graphic ~= GatheringLumberjackingStaticConfig.HatchetGraphicID then
-        iuls.lumberjackSwap(ipmp.itemIsOfIron)
+        iuls.lumberjackSwap(ipmp.getAcceptPredicateForMaterialType(GatheringLumberjackingConfig.HatchetMaterialType))
         hatchet = Items.FindByLayer(2)
         Pause(cat.getActionWaitTime())
     end
@@ -140,6 +145,7 @@ end
 --------------
 
 local Obj = {
+    setHatchetMaterialType = setHatchetMaterialType_,
     setLogHuesToKeep = setLogHuesToKeep_,
     resetLumberjackFSM = resetLumberjackFSM_,
     transitionLumberjackFSM = transitionLumberjackFSM_

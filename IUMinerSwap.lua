@@ -58,7 +58,7 @@ local function minerSwap_(pickaxeAcceptPredicate_, callback)
     config.first.acceptPredicate = pickaxeAcceptPredicate_
     pickaxeAcceptPredicate = pickaxeAcceptPredicate_
     postSwapCallback = callback
-    iusiih.swapItemInHand(config, callback)
+    iusiih.swapItemInHandWithRetry(config, callback)
 end
 
 --------------

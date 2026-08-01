@@ -24,6 +24,7 @@ local GatheringMiningStaticConfig = {
 }
 
 GatheringMiningConfig = {
+    PickaxeMaterialType = nil,
     OreHuesToKeep = {
         --- 0x0000,         --- Regular
         --- 0x0973,         --- Dull Copper
@@ -41,6 +42,10 @@ GatheringMiningConfig = {
 --- Accessors ---
 -----------------
 
+local function setPickaxeMaterialType_(materialType)
+    GatheringMiningConfig.PickaxeMaterialType = materialType
+end
+
 local function setOreHuesToKeep_(hues)
     GatheringMiningConfig.OreHuesToKeep = hues
 end
@@ -56,7 +61,7 @@ end
 local function equipPickaxe_()
     local pickaxe = Items.FindByLayer(1)
     if pickaxe == nil or pickaxe.Graphic ~= GatheringMiningStaticConfig.PickaxeGraphicID then
-        iums.minerSwap(ipmp.itemIsOfIron)
+        iums.minerSwap(GatheringMiningConfig.PickaxeMaterialType)
         pickaxe = Items.FindByLayer(1)
         Pause(cat.getActionWaitTime())
     end
@@ -73,6 +78,9 @@ local waitActionJournalLog = "You must wait to perform another action."
 local windowOutOfFocus = "Your game window does not have focus"
 local normalOresCollectedJournalLog = "ore and put it in your backpack."
 local questProgressJournalLog = "Quest progress: Gather"
+
+
+local tooFarToGatherJournalLog = "You have moved too far away to continue mining."
 
 local failedToGatherJournalLog = "You loosen some rocks but fail to find any usable ore."
 
@@ -125,6 +133,7 @@ end
 --------------
 
 local Obj = {
+    setPickaxeMaterialType = setPickaxeMaterialType_,
     setOreHuesToKeep = setOreHuesToKeep_,
     resetMiningFSM = resetMiningFSM_,
     transitionMiningFSM = transitionMiningFSM_

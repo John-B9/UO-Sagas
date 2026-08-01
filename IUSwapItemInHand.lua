@@ -19,6 +19,7 @@ local bl = Import('BaseLib')
 -----------------
 
 local debugEnabled = true
+local waitActionJournalLog = "You must wait to perform another action"
 
 ---------------
 -- Functions --
@@ -86,12 +87,20 @@ local function swapItemInHand_(config, callback)
 
 end
 
+local function swapItemInHandWithRetry_(config, callback)
+    swapItemInHand_(config, callback)
+    if Journal.Contains(waitActionJournalLog) then
+        swapItemInHand_(config, callback)
+    end
+end
+
 --------------
 --- Export ---
 --------------
 
 local Obj = {
-    swapItemInHand = swapItemInHand_
+    swapItemInHand = swapItemInHand_,
+    swapItemInHandWithRetry = swapItemInHandWithRetry_
 }
 
 return Obj

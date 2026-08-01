@@ -480,8 +480,7 @@ function IPLib_equipItemWithLessSinglePropertyValue(itemID, fieldStr, itemName, 
         Messages.Print("Missing " .. itemName .. "...", 69, Player.Serial)
         return nil
     end
-    Player.Equip(itemToEquip.Serial)
-    return itemToEquip
+    return Player.Equip(itemToEquip.Serial)
 end
 
 function IPLib_getItemWithLessUsesRemaining(itemID, itemAcceptPredicate)
@@ -518,8 +517,7 @@ function IPLib_equipItemWithLessDoublePropertyFirstValue(itemID, fieldStr, itemN
         Messages.Print("Missing " .. itemName .. "...", 69, Player.Serial)
         return nil
     end
-    Player.Equip(itemToEquip.Serial)
-    return itemToEquip
+    return Player.Equip(itemToEquip.Serial)
 end
 
 function IPLib_getItemWithLessContent(itemID)
@@ -2732,61 +2730,76 @@ function CASkinn_skinn()
     end
 end
 
-function IPMaterialPredicates_itemIsOfIron(item)
+CAUserTriggeredCommands_IPMaterialPredicates_MaterialTypes = {
+    Iron = 1,
+    Shadow = 2,
+    Copper = 3,
+    Bronze = 4,
+    Verite = 5,
+    Valorite = 6
+}
+
+CAUserTriggeredCommands_IPMaterialPredicates_MaterialTypesStrings = {
+    "Iron",
+    "Shadow",
+    "Copper",
+    "Bronze",
+    "Verite",
+    "Valorite"
+}
+
+function IPMaterialPredicates_getMaterialTypes()
+    return CAUserTriggeredCommands_IPMaterialPredicates_MaterialTypes
+end
+
+function IPMaterialPredicates_itemIsOfMaterialType(item, materialType)
     local itemMaterial = IPLib_getMaterial(item)
     BaseLib_printIfDebug(true, itemMaterial)
-    if itemMaterial == "Iron" then
+    if itemMaterial == CAUserTriggeredCommands_IPMaterialPredicates_MaterialTypesStrings[materialType] then
         return true
     end
     return false
+end
+
+function IPMaterialPredicates_itemIsOfIron(item)
+    return IPMaterialPredicates_itemIsOfMaterialType(item, CAUserTriggeredCommands_IPMaterialPredicates_MaterialTypes.Iron)
 end
 
 function IPMaterialPredicates_itemIsOfShadow(item)
-    local itemMaterial = IPLib_getMaterial(item)
-    BaseLib_printIfDebug(true, itemMaterial)
-    if itemMaterial == "Shadow" then
-        return true
-    end
-    return false
+    return IPMaterialPredicates_itemIsOfMaterialType(item, CAUserTriggeredCommands_IPMaterialPredicates_MaterialTypes.Shadow)
 end
 
 function IPMaterialPredicates_itemIsOfCopper(item)
-    local itemMaterial = IPLib_getMaterial(item)
-    BaseLib_printIfDebug(true, itemMaterial)
-    if itemMaterial == "Copper" then
-        return true
-    end
-    return false
+    return IPMaterialPredicates_itemIsOfMaterialType(item, CAUserTriggeredCommands_IPMaterialPredicates_MaterialTypes.Copper)
 end
 
 function IPMaterialPredicates_itemIsOfBronze(item)
-    local itemMaterial = IPLib_getMaterial(item)
-    BaseLib_printIfDebug(true, itemMaterial)
-    if itemMaterial == "Bronze" then
-        return true
-    end
-    return false
+    return IPMaterialPredicates_itemIsOfMaterialType(item, CAUserTriggeredCommands_IPMaterialPredicates_MaterialTypes.Bronze)
 end
 
 function IPMaterialPredicates_itemIsOfVerite(item)
-    local itemMaterial = IPLib_getMaterial(item)
-    BaseLib_printIfDebug(true, itemMaterial)
-    if itemMaterial == "Verite" then
-        return true
-    end
-    return false
+    return IPMaterialPredicates_itemIsOfMaterialType(item, CAUserTriggeredCommands_IPMaterialPredicates_MaterialTypes.Verite)
 end
 
 function IPMaterialPredicates_itemIsOfValorite(item)
-    local itemMaterial = IPLib_getMaterial(item)
-    BaseLib_printIfDebug(true, itemMaterial)
-    if itemMaterial == "Valorite" then
-        return true
-    end
-    return false
+    return IPMaterialPredicates_itemIsOfMaterialType(item, CAUserTriggeredCommands_IPMaterialPredicates_MaterialTypes.Valorite)
+end
+
+AcceptPredicate = {
+    IPMaterialPredicates_itemIsOfIron,
+    IPMaterialPredicates_itemIsOfShadow,
+    IPMaterialPredicates_itemIsOfCopper,
+    IPMaterialPredicates_itemIsOfBronze,
+    IPMaterialPredicates_itemIsOfVerite,
+    IPMaterialPredicates_itemIsOfValorite
+}
+
+function IPMaterialPredicates_getAcceptPredicateForMaterialType(materialType)
+    return AcceptPredicate[materialType]
 end
 
 IULumberjackSwap_IUSwapItemInHand_debugEnabled = true
+IULumberjackSwap_IUSwapItemInHand_waitActionJournalLog = "You must wait to perform another action"
 
 function IUSwapItemInHand_swapItemInHand(config, callback)
 
@@ -2842,6 +2855,13 @@ function IUSwapItemInHand_swapItemInHand(config, callback)
 
 end
 
+function IUSwapItemInHand_swapItemInHandWithRetry(config, callback)
+    IUSwapItemInHand_swapItemInHand(config, callback)
+    if Journal.Contains(IULumberjackSwap_IUSwapItemInHand_waitActionJournalLog) then
+        IUSwapItemInHand_swapItemInHand(config, callback)
+    end
+end
+
 hatchet_type_id = 3907
 double_axe_type_id = 3915
 hatchetAcceptPredicate = nil
@@ -2849,7 +2869,7 @@ postSwapCallback = nil
 
 function IULumberjackSwap_equipHatchet()
     local hatchet = Items.FindByType(hatchet_type_id)
-    IPLib_equipItemWithLessUsesRemaining(hatchet_type_id, hatchet.Name, hatchetAcceptPredicate)
+    local success = IPLib_equipItemWithLessUsesRemaining(hatchet_type_id, hatchet.Name, hatchetAcceptPredicate)
 end
 
 LumberjackWeaponToEquipGraphicID = double_axe_type_id
@@ -2860,7 +2880,7 @@ end
 
 function IULumberjackSwap_equipWeapon()
     local weapon = Items.FindByType(LumberjackWeaponToEquipGraphicID)
-    IPLib_equipItemWithLessDurability(LumberjackWeaponToEquipGraphicID, weapon.Name)
+    local success = IPLib_equipItemWithLessDurability(LumberjackWeaponToEquipGraphicID, weapon.Name)
     if postSwapCallback then
         Pause(500)
         postSwapCallback()
@@ -2877,7 +2897,7 @@ function IULumberjackSwap_lumberjackSwap(hatchetAcceptPredicate_, callback)
     config.first.acceptPredicate = hatchetAcceptPredicate_
     hatchetAcceptPredicate = hatchetAcceptPredicate_
     postSwapCallback = callback
-    IUSwapItemInHand_swapItemInHand(config, callback)
+    IUSwapItemInHand_swapItemInHandWithRetry(config, callback)
 end
 
 IUMinerSwap_pickaxe_type_id = 3718
@@ -2915,7 +2935,7 @@ function IUMinerSwap_minerSwap(pickaxeAcceptPredicate_, callback)
     IUMinerSwap_config.first.acceptPredicate = pickaxeAcceptPredicate_
     IUMinerSwap_pickaxeAcceptPredicate = pickaxeAcceptPredicate_
     IUMinerSwap_postSwapCallback = callback
-    IUSwapItemInHand_swapItemInHand(IUMinerSwap_config, callback)
+    IUSwapItemInHand_swapItemInHandWithRetry(IUMinerSwap_config, callback)
 end
 
 function IUIDWand_useIdWand(callback)
@@ -3005,8 +3025,11 @@ end
 
 function CAGatheringFSM_dropUnwantedMaterials(materialGraphicID, materialHuesToKeep)
     local materials = BaseLib_findInInventory(materialGraphicID)
+    if #materials == 0 then
+        return
+    end
     for _, material in ipairs(materials) do
-        local keepMaterial = BaseLib_tableContains(materialHuesToKeep, material.Hue)
+        keepMaterial = BaseLib_tableContains(materialHuesToKeep, material.Hue)
         if not keepMaterial then
             Player.PickUp(material.Serial, material.Amount)
             Player.DropOnGround()
@@ -3081,6 +3104,7 @@ GatheringLumberjackingStaticConfig = {
 }
 
 GatheringLumberjackingConfig = {
+    HatchetMaterialType = nil,
     LogHuesToKeep = {
         --- 0x0000,         --- Regular
         --- 0x0973,         --- Dull Copper
@@ -3094,6 +3118,10 @@ GatheringLumberjackingConfig = {
     }
 }
 
+function CAGatheringLumberjacking_setHatchetMaterialType(materialType)
+    GatheringLumberjackingConfig.HatchetMaterialType = materialType
+end
+
 function CAGatheringLumberjacking_setLogHuesToKeep(hues)
     GatheringLumberjackingConfig.LogHuesToKeep = hues
 end
@@ -3105,7 +3133,7 @@ end
 function CAGatheringLumberjacking_equipHatchet()
     local hatchet = Items.FindByLayer(2)
     if hatchet == nil or hatchet.Graphic ~= GatheringLumberjackingStaticConfig.HatchetGraphicID then
-        IULumberjackSwap_lumberjackSwap(IPMaterialPredicates_itemIsOfIron)
+        IULumberjackSwap_lumberjackSwap(IPMaterialPredicates_getAcceptPredicateForMaterialType(GatheringLumberjackingConfig.HatchetMaterialType))
         hatchet = Items.FindByLayer(2)
         Pause(CATime_getActionWaitTime())
     end
@@ -3189,6 +3217,7 @@ CAGatheringMining_GatheringMiningStaticConfig = {
 }
 
 GatheringMiningConfig = {
+    PickaxeMaterialType = nil,
     OreHuesToKeep = {
         --- 0x0000,         --- Regular
         --- 0x0973,         --- Dull Copper
@@ -3202,6 +3231,10 @@ GatheringMiningConfig = {
     }
 }
 
+function CAGatheringMining_setPickaxeMaterialType(materialType)
+    GatheringMiningConfig.PickaxeMaterialType = materialType
+end
+
 function CAGatheringMining_setOreHuesToKeep(hues)
     GatheringMiningConfig.OreHuesToKeep = hues
 end
@@ -3213,7 +3246,7 @@ end
 function CAGatheringMining_equipPickaxe()
     local pickaxe = Items.FindByLayer(1)
     if pickaxe == nil or pickaxe.Graphic ~= CAGatheringMining_GatheringMiningStaticConfig.PickaxeGraphicID then
-        IUMinerSwap_minerSwap(IPMaterialPredicates_itemIsOfIron)
+        IUMinerSwap_minerSwap(GatheringMiningConfig.PickaxeMaterialType)
         pickaxe = Items.FindByLayer(1)
         Pause(CATime_getActionWaitTime())
     end
@@ -3230,6 +3263,8 @@ CAGatheringMining_waitActionJournalLog = "You must wait to perform another actio
 CAGatheringMining_windowOutOfFocus = "Your game window does not have focus"
 CAGatheringMining_normalOresCollectedJournalLog = "ore and put it in your backpack."
 CAGatheringMining_questProgressJournalLog = "Quest progress: Gather"
+
+CAGatheringMining_tooFarToGatherJournalLog = "You have moved too far away to continue mining."
 
 CAGatheringMining_failedToGatherJournalLog = "You loosen some rocks but fail to find any usable ore."
 
@@ -3936,7 +3971,7 @@ end
 
 CAUIGumpMainRowLayout = {
     TitleLabelPosX = 10,
-    TitleLabelPosY = 40,
+    TitleLabelPosY = 30,
     ConfigButtonPosX = 175,
     ConfigButtonPosY = 35,
     ConfigButtonSizeX = 85,
@@ -3956,6 +3991,13 @@ CAUIGMR = {
         miningGatheringModeButton = nil
     }
 }
+
+ConfigButtonClosedString = 'CONFIG (+)'
+ConfigButtonOpenString = 'CONFIG (-)'
+titleLabelString =
+'  ___________________\n'..
+'_/( Dexxer Gatherer )\\_\n'..
+'¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯'
 
 ConfigWindowTimeoutModeValues = {
     NoTimeout = 1,
@@ -4107,11 +4149,11 @@ end
 closeMainConfigWindow_ = nil
 
 function CAUIGumpMainRow_updateMainConfigWindow(targetValue, closeOtherCWs)
-    CAUIGumpMainRowState.MainConfigClosed = CAUIGumpLogicBase_onConfigMenuButtonPressed(not targetValue, CAUIGMR.configButton, CAUIGMR.Config.window, 'Main Config', closeOtherCWs, closeMainConfigWindow_, 'CONFIG (+)', 'CONFIG (-)')
+    CAUIGumpMainRowState.MainConfigClosed = CAUIGumpLogicBase_onConfigMenuButtonPressed(not targetValue, CAUIGMR.configButton, CAUIGMR.Config.window, 'Main Config', closeOtherCWs, closeMainConfigWindow_, ConfigButtonClosedString, ConfigButtonOpenString)
 end
 
 closeMainConfigWindow_ = function ()
-    CAUIGumpMainRow_updateMainConfigWindow(true, false)
+CAUIGumpMainRow_updateMainConfigWindow(true, false)
 end
 
 function CAUIGumpMainRow_processConfigMenuButtonInteractions()
@@ -4181,17 +4223,17 @@ end
 
 function CAUIGumpMainRow_initUI(mainWindow)
     CALog_debug('Creating Main Row UI...')
-    CAUIGMR.titleLabel = mainWindow:AddLabel(CAUIGumpMainRowLayout.TitleLabelPosX, CAUIGumpMainRowLayout.TitleLabelPosY, ' _/ Dexxer Gatherer \\_')
+    CAUIGMR.titleLabel = mainWindow:AddLabel(CAUIGumpMainRowLayout.TitleLabelPosX, CAUIGumpMainRowLayout.TitleLabelPosY, titleLabelString)
     CAUIGMR.titleLabel:SetColor(0.2, 0.8, 1, 1)
-    CAUIGMR.configButton = mainWindow:AddButton(CAUIGumpMainRowLayout.ConfigButtonPosX, CAUIGumpMainRowLayout.ConfigButtonPosY, 'CONFIG (+)', CAUIGumpMainRowLayout.ConfigButtonSizeX, CAUIGumpMainRowLayout.ConfigButtonSizeY)
+    CAUIGMR.configButton = mainWindow:AddButton(CAUIGumpMainRowLayout.ConfigButtonPosX, CAUIGumpMainRowLayout.ConfigButtonPosY, ConfigButtonClosedString, CAUIGumpMainRowLayout.ConfigButtonSizeX, CAUIGumpMainRowLayout.ConfigButtonSizeY)
     CAUIGMR.Config.window = CAUIGumpLayoutBase_createModuleConfigWindow('MainConfigWindow', 'Main Config', 5, 1)
     CAUIGumpLogicBase_registerSharedVisibilityConfigWindowsCloseFunction(closeMainConfigWindow_)
-    CAUIGMR.Config.configWindowTimeoutModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 1, ConfigWindowTimeoutModeStrings[CAUIGumpMainRowState.ConfigWindowTimeoutMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    CAUIGMR.Config.rearmButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 2, RearmModeStrings[CAUIGumpMainRowState.RearmMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    CAUIGMR.Config.skinningGatheringModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 3, SkinningGatheringModeStrings[CAUIGumpMainRowState.SkinningGatheringMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    CAUIGMR.Config.lumberjackingGatheringModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 4, LumberjackingGatheringModeStrings[CAUIGumpMainRowState.LumberjackingGatheringMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    CAUIGMR.Config.miningGatheringModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 5, MiningGatheringModeStrings[CAUIGumpMainRowState.MiningGatheringMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-end
+        CAUIGMR.Config.configWindowTimeoutModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 1, ConfigWindowTimeoutModeStrings[CAUIGumpMainRowState.ConfigWindowTimeoutMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+        CAUIGMR.Config.rearmButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 2, RearmModeStrings[CAUIGumpMainRowState.RearmMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+        CAUIGMR.Config.skinningGatheringModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 3, SkinningGatheringModeStrings[CAUIGumpMainRowState.SkinningGatheringMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+        CAUIGMR.Config.lumberjackingGatheringModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 4, LumberjackingGatheringModeStrings[CAUIGumpMainRowState.LumberjackingGatheringMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+        CAUIGMR.Config.miningGatheringModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 5, MiningGatheringModeStrings[CAUIGumpMainRowState.MiningGatheringMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    end
 
 CAUIGumpStatsDisplay_IUWeapons_limit_durability = 0
 CAUIGumpStatsDisplay_IUWeapons_disarm_wait_time = 1000
@@ -4527,7 +4569,7 @@ function CAUIGumpStatsDisplay_updateHitPointsPercentageLabel()
 end
 
 function CAUIGumpStatsDisplay_updateStaminaPercentageLabel()
-    local staminaPercentage = math.floor(BaseLib_getHpPercentage(Player))
+    local staminaPercentage = math.floor(BaseLib_getStaminaPercentage(Player))
     CAUIGSD.Row1.StaminaPercentageLabel:SetText('ST: '..staminaPercentage..'%%')
     CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row1.StaminaPercentageLabel, CAUIGumpStatsDisplay_getPercentageAmountColor(staminaPercentage))
 end
