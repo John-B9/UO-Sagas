@@ -17,6 +17,7 @@
 
 local caml = Import('CAMainLoop')
 local cauig = Import('CAUIGump')
+local cagc = Import('CAGatheringConstants')
 
 ---------------
 --- Configs ---
@@ -114,6 +115,20 @@ local DexxerMainLoopConfig = {
         DebugTick = 500,                --- slower exececution tick frequency
         EnableOverheadMessages = false  --- Enables overhead messages, if false then messages will be printed in journal
     },
+    gathering = {
+        NoisyMode = false,                                          --- Notify when dropping or keeping a resource (false -> Overhead Message, true -> Saying to everyone)
+        SkinningEnabled = false,                                     --- Enable Skinning gathering mode (starting value not available for Lumberjacking or Mining)
+        SkinningHuesToKeep = cagc.getHuesToKeepValues().None,       --- Hues to keep when gathering, see CAGatheringConstants.lua for values
+        LumberjackingHuesToKeep = cagc.getHuesToKeepValues().None,  --- Hues to keep when gathering, see CAGatheringConstants.lua for values,
+        MiningHuesToKeep = cagc.getHuesToKeepValues().None,         --- Hues to keep when gathering, see CAGatheringConstants.lua for values
+    },
+    userCommands = {
+        Enable = true,                                  --- Parse and process user commands (via journal)
+        LumberjackSwapMainWeaponGraphicID = 0x0F4B,     --- Double Axe
+        ---MinerSwapMainWeaponGraphicID = 0x1439,       --- War Hammer
+        MinerSwapMainWeaponGraphicID = 0x13B0,          --- War Axe
+        CommandStringPrefix = "(DEXXER)"
+    },
     modules = {
         ArmDisarm = {
             Enable = true,              --- Re-arms once moved char when disarmed, disarms if weapon durability too low
@@ -152,18 +167,18 @@ local DexxerMainLoopConfig = {
                 Enable = true   --- Drink nightsight potion if not buffed already
             },
             Stamina = {
-                Enable = true,          --- Drink stamina potion when bellow a threshould
+                Enable = false,          --- Drink stamina potion when bellow a threshould
                 DrinkThreshould = 60    --- in percentage, when to drink stamina potion
             },
             Strength = {
                 Enable = true,          --- Drink strength potion if not buffed already
                 BaseStrength = 100,
-                DrinkHeal = true
+                DrinkHeal = false
             },
             Agility = {
                 Enable = true,          --- Drink potion potion if not buffed already
                 BaseAgility = 81,       --- Because of full plate (without gorget: using luck gear)
-                DrinkRefresh = true
+                DrinkRefresh = false
             },
             EatFood = {
                 Enable = false   --- BUGGED: Buff foods don't prevent eating if already under the effect
@@ -178,11 +193,6 @@ local DexxerMainLoopConfig = {
         DetectPlayers = {
             Enable = false  --- Alerts you when a player from the hunt list is visible
         },
-        Skinning = {
-            Enable = false,
-            NoisyMode = true,       --- To Log XOR Say when dropping or keeping a resource
-            LeatherHuesToKeep = {}
-        },
         Scavenging = {
             Enable = false,                             --- Scavenges items from the ground, only arrows, add more if needed
             Frequency = 0,                              --- milliseconds, zero means immediate
@@ -190,13 +200,13 @@ local DexxerMainLoopConfig = {
             LootItemsNames = {},                        --- Use if serial not available
             DisallowGold = false,                       --- Toggle scavenging gold
             DisallowCleanBandage = false,               --- Toggle scavenging clean bandages
-            DisallowBones = false,                      --- Toggle scavenging bones
+            DisallowBones = true,                      --- Toggle scavenging bones
             DisallowGrimoire = false,                   --- Toggle scavenging grimoires
-            DisallowRibs = false                        --- Toggle scavenging ribs
+            DisallowRibs = true                        --- Toggle scavenging ribs
         },
         Attack = {
             Enable = false,                                             --- Attacks nearby enemies automatically
-            Rangemax = 10,                                              --- Attack search range
+            Rangemax = 5,                                               --- Attack search range
             AllowMobilesExceptionsSerials = true,                       --- Allow Mobiles Serials to ignore
             MobilesExceptionsSerials = FriendsSerialList,               --- Mobiles Serials to ignore (add friends so to not attack should they become grey)
             AllowMobilesExceptionsGraphicIDs = true,                    --- Allow Mobiles Mobiles GraphicIDs to ignore
@@ -205,14 +215,11 @@ local DexxerMainLoopConfig = {
             MobilesExceptionsNames = MobilesExceptionsNames,            --- Mobiles Names to ignore (use if don't have serial or graphic available)
             CheckFrequency = 500                                        --- in milliseconds, how often to check for new targets, adjust if needed
         }
-    },
-    userCommands = {
-        Enable = true,                                  --- Parse and process user commands (via journal)
-        LumberjackSwapMainWeaponGraphicID = 0x0F4B,     --- Double Axe
-        ---MinerSwapMainWeaponGraphicID = 0x1439,       --- War Hammer
-        MinerSwapMainWeaponGraphicID = 0x13B0,          --- War Axe
-        CommandStringPrefix = "(DEXXER)"
     }
+}
+
+local DexxerUIConfig = {
+    ConfigWindowTimeoutMode = 4     --- seconds to auto-close config windows (0 will never close)
 }
 
 -----------------
@@ -225,7 +232,7 @@ local function run_()
 end
 
 local function runUiGump_()
-    cauig.runGump(DexxerMainLoopConfig)
+    cauig.runGump(DexxerMainLoopConfig, DexxerUIConfig)
 end
 
 local function runWithCommandsDisabled_()

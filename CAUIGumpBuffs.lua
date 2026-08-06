@@ -67,13 +67,13 @@ CAUIGumpBuffsState = {
     EnableNightsight = true,
     EnableStrength = true,
     EnableAgility = true,
-    HealPotsAfterStrPot = true,
+    StamPotsAfterAgiPot = true,
     StaminaPotsMode = StaminaPotsModeValues.SixtyPercent
 }
 
------------------
---- Functions ---
------------------
+----------------------
+--- UI Interaction ---
+----------------------
 
 local function processBuffsButtonInteractions_()
     if CAUIGB.enableButton:WasClicked() then
@@ -103,6 +103,15 @@ local function processNightsightButtonInteractions_(forced)
     end
 end
 
+local function getEnableNightsight_()
+    return CAUIGumpBuffsState.EnableNightsight
+end
+
+local function setEnableNightsight_(isChecked)
+    CAUIGumpBuffsState.EnableNightsight = not isChecked
+    processNightsightButtonInteractions_(true)
+end
+
 local function processStrengthButtonInteractions_()
     if CAUIGB.Config.enableStrength:WasClicked() then
         CAUIGumpBuffsState.EnableStrength = cauiglogicb.onBooleanButtonPressed(CAUIGumpBuffsState.EnableStrength, CAUIGB.Config.enableStrength, 'Strength')
@@ -117,7 +126,7 @@ end
 
 local function processRefreshOnAgilityButtonInteractions_()
     if CAUIGB.Config.refreshAfterAgility:WasClicked() then
-        CAUIGumpBuffsState.HealPotsAfterStrPot = cauiglogicb.onBooleanButtonPressed(CAUIGumpBuffsState.HealPotsAfterStrPot, CAUIGB.Config.refreshAfterAgility, 'Refresh On Agi')
+        CAUIGumpBuffsState.StamPotsAfterAgiPot = cauiglogicb.onBooleanButtonPressed(CAUIGumpBuffsState.StamPotsAfterAgiPot, CAUIGB.Config.refreshAfterAgility, 'Refresh On Agi')
     end
 end
 
@@ -137,38 +146,66 @@ local function processUIInteractions_()
     processStaminaPotionsModeButtonInteractions_()
 end
 
+-------------------------------------
+--- CA Config values to UI values ---
+-------------------------------------
+
+local function numberToStaminaPotsModeValue_(num)
+    for _, v in pairs(StaminaPotsModeValues) do
+        if StaminaPotsModeThreshoulds[v] ~=0 and num <= StaminaPotsModeThreshoulds[v] and num+20 > StaminaPotsModeThreshoulds[v] then
+            return v
+        end
+    end
+    return StaminaPotsModeValues.None --- Default to disabled if not found
+end
+
+local function setUIValuesFromCAConfig_(CAConfig)
+    cal.debug('Setting Buffs UI values from CAConfig...')
+    local buffsConfig = CAConfig.modules.Buffs
+    CAUIGumpBuffsState.BuffsEnabled = buffsConfig.Enable
+    CAUIGumpBuffsState.EnableNightsight = buffsConfig.Nightsight.Enable
+    CAUIGumpBuffsState.EnableStrength = buffsConfig.Strength.Enable
+    CAUIGumpBuffsState.EnableAgility = buffsConfig.Agility.Enable
+    CAUIGumpBuffsState.StamPotsAfterAgiPot = buffsConfig.Agility.DrinkRefresh
+    CAUIGumpBuffsState.StaminaPotsMode = (buffsConfig.Stamina.Enable and numberToStaminaPotsModeValue_(buffsConfig.Stamina.DrinkThreshould)) or StaminaPotsModeValues.None
+end
+
+-------------------------------------
+--- UI values to CA Config values ---
+-------------------------------------
+
 local function updateCAConfigToCurrentUIConfig_(CAConfig)
     local buffsConfig = CAConfig.modules.Buffs
     buffsConfig.Enable = CAUIGumpBuffsState.BuffsEnabled
     buffsConfig.Nightsight.Enable = CAUIGumpBuffsState.EnableNightsight
     buffsConfig.Strength.Enable = CAUIGumpBuffsState.EnableStrength
     buffsConfig.Agility.Enable = CAUIGumpBuffsState.EnableAgility
+    buffsConfig.Agility.DrinkRefresh = CAUIGumpBuffsState.StamPotsAfterAgiPot
     buffsConfig.Stamina.Enable = CAUIGumpBuffsState.StaminaPotsMode ~= StaminaPotsModeValues.None
     buffsConfig.Stamina.DrinkThreshould = StaminaPotsModeThreshoulds[CAUIGumpBuffsState.StaminaPotsMode]
 end
 
-local function initUI_(mainWindow, row)
+---------------
+--- UI Init ---
+---------------
+
+local function createUIElements_(mainWindow, CAConfig, row)
     cal.debug('Creating Buffs UI...')
     CAUIGB.enableButton = cauiglayoutb.createModuleEnableButtonAtRow(mainWindow, row, 'Buffs')
-    CAUIGB.enableLabel = cauiglayoutb.createModuleEnableLabelAtRow(mainWindow, row, 'Disabled')
-    CAUIGB.enableLabel:SetColor(1, 0, 0, 1)
+    CAUIGB.enableLabel = cauiglayoutb.createModuleEnableLabelAtRow(mainWindow, row, cauiglogicb.getEnabledDisabledLabelValues(CAUIGumpBuffsState.BuffsEnabled))
     CAUIGB.configButton = cauiglayoutb.createModuleConfigButtonAtRow(mainWindow, row)
     CAUIGB.Config.window = cauiglayoutb.createModuleConfigWindow('buffsConfigWindow', 'Buffs Config', 5, row)
     cauiglogicb.registerSharedVisibilityConfigWindowsCloseFunction(closeBuffsConfigWindow_)
     CAUIGB.Config.enableNightsight = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGB.Config.window, 1, cauiglogicb.getBoonleanButtonStateDisplayStr(CAUIGumpBuffsState.EnableNightsight, 'Nightsight'))
     CAUIGB.Config.enableStrength = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGB.Config.window, 2, cauiglogicb.getBoonleanButtonStateDisplayStr(CAUIGumpBuffsState.EnableStrength, 'Strength'))
     CAUIGB.Config.enableAgility = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGB.Config.window, 3, cauiglogicb.getBoonleanButtonStateDisplayStr(CAUIGumpBuffsState.EnableAgility, 'Agility'))
-    CAUIGB.Config.refreshAfterAgility = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGB.Config.window, 4, cauiglogicb.getBoonleanButtonStateDisplayStr(CAUIGumpBuffsState.HealPotsAfterStrPot, 'Refresh On Agi'), 140, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGB.Config.refreshAfterAgility = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGB.Config.window, 4, cauiglogicb.getBoonleanButtonStateDisplayStr(CAUIGumpBuffsState.StamPotsAfterAgiPot, 'Refresh On Agi'), 140, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
     CAUIGB.Config.staminaPotionsModeButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGB.Config.window, 5, StaminaPotsModeStrings[CAUIGumpBuffsState.StaminaPotsMode], 180, cauiglayoutb.getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
 end
 
-local function getEnableNightsight_()
-    return CAUIGumpBuffsState.EnableNightsight
-end
-
-local function setEnableNightsight_(isChecked)
-    CAUIGumpBuffsState.EnableNightsight = not isChecked
-    processNightsightButtonInteractions_(true)
+local function initUI_(mainWindow, CAConfig, row)
+    setUIValuesFromCAConfig_(CAConfig)
+    createUIElements_(mainWindow, CAConfig, row)
 end
 
 --------------
@@ -176,11 +213,11 @@ end
 --------------
 
 local Obj = {
+    getEnableNightsight = getEnableNightsight_,
+    setEnableNightsight = setEnableNightsight_,
     updateCAConfigToCurrentUIConfig = updateCAConfigToCurrentUIConfig_,
     processUIInteractions = processUIInteractions_,
-    initUI = initUI_,
-    getEnableNightsight = getEnableNightsight_,
-    setEnableNightsight = setEnableNightsight_
+    initUI = initUI_
 }
 
 return Obj

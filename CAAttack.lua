@@ -87,6 +87,16 @@ local function nearestMosttHitMobileFirstComparePredicate_(mobile_l, mobile_r)
     return mobile_l.Distance < mobile_r.Distance
 end
 
+local function nearestMobileWithLessHPFirstComparePredicate_(mobile_l, mobile_r)
+    if mobile_l.Distance == mobile_r.Distance then
+        if mobile_l.Hits == mobile_r.Hits then
+            return (mobile_l.Name or "") < (mobile_r.Name or "")
+        end
+        return mobile_l.Hits < mobile_r.Hits
+    end
+    return mobile_l.Distance < mobile_r.Distance
+end
+
 local function targetAcceptPredicate_(mobile)
 
     if mobile.IsDead then
@@ -150,7 +160,8 @@ local function attackNearestEnemy_()
     if #list > 0 then
 
         cal.debug('Sorting attack targets')
-        table.sort(list, nearestMosttHitMobileFirstComparePredicate_)
+        ---table.sort(list, nearestMosttHitMobileFirstComparePredicate_)
+        table.sort(list, nearestMobileWithLessHPFirstComparePredicate_)
         for index, mobile in ipairs(list) do
             cal.debug('Found mobile ('..mobile.Name..') at location x:'..mobile.X..' y:'..mobile.Y)
         end

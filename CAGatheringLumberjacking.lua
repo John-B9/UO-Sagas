@@ -11,7 +11,7 @@
 local bl = Import('BaseLib')
 local cal = Import('CALog')
 local cat = Import('CATime')
-local ipmp = Import('IPMaterialPredicates')
+local cagc = Import('CAGatheringConstants')
 local iuls = Import('IULumberjackSwap')
 local cagfsm = Import('CAGatheringFSM')
 
@@ -25,30 +25,17 @@ local GatheringLumberjackingStaticConfig = {
 }
 
 GatheringLumberjackingConfig = {
-    HatchetMaterialType = nil,
-    LogHuesToKeep = {
-        --- 0x0000,         --- Regular
-        --- 0x0973,         --- Dull Copper
-        0x0966,         --- Shadow Iron
-        0x096D,         --- Copper
-        0x0972,             --- Bronze
-        0x08A5,             --- Gold
-        0x0979,             --- Agapite
-        0x089F,             --- Verite
-        0x08AB              --- Valorite
-    }
+    NoisyMode = false,
+    LogHuesToKeep = nil
 }
 
 -----------------
 --- Accessors ---
 -----------------
 
-local function setHatchetMaterialType_(materialType)
-    GatheringLumberjackingConfig.HatchetMaterialType = materialType
-end
-
-local function setLogHuesToKeep_(hues)
-    GatheringLumberjackingConfig.LogHuesToKeep = hues
+local function setConfig_(config)
+    GatheringLumberjackingConfig.NoisyMode = config.NoisyMode
+    GatheringLumberjackingConfig.LogHuesToKeep = config.LumberjackingHuesToKeep
 end
 
 -----------------
@@ -62,7 +49,7 @@ end
 local function equipHatchet_()
     local hatchet = Items.FindByLayer(2)
     if hatchet == nil or hatchet.Graphic ~= GatheringLumberjackingStaticConfig.HatchetGraphicID then
-        iuls.lumberjackSwap(ipmp.getAcceptPredicateForMaterialType(GatheringLumberjackingConfig.HatchetMaterialType))
+        iuls.lumberjackSwap()
         hatchet = Items.FindByLayer(2)
         Pause(cat.getActionWaitTime())
     end
@@ -135,7 +122,8 @@ local function transitionLumberjackFSM_()
         checkJournal = checkJournal_,
         weightThreshouldReachedCallback = cutLogs_,
         materialGraphicID = GatheringLumberjackingStaticConfig.LogsGraphicID,
-        materialHuesToKeep = GatheringLumberjackingConfig.LogHuesToKeep
+        noisyMode = GatheringLumberjackingConfig.NoisyMode,
+        materialHuesToKeep = cagc.getHuesToKeepLootTable(GatheringLumberjackingConfig.LogHuesToKeep)
     }
     cagfsm.transitionGatheringFSM(FSMConfigLumberjacking)
 end
@@ -145,8 +133,7 @@ end
 --------------
 
 local Obj = {
-    setHatchetMaterialType = setHatchetMaterialType_,
-    setLogHuesToKeep = setLogHuesToKeep_,
+    setConfig = setConfig_,
     resetLumberjackFSM = resetLumberjackFSM_,
     transitionLumberjackFSM = transitionLumberjackFSM_
 }

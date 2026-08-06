@@ -20,6 +20,15 @@ GatheringConfig = {
     LumberjackingModeActive = false
 }
 
+---------------
+--- Setters ---
+---------------
+
+local function setConfig_(config)
+    cagl.setConfig(config)
+    cagm.setConfig(config)
+end
+
 -----------------
 --- Functions ---
 -----------------
@@ -69,6 +78,7 @@ end
 --------------
 
 local Obj = {
+    setConfig = setConfig_,
     toggleMiningMode = toggleMiningMode_,
     toggleLumberjackingMode = toggleLumberjackingMode_,
     gather = gather_

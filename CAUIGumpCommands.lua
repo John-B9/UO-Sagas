@@ -28,9 +28,9 @@ CAUIGumpCommandsConfig = {
     CommandsEnabled = true
 }
 
------------------
---- Functions ---
------------------
+----------------------
+--- UI Interaction ---
+----------------------
 
 local function processCommandsButtonInteractions_()
     if CAUIGC.enableButton:WasClicked() then
@@ -42,15 +42,38 @@ local function processUIInteractions_()
     processCommandsButtonInteractions_()
 end
 
+-------------------------------------
+--- CA Config values to UI values ---
+-------------------------------------
+
+local function setUIValuesFromCAConfig_(CAConfig)
+    cal.debug('Setting Commands UI values from CAConfig...')
+    local commandsConfig = CAConfig.userCommands
+    CAUIGumpCommandsConfig.CommandsEnabled = commandsConfig.Enable
+end
+
+-------------------------------------
+--- UI values to CA Config values ---
+-------------------------------------
+
 local function updateCAConfigToCurrentUIConfig_(CAConfig)
     local commandsConfig = CAConfig.userCommands
     commandsConfig.Enable = CAUIGumpCommandsConfig.CommandsEnabled
 end
 
-local function initUI_(mainWindow, row)
+---------------
+--- UI Init ---
+---------------
+
+local function createUIElements_(mainWindow, CAConfig, row)
     cal.debug('Creating Commands UI...')
     CAUIGC.enableButton = cauiglayoutb.createModuleEnableButtonAtRow(mainWindow, row, 'Commands')
-    CAUIGC.enableLabel = cauiglayoutb.createModuleEnableLabelAtRow(mainWindow, row, 'Enabled')
+    CAUIGC.enableLabel = cauiglayoutb.createModuleEnableLabelAtRow(mainWindow, row, cauiglogicb.getEnabledDisabledLabelValues(CAUIGumpCommandsConfig.CommandsEnabled))
+end
+
+local function initUI_(mainWindow, CAConfig, row)
+    setUIValuesFromCAConfig_(CAConfig)
+    createUIElements_(mainWindow, CAConfig, row)
 end
 
 --------------

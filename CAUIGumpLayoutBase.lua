@@ -67,12 +67,12 @@ local function createModuleEnableButtonAtRow_(mainWindow, row, buttonText, sizeX
     return button
 end
 
-local function createModuleEnableLabelAtRow_(mainWindow, row, labelText)
+local function createModuleEnableLabelAtRow_(mainWindow, row, labelValues)
     cal.debug('Initializing Module Enable Label (At Row: "..row..")...')
     local labelPosX = CAUIGumpLayoutConstants.ModuleEnableLabelPosX
     local labelPosY = CAUIGumpLayoutValues.ModulesRowPosYStart + ((row -1) * CAUIGumpLayoutConstants.ModuleRowPosYIncrement) + CAUIGumpLayoutConstants.ModuleRowPosYLabelAlignIncrement
-    local label = mainWindow:AddLabel(labelPosX, labelPosY, labelText)
-    label:SetColor(0, 1, 0, 1)
+    local label = mainWindow:AddLabel(labelPosX, labelPosY, labelValues[1])
+    label:SetColor(labelValues[2][1], labelValues[2][2], labelValues[2][3], labelValues[2][4])
     return label
 end
 

@@ -117,27 +117,32 @@ local function initMainWindow_()
     cal.debug("Window created and ready!")
 end
 
-local function initModules_()
-    cauigmainrow.initUI(CAUI.mainWindow)        --- Main Row
-    cauigstats.initUI(CAUI.mainWindow)          --- Stats
-    cauigrun.initUI(CAUI.mainWindow, 1)         --- Run
-    cauigcommands.initUI(CAUI.mainWindow, 2)    --- Commands
-    cauigattack.initUI(CAUI.mainWindow, 3)      --- Attack
-    cauigheal.initUI(CAUI.mainWindow, 4)        --- Heal
-    cauigbuffs.initUI(CAUI.mainWindow, 5)       --- Buffs
-    cauigscavenge.initUI(CAUI.mainWindow, 6)    --- Scavenge
+local function initModules_(CAConfig)
+    cauigmainrow.initUI(CAUI.mainWindow, CAConfig)        --- Main Row
+    cauigstats.initUI(CAUI.mainWindow, CAConfig)          --- Stats
+    cauigrun.initUI(CAUI.mainWindow, CAConfig, 1)         --- Run
+    cauigcommands.initUI(CAUI.mainWindow, CAConfig, 2)    --- Commands
+    cauigattack.initUI(CAUI.mainWindow, CAConfig, 3)      --- Attack
+    cauigheal.initUI(CAUI.mainWindow, CAConfig, 4)        --- Heal
+    cauigbuffs.initUI(CAUI.mainWindow, CAConfig, 5)       --- Buffs
+    cauigscavenge.initUI(CAUI.mainWindow, CAConfig, 6)    --- Scavenge
 end
 
-local function initMainGump_()
+local function setUIConfigs_(UIConfig)
+    cauigmainrow.setConfigWindowTimeoutMode(UIConfig.ConfigWindowTimeoutMode)
+end
+
+local function initMainGump_(CAConfig, UIConfig)
     initMainWindow_()
-    initModules_()
+    setUIConfigs_(UIConfig)
+    initModules_(CAConfig)
 end
 
-local function runGump_(CAConfig)
+local function runGump_(CAConfig, UIConfig)
 
-    cal.debug('Starting Combat Assistant Iteration!')
+    cal.debug('Starting Combat Assistant Gump!')
     UI.DestroyAllWindows()                                  --- Cleanup
-    initMainGump_()                                         --- Init main gump (create UI, set up event handlers, etc...)
+    initMainGump_(CAConfig, UIConfig)                       --- Init main gump (create UI, set up event handlers, etc...)
     caml.mainLoopInit(CAConfig)                             --- Initialize main loop (configure modules, etc...)
     while true do
 

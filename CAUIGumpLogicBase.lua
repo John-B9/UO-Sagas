@@ -53,6 +53,10 @@ local function getColorOptions_()
     return ColorOptions
 end
 
+local function getColorValues_()
+    return ColorValues
+end
+
 local function registerSharedVisibilityConfigWindowsCloseFunction_(closeFunction)
     table.insert(CAUIGumpLogicBaseState.SharedVisibilityConfigWindowsCloseFunctions, closeFunction)
 end
@@ -180,6 +184,10 @@ local function onEnabledDisabledButtonPressed_(currentState, label, buttonEventL
     return onLabeledBooleanButtonPressed_(currentState, label, buttonEventLogStr, { 'Enabled', ColorOptions.Green }, { 'Disabled', ColorOptions.Red })
 end
 
+local function getEnabledDisabledLabelValues_(currentState)
+    return (currentState and { 'Enabled', ColorValues[ColorOptions.Green] }) or { 'Disabled', ColorValues[ColorOptions.Red] }
+end
+
 local function getBoonleanButtonStateDisplayStr_(state, buttonDescriptionStr)
     return buttonDescriptionStr .. ((state and ' (Y)') or ' (N)')
 end
@@ -201,6 +209,7 @@ end
 
 local Obj = {
     getColorOptions = getColorOptions_,
+    getColorValues = getColorValues_,
     registerSharedVisibilityConfigWindowsCloseFunction = registerSharedVisibilityConfigWindowsCloseFunction_,
     setWindowAutoCloseTime = setWindowAutoCloseTime_,
     checkAndCloseOpenConfigWindow = checkAndCloseOpenConfigWindow_,
@@ -209,6 +218,7 @@ local Obj = {
     onEnumStateButtonPressed = onEnumStateButtonPressed_,
     onLabeledBooleanButtonPressed = onLabeledBooleanButtonPressed_,
     onEnabledDisabledButtonPressed = onEnabledDisabledButtonPressed_,
+    getEnabledDisabledLabelValues = getEnabledDisabledLabelValues_,
     getBoonleanButtonStateDisplayStr = getBoonleanButtonStateDisplayStr_,
     onBooleanButtonPressed = onBooleanButtonPressed_
 }

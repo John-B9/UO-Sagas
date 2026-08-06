@@ -32,7 +32,6 @@ local GatheringFSMStatesStrings = {
 -----------------
 
 local GatheringFSMConfigStatic = {
-    NoisyMode = true,
     WeightTolerance = 10,
     GatheringWaitTimeout = 4000
 }
@@ -74,21 +73,22 @@ local function weightThreshouldReached_()
     return Player.Weight > Player.MaxWeight - GatheringFSMConfigStatic.WeightTolerance
 end
 
-local function announceFoundMaterial_(material, keep)
+local function announceFoundMaterial_(material, keep, noisyMode)
     local msgPrefix = keep and "+ " or "- "
     local msgSufix = keep and " +" or " -"
-    if GatheringFSMConfigStatic.NoisyMode then
+    if noisyMode then
         Player.Say(msgPrefix .. material.Name .. msgSufix, 48)
     else
         cal.mainInfo(msgPrefix .. material.Name .. " " .. msgSufix)
     end
 end
 
-local function dropUnwantedMaterials_(materialGraphicID, materialHuesToKeep)
+local function dropUnwantedMaterials_(materialGraphicID, materialHuesToKeep, noisyMode)
     local materials = bl.findInInventory(materialGraphicID)
     if #materials == 0 then
         return
     end
+    cal.mainInfo("Dropping unwanted materials...")
     for _, material in ipairs(materials) do
         local keepMaterial = bl.tableContains(materialHuesToKeep, material.Hue)
         if not keepMaterial then
@@ -96,7 +96,7 @@ local function dropUnwantedMaterials_(materialGraphicID, materialHuesToKeep)
             Player.DropOnGround()
             Pause(0.5 * cat.getActionWaitTime())
         end
-        announceFoundMaterial_(material, keepMaterial)
+        announceFoundMaterial_(material, keepMaterial, noisyMode)
     end
 end
 
@@ -145,7 +145,7 @@ local function transitionGatheringFSM_(FSMConfig)
     end
     
     if weightThreshouldReached_() then
-        dropUnwantedMaterials_(FSMConfig.materialGraphicID, FSMConfig.materialHuesToKeep)
+        dropUnwantedMaterials_(FSMConfig.materialGraphicID, FSMConfig.materialHuesToKeep, FSMConfig.noisyMode)
         if FSMConfig.weightThreshouldReachedCallback ~= nil then
             FSMConfig.weightThreshouldReachedCallback()
         end

@@ -51,11 +51,11 @@ local function processUIInteractions_()
     processRunButtonInteractions_()
 end
 
-local function initUI_(mainWindow, row)
+local function initUI_(mainWindow, CAConfig, row)
     cal.debug('Creating Run Button UI...')
     CAUIGR.enableButton = cauiglayoutb.createModuleEnableButtonAtRow(mainWindow, row, 'Run', CAUIGumpRunLayout.RunButtonSizeX, CAUIGumpRunLayout.RunButtonSizeY)
-    CAUIGR.enableLabel = cauiglayoutb.createModuleEnableLabelAtRow(mainWindow, row, 'Stopped')
-    cauiglogicb.setLabelColor(CAUIGR.enableLabel, cauiglogicb.getColorOptions().Red)
+    CAUIGR.enableLabel = cauiglayoutb.createModuleEnableLabelAtRow(mainWindow, row, { 'Stopped', cauiglogicb.getColorValues()[cauiglogicb.getColorOptions().Red] })
+    ---cauiglogicb.setLabelColor(CAUIGR.enableLabel, cauiglogicb.getColorOptions().Red)
 end
 
 local function startIteration_()

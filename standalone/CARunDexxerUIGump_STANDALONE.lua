@@ -2585,20 +2585,80 @@ function IUSkinn_useSkinningKnife(callback, verbose)
     return best_skinning_knife ~= nil
 end
 
+CAGatheringConstants_HuesToKeepValues = {
+    None = 1,
+    All = 2,
+    ShadowPlus = 3,
+    CopperPlus = 4,
+    BronzePlus = 5,
+    VeritePlus = 6,
+    Valorite = 7
+}
+
+CAGatheringConstants_HuesToKeepTableNone = {
+}
+
+CAGatheringConstants_HuesToKeepTableAll = {
+    0x0000,             --- Regular
+    0x0966,             --- Shadow
+    0x096D,             --- Copper
+    0x0972,             --- Bronze
+    0x089F,             --- Verite
+    0x08AB              --- Valorite
+}
+
+CAGatheringConstants_HuesToKeepTableShadowPlus = {
+    0x0966,             --- Shadow
+    0x096D,             --- Copper
+    0x0972,             --- Bronze
+    0x089F,             --- Verite
+    0x08AB              --- Valorite
+}
+
+CAGatheringConstants_HuesToKeepTableCopperPlus = {
+    0x096D,             --- Copper
+    0x0972,             --- Bronze
+    0x089F,             --- Verite
+    0x08AB              --- Valorite
+}
+
+CAGatheringConstants_HuesToKeepTableBronzePlus = {
+    0x0972,             --- Bronze
+    0x089F,             --- Verite
+    0x08AB              --- Valorite
+}
+
+CAGatheringConstants_HuesToKeepTableVeritePlus = {
+    0x089F,             --- Verite
+    0x08AB              --- Valorite
+}
+
+CAGatheringConstants_HuesToKeepTableValorite = {
+    0x08AB              --- Valorite
+}
+
+CAGatheringConstants_HuesToKeepTables = {
+    CAGatheringConstants_HuesToKeepTableNone,
+    CAGatheringConstants_HuesToKeepTableAll,
+    CAGatheringConstants_HuesToKeepTableShadowPlus,
+    CAGatheringConstants_HuesToKeepTableCopperPlus,
+    CAGatheringConstants_HuesToKeepTableBronzePlus,
+    CAGatheringConstants_HuesToKeepTableVeritePlus,
+    CAGatheringConstants_HuesToKeepTableValorite
+}
+
+function CAGatheringConstants_getHuesToKeepValues()
+    return CAGatheringConstants_HuesToKeepValues
+end
+
+function CAGatheringConstants_getHuesToKeepLootTable(gatheringMode)
+    return CAGatheringConstants_HuesToKeepTables[gatheringMode]
+end
+
 SkinnConfig = {
     Enable = false,
-    NoisyMode = true,       --- To Log XOR Say when dropping or keeping a resource
-    LeatherHuesToKeep = {
-        --- 0x0000,         --- Regular
-        --- 0x0973,         --- Dull Copper
-        --- 0x0966,         --- Shadow Iron
-        --- 0x096D,         --- Copper
-        0x0972,             --- Bronze
-        0x08A5,             --- Gold
-        0x0979,             --- Agapite
-        0x089F,             --- Verite
-        0x08AB              --- Valorite
-    }
+    NoisyMode = true,           --- To Log XOR Say when dropping or keeping a resource
+    LeatherHuesToKeep = nil     --- Table with hues to keep
 }
 
 SkinnStaticConfig = {
@@ -2628,9 +2688,9 @@ function CASkinn_setNoisyMode(val)
 end
 
 function CASkinn_setConfig(config)
-    CASkinn_setEnable(config.Enable)
+    CASkinn_setEnable(config.SkinningEnabled)
     CASkinn_setNoisyMode(config.NoisyMode)
-    SkinnConfig.LeatherHuesToKeep = config.LeatherHuesToKeep
+    SkinnConfig.LeatherHuesToKeep = CAGatheringConstants_getHuesToKeepLootTable(config.SkinningHuesToKeep)
 end
 
 function CASkinn_announceFoundHide(hide, keep)
@@ -2979,7 +3039,6 @@ CAGathering_CAGatheringLumberjacking_CAGatheringFSM_GatheringFSMStatesStrings = 
 }
 
 CAGathering_CAGatheringLumberjacking_CAGatheringFSM_GatheringFSMConfigStatic = {
-    NoisyMode = true,
     WeightTolerance = 10,
     GatheringWaitTimeout = 4000
 }
@@ -3013,21 +3072,22 @@ function CAGatheringFSM_weightThreshouldReached()
     return Player.Weight > Player.MaxWeight - CAGathering_CAGatheringLumberjacking_CAGatheringFSM_GatheringFSMConfigStatic.WeightTolerance
 end
 
-function CAGatheringFSM_announceFoundMaterial(material, keep)
+function CAGatheringFSM_announceFoundMaterial(material, keep, noisyMode)
     local msgPrefix = keep and "+ " or "- "
     local msgSufix = keep and " +" or " -"
-    if CAGathering_CAGatheringLumberjacking_CAGatheringFSM_GatheringFSMConfigStatic.NoisyMode then
+    if noisyMode then
         Player.Say(msgPrefix .. material.Name .. msgSufix, 48)
     else
         CALog_mainInfo(msgPrefix .. material.Name .. " " .. msgSufix)
     end
 end
 
-function CAGatheringFSM_dropUnwantedMaterials(materialGraphicID, materialHuesToKeep)
+function CAGatheringFSM_dropUnwantedMaterials(materialGraphicID, materialHuesToKeep, noisyMode)
     local materials = BaseLib_findInInventory(materialGraphicID)
     if #materials == 0 then
         return
     end
+    CALog_mainInfo("Dropping unwanted materials...")
     for _, material in ipairs(materials) do
         keepMaterial = BaseLib_tableContains(materialHuesToKeep, material.Hue)
         if not keepMaterial then
@@ -3035,7 +3095,7 @@ function CAGatheringFSM_dropUnwantedMaterials(materialGraphicID, materialHuesToK
             Player.DropOnGround()
             Pause(0.5 * CATime_getActionWaitTime())
         end
-        CAGatheringFSM_announceFoundMaterial(material, keepMaterial)
+        CAGatheringFSM_announceFoundMaterial(material, keepMaterial, noisyMode)
     end
 end
 
@@ -3084,7 +3144,7 @@ function CAGatheringFSM_transitionGatheringFSM(FSMConfig)
     end
 
     if CAGatheringFSM_weightThreshouldReached() then
-        CAGatheringFSM_dropUnwantedMaterials(FSMConfig.materialGraphicID, FSMConfig.materialHuesToKeep)
+        CAGatheringFSM_dropUnwantedMaterials(FSMConfig.materialGraphicID, FSMConfig.materialHuesToKeep, FSMConfig.noisyMode)
         if FSMConfig.weightThreshouldReachedCallback ~= nil then
             FSMConfig.weightThreshouldReachedCallback()
         end
@@ -3104,26 +3164,13 @@ GatheringLumberjackingStaticConfig = {
 }
 
 GatheringLumberjackingConfig = {
-    HatchetMaterialType = nil,
-    LogHuesToKeep = {
-        --- 0x0000,         --- Regular
-        --- 0x0973,         --- Dull Copper
-        0x0966,         --- Shadow Iron
-        0x096D,         --- Copper
-        0x0972,             --- Bronze
-        0x08A5,             --- Gold
-        0x0979,             --- Agapite
-        0x089F,             --- Verite
-        0x08AB              --- Valorite
-    }
+    NoisyMode = false,
+    LogHuesToKeep = nil
 }
 
-function CAGatheringLumberjacking_setHatchetMaterialType(materialType)
-    GatheringLumberjackingConfig.HatchetMaterialType = materialType
-end
-
-function CAGatheringLumberjacking_setLogHuesToKeep(hues)
-    GatheringLumberjackingConfig.LogHuesToKeep = hues
+function CAGatheringLumberjacking_setConfig(config)
+    GatheringLumberjackingConfig.NoisyMode = config.NoisyMode
+    GatheringLumberjackingConfig.LogHuesToKeep = config.LumberjackingHuesToKeep
 end
 
 function CAGatheringLumberjacking_resetLumberjackFSM()
@@ -3133,7 +3180,7 @@ end
 function CAGatheringLumberjacking_equipHatchet()
     local hatchet = Items.FindByLayer(2)
     if hatchet == nil or hatchet.Graphic ~= GatheringLumberjackingStaticConfig.HatchetGraphicID then
-        IULumberjackSwap_lumberjackSwap(IPMaterialPredicates_getAcceptPredicateForMaterialType(GatheringLumberjackingConfig.HatchetMaterialType))
+        IULumberjackSwap_lumberjackSwap()
         hatchet = Items.FindByLayer(2)
         Pause(CATime_getActionWaitTime())
     end
@@ -3206,7 +3253,8 @@ function CAGatheringLumberjacking_transitionLumberjackFSM()
         checkJournal = CAGatheringLumberjacking_checkJournal,
         weightThreshouldReachedCallback = CAGatheringLumberjacking_cutLogs,
         materialGraphicID = GatheringLumberjackingStaticConfig.LogsGraphicID,
-        materialHuesToKeep = GatheringLumberjackingConfig.LogHuesToKeep
+        noisyMode = GatheringLumberjackingConfig.NoisyMode,
+        materialHuesToKeep = CAGatheringConstants_getHuesToKeepLootTable(GatheringLumberjackingConfig.LogHuesToKeep)
     }
     CAGatheringFSM_transitionGatheringFSM(FSMConfigLumberjacking)
 end
@@ -3217,26 +3265,13 @@ CAGatheringMining_GatheringMiningStaticConfig = {
 }
 
 GatheringMiningConfig = {
-    PickaxeMaterialType = nil,
-    OreHuesToKeep = {
-        --- 0x0000,         --- Regular
-        --- 0x0973,         --- Dull Copper
-        0x0966,         --- Shadow Iron
-        0x096D,         --- Copper
-        0x0972,             --- Bronze
-        0x08A5,             --- Gold
-        0x0979,             --- Agapite
-        0x089F,             --- Verite
-        0x08AB              --- Valorite
-    }
+    NoisyMode = false,
+    OreHuesToKeep = nil
 }
 
-function CAGatheringMining_setPickaxeMaterialType(materialType)
-    GatheringMiningConfig.PickaxeMaterialType = materialType
-end
-
-function CAGatheringMining_setOreHuesToKeep(hues)
-    GatheringMiningConfig.OreHuesToKeep = hues
+function CAGatheringMining_setConfig(config)
+    GatheringMiningConfig.NoisyMode = config.NoisyMode
+    GatheringMiningConfig.OreHuesToKeep = config.MiningHuesToKeep
 end
 
 function CAGatheringMining_resetMiningFSM()
@@ -3246,7 +3281,7 @@ end
 function CAGatheringMining_equipPickaxe()
     local pickaxe = Items.FindByLayer(1)
     if pickaxe == nil or pickaxe.Graphic ~= CAGatheringMining_GatheringMiningStaticConfig.PickaxeGraphicID then
-        IUMinerSwap_minerSwap(GatheringMiningConfig.PickaxeMaterialType)
+        IUMinerSwap_minerSwap()
         pickaxe = Items.FindByLayer(1)
         Pause(CATime_getActionWaitTime())
     end
@@ -3307,7 +3342,8 @@ function CAGatheringMining_transitionMiningFSM()
         checkJournal = CAGatheringMining_checkJournal,
         postTransitionWork = nil,
         materialGraphicID = CAGatheringMining_GatheringMiningStaticConfig.OresGraphicID,
-        materialHuesToKeep = GatheringMiningConfig.OreHuesToKeep
+        noisyMode = GatheringMiningConfig.NoisyMode,
+        materialHuesToKeep = CAGatheringConstants_getHuesToKeepLootTable(GatheringMiningConfig.OreHuesToKeep)
     }
     CAGatheringFSM_transitionGatheringFSM(FSMConfigMining)
 end
@@ -3316,6 +3352,11 @@ GatheringConfig = {
     MiningModeActive = false,
     LumberjackingModeActive = false
 }
+
+function CAGathering_setConfig(config)
+    CAGatheringLumberjacking_setConfig(config)
+    CAGatheringMining_setConfig(config)
+end
 
 function CAGathering_resetGatheringFSM()
     CALog_debug("Clearing gathering FSM state")
@@ -3516,6 +3557,16 @@ function CAAttack_nearestMosttHitMobileFirstComparePredicate(mobile_l, mobile_r)
     return mobile_l.Distance < mobile_r.Distance
 end
 
+function CAAttack_nearestMobileWithLessHPFirstComparePredicate(mobile_l, mobile_r)
+    if mobile_l.Distance == mobile_r.Distance then
+        if mobile_l.Hits == mobile_r.Hits then
+            return (mobile_l.Name or "") < (mobile_r.Name or "")
+        end
+        return mobile_l.Hits < mobile_r.Hits
+    end
+    return mobile_l.Distance < mobile_r.Distance
+end
+
 function CAAttack_targetAcceptPredicate(mobile)
 
     if mobile.IsDead then
@@ -3579,7 +3630,8 @@ function CAAttack_attackNearestEnemy()
     if #list > 0 then
 
         CALog_debug('Sorting attack targets')
-        table.sort(list, CAAttack_nearestMosttHitMobileFirstComparePredicate)
+
+        table.sort(list, CAAttack_nearestMobileWithLessHPFirstComparePredicate)
         for index, mobile in ipairs(list) do
             CALog_debug('Found mobile ('..mobile.Name..') at location x:'..mobile.X..' y:'..mobile.Y)
         end
@@ -3611,6 +3663,14 @@ MainLoopState = {
     lastJournalTickTime = 0
 }
 
+function CAMainLoop_configureTime(config)
+    CATime_setActionWaitTime(config.time.ActionWaitTime)
+end
+
+function CAMainLoop_configureDebug(config)
+    CALog_setConfig(config.debug)
+end
+
 function CAMainLoop_configureModules(config)
     CAArmDisarm_setConfig(config.modules.ArmDisarm)
     CAEscape_setConfig(config.modules.Escape)
@@ -3620,16 +3680,25 @@ function CAMainLoop_configureModules(config)
     CABuffs_setConfig(config.modules.Buffs)
     CADebuffs_setConfig(config.modules.Debuffs)
     CADetectPlayers_setConfig(config.modules.DetectPlayers)
-    CASkinn_setConfig(config.modules.Skinning)
     CAScavenge_setConfig(config.modules.Scavenging)
     CAAttack_setConfig(config.modules.Attack)
 end
 
-function CAMainLoop_configure(config)
-    CATime_setActionWaitTime(config.time.ActionWaitTime)
-    CALog_setConfig(config.debug)
-    CAMainLoop_configureModules(config)
+function CAMainLoop_configureCommands(config)
     CAUserTriggeredCommands_setConfig(config.userCommands)
+end
+
+function CAMainLoop_configureGathering(config)
+    CASkinn_setConfig(config.gathering)
+    CAGathering_setConfig(config.gathering)
+end
+
+function CAMainLoop_configure(config)
+    CAMainLoop_configureTime(config)
+    CAMainLoop_configureDebug(config)
+    CAMainLoop_configureGathering(config)
+    CAMainLoop_configureCommands(config)
+    CAMainLoop_configureModules(config)
 end
 
 function CAMainLoop_journalDependantActions()
@@ -3746,12 +3815,12 @@ function CAUIGumpLayoutBase_createModuleEnableButtonAtRow(mainWindow, row, butto
     return button
 end
 
-function CAUIGumpLayoutBase_createModuleEnableLabelAtRow(mainWindow, row, labelText)
+function CAUIGumpLayoutBase_createModuleEnableLabelAtRow(mainWindow, row, labelValues)
     CALog_debug('Initializing Module Enable Label (At Row: "..row..")...')
     local labelPosX = CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleEnableLabelPosX
     local labelPosY = CAUIGumpLayoutValues.ModulesRowPosYStart + ((row -1) * CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleRowPosYIncrement) + CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleRowPosYLabelAlignIncrement
-    local label = mainWindow:AddLabel(labelPosX, labelPosY, labelText)
-    label:SetColor(0, 1, 0, 1)
+    local label = mainWindow:AddLabel(labelPosX, labelPosY, labelValues[1])
+    label:SetColor(labelValues[2][1], labelValues[2][2], labelValues[2][3], labelValues[2][4])
     return label
 end
 
@@ -3825,6 +3894,10 @@ CAUIGumpLogicBaseState = {
 
 function CAUIGumpLogicBase_getColorOptions()
     return CAUIGumpMainRow_CAUIGumpLogicBase_ColorOptions
+end
+
+function CAUIGumpLogicBase_getColorValues()
+    return CAUIGumpMainRow_CAUIGumpLogicBase_ColorValues
 end
 
 function CAUIGumpLogicBase_registerSharedVisibilityConfigWindowsCloseFunction(closeFunction)
@@ -3954,6 +4027,10 @@ function CAUIGumpLogicBase_onEnabledDisabledButtonPressed(currentState, label, b
     return CAUIGumpLogicBase_onLabeledBooleanButtonPressed(currentState, label, buttonEventLogStr, { 'Enabled', CAUIGumpMainRow_CAUIGumpLogicBase_ColorOptions.Green }, { 'Disabled', CAUIGumpMainRow_CAUIGumpLogicBase_ColorOptions.Red })
 end
 
+function CAUIGumpLogicBase_getEnabledDisabledLabelValues(currentState)
+    return (currentState and { 'Enabled', CAUIGumpMainRow_CAUIGumpLogicBase_ColorValues[CAUIGumpMainRow_CAUIGumpLogicBase_ColorOptions.Green] }) or { 'Disabled', CAUIGumpMainRow_CAUIGumpLogicBase_ColorValues[CAUIGumpMainRow_CAUIGumpLogicBase_ColorOptions.Red] }
+end
+
 function CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(state, buttonDescriptionStr)
     return buttonDescriptionStr .. ((state and ' (Y)') or ' (N)')
 end
@@ -3979,6 +4056,10 @@ CAUIGumpMainRowLayout = {
     ConfigButtonYOffset = 10
 }
 
+function CAUIGumpMainRow_getTotalSizeY()
+    return CAUIGumpMainRowLayout.ConfigButtonPosY + CAUIGumpMainRowLayout.ConfigButtonSizeY + CAUIGumpMainRowLayout.ConfigButtonYOffset
+end
+
 CAUIGMR = {
     titleLabel = nil,
     configButton = nil,
@@ -3994,10 +4075,10 @@ CAUIGMR = {
 
 ConfigButtonClosedString = 'CONFIG (+)'
 ConfigButtonOpenString = 'CONFIG (-)'
+
 titleLabelString =
 '  ___________________\n'..
-'_/( Dexxer Gatherer )\\_\n'..
-'¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯'
+'_/( Dexxer Gatherer )\\_\n'
 
 ConfigWindowTimeoutModeValues = {
     NoTimeout = 1,
@@ -4038,30 +4119,20 @@ RearmModeStrings = {
     'Rearm (On Move + Timer)'
 }
 
-GatheringModeValues = {
-    None = 1,
-    All = 2,
-    ShaddowPlus = 3,
-    CopperPlus = 4,
-    BronzePlus = 5,
-    VeritePlus = 6,
-    Valorite = 7
-}
-
 SkinningGatheringModeStrings = {
     'Skinning (None)',
     'Skinning (All)',
-    'Skinning (Shaddow +)',
+    'Skinning (Shadow +)',
     'Skinning (Copper +)',
     'Skinning (Bronze +)',
     'Skinning (Verite +)',
-    'Skinn (Valorite)'
+    'Skinning (Valorite)'
 }
 
 LumberjackingGatheringModeStrings = {
     'Lumberjack (None)',
     'Lumberjack (All)',
-    'Lumberjack (Shaddow +)',
+    'Lumberjack (Shadow +)',
     'Lumberjack (Copper +)',
     'Lumberjack (Bronze +)',
     'Lumberjack (Verite +)',
@@ -4071,79 +4142,34 @@ LumberjackingGatheringModeStrings = {
 MiningGatheringModeStrings = {
     'Mining (None)',
     'Mining (All)',
-    'Mining (Shaddow +)',
+    'Mining (Shadow +)',
     'Mining (Copper +)',
     'Mining (Bronze +)',
     'Mining (Verite +)',
     'Mining (Valorite)'
 }
 
-HuesToKeepTableNone = {
-}
-
-HuesToKeepTableAll = {
-    0x0000,             --- Regular
-    ---0x0973,             --- Dull Copper
-    0x0966,             --- Shadow Iron
-    0x096D,             --- Copper
-    0x0972,             --- Bronze
-    ---0x08A5,             --- Gold
-    ---0x0979,             --- Agapite
-    0x089F,             --- Verite
-    0x08AB              --- Valorite
-}
-
-HuesToKeepTableShadowPlus = {
-    0x0966,             --- Shadow Iron
-    0x096D,             --- Copper
-    0x0972,             --- Bronze
-    0x089F,             --- Verite
-    0x08AB              --- Valorite
-}
-
-HuesToKeepTableCopperPlus = {
-    0x096D,             --- Copper
-    0x0972,             --- Bronze
-    0x089F,             --- Verite
-    0x08AB              --- Valorite
-}
-
-HuesToKeepTableBronzePlus = {
-    0x0972,             --- Bronze
-    0x089F,             --- Verite
-    0x08AB              --- Valorite
-}
-
-HuesToKeepTableVeritePlus = {
-    0x089F,             --- Verite
-    0x08AB              --- Valorite
-}
-
-HuesToKeepTableValorite = {
-    0x08AB              --- Valorite
-}
-
-HuesToKeepTables = {
-    HuesToKeepTableNone,
-    HuesToKeepTableAll,
-    HuesToKeepTableShadowPlus,
-    HuesToKeepTableCopperPlus,
-    HuesToKeepTableBronzePlus,
-    HuesToKeepTableVeritePlus,
-    HuesToKeepTableValorite
-}
-
 CAUIGumpMainRowState = {
     MainConfigClosed = true,
     ConfigWindowTimeoutMode = ConfigWindowTimeoutModeValues.TimeoutFourSeconds,
-    RearmMode = RearmModeValues.Move,
-    SkinningGatheringMode = GatheringModeValues.None,
-    LumberjackingGatheringMode = GatheringModeValues.All,
-    MiningGatheringMode = GatheringModeValues.All
+    RearmMode = nil,
+    SkinningHuesToKeep = nil,
+    LumberjackingHuesToKeep = nil,
+    MiningHuesToKeep = nil
 }
 
-function CAUIGumpMainRow_getTotalSizeY()
-    return CAUIGumpMainRowLayout.ConfigButtonPosY + CAUIGumpMainRowLayout.ConfigButtonSizeY + CAUIGumpMainRowLayout.ConfigButtonYOffset
+function CAUIGumpMainRow_numberConfigWindowTimeoutMode(num)
+    for _, v in pairs(ConfigWindowTimeoutModeValues) do
+        if ConfigWindowTimeoutValues[v] ~= nil and num <= ConfigWindowTimeoutValues[v] and num+2000 > ConfigWindowTimeoutValues[v] then
+            return v
+        end
+    end
+    return ConfigWindowTimeoutModeValues.NoTimeout
+end
+
+function CAUIGumpMainRow_setConfigWindowTimeoutMode(value)
+    CAUIGumpMainRowState.ConfigWindowTimeoutMode = CAUIGumpMainRow_numberConfigWindowTimeoutMode(value*1000)
+    CAUIGumpLogicBase_setWindowAutoCloseTime(ConfigWindowTimeoutValues[CAUIGumpMainRowState.ConfigWindowTimeoutMode])
 end
 
 closeMainConfigWindow_ = nil
@@ -4153,7 +4179,7 @@ function CAUIGumpMainRow_updateMainConfigWindow(targetValue, closeOtherCWs)
 end
 
 closeMainConfigWindow_ = function ()
-CAUIGumpMainRow_updateMainConfigWindow(true, false)
+    CAUIGumpMainRow_updateMainConfigWindow(true, false)
 end
 
 function CAUIGumpMainRow_processConfigMenuButtonInteractions()
@@ -4165,6 +4191,7 @@ end
 function CAUIGumpMainRow_processConfigWindowTimeoutModeButtonInteractions()
     if CAUIGMR.Config.configWindowTimeoutModeButton:WasClicked() then
         CAUIGumpMainRowState.ConfigWindowTimeoutMode = CAUIGumpLogicBase_onEnumStateButtonPressed(CAUIGumpMainRowState.ConfigWindowTimeoutMode, ConfigWindowTimeoutModeValues.TimeoutSevenSeconds, ConfigWindowTimeoutModeStrings, CAUIGMR.Config.configWindowTimeoutModeButton, 'Config Window Timeout Mode')
+        CAUIGumpLogicBase_setWindowAutoCloseTime(ConfigWindowTimeoutValues[CAUIGumpMainRowState.ConfigWindowTimeoutMode])
     end
 end
 
@@ -4176,19 +4203,19 @@ end
 
 function CAUIGumpMainRow_processSkinningGatheringModeButtonInteractions()
     if CAUIGMR.Config.skinningGatheringModeButton:WasClicked() then
-        CAUIGumpMainRowState.SkinningGatheringMode = CAUIGumpLogicBase_onEnumStateButtonPressed(CAUIGumpMainRowState.SkinningGatheringMode, GatheringModeValues.Valorite, SkinningGatheringModeStrings, CAUIGMR.Config.skinningGatheringModeButton, 'Skinning Mode')
+        CAUIGumpMainRowState.SkinningHuesToKeep = CAUIGumpLogicBase_onEnumStateButtonPressed(CAUIGumpMainRowState.SkinningHuesToKeep, CAGatheringConstants_getHuesToKeepValues().Valorite, SkinningGatheringModeStrings, CAUIGMR.Config.skinningGatheringModeButton, 'Skinning Mode')
     end
 end
 
 function CAUIGumpMainRow_processLumberjackingGatheringModeButtonInteractions()
     if CAUIGMR.Config.lumberjackingGatheringModeButton:WasClicked() then
-        CAUIGumpMainRowState.LumberjackingGatheringMode = CAUIGumpLogicBase_onEnumStateButtonPressed(CAUIGumpMainRowState.LumberjackingGatheringMode, GatheringModeValues.Valorite, LumberjackingGatheringModeStrings, CAUIGMR.Config.lumberjackingGatheringModeButton, 'Lumberjacking Mode')
+        CAUIGumpMainRowState.LumberjackingHuesToKeep = CAUIGumpLogicBase_onEnumStateButtonPressed(CAUIGumpMainRowState.LumberjackingHuesToKeep, CAGatheringConstants_getHuesToKeepValues().Valorite, LumberjackingGatheringModeStrings, CAUIGMR.Config.lumberjackingGatheringModeButton, 'Lumberjacking Mode')
     end
 end
 
 function CAUIGumpMainRow_processMiningGatheringModeButtonInteractions()
     if CAUIGMR.Config.miningGatheringModeButton:WasClicked() then
-        CAUIGumpMainRowState.MiningGatheringMode = CAUIGumpLogicBase_onEnumStateButtonPressed(CAUIGumpMainRowState.MiningGatheringMode, GatheringModeValues.Valorite, MiningGatheringModeStrings, CAUIGMR.Config.miningGatheringModeButton, 'Mining Mode')
+        CAUIGumpMainRowState.MiningHuesToKeep = CAUIGumpLogicBase_onEnumStateButtonPressed(CAUIGumpMainRowState.MiningHuesToKeep, CAGatheringConstants_getHuesToKeepValues().Valorite, MiningGatheringModeStrings, CAUIGMR.Config.miningGatheringModeButton, 'Mining Mode')
     end
 end
 
@@ -4201,9 +4228,36 @@ function CAUIGumpMainRow_processUIInteractions()
     CAUIGumpMainRow_processMiningGatheringModeButtonInteractions()
 end
 
-function CAUIGumpMainRow_updateCAConfigToCurrentUIConfig(CAConfig)
-    CAUIGumpLogicBase_setWindowAutoCloseTime(ConfigWindowTimeoutValues[CAUIGumpMainRowState.ConfigWindowTimeoutMode])
+function CAUIGumpMainRow_setRearmUIValuesFromCAConfig(CAConfig)
+    CALog_debug('Setting ArmDisarm mode UI values from CAConfig...')
+    local armDisarmConfig = CAConfig.modules.ArmDisarm
+    if armDisarmConfig.Enable == false then
+        CAUIGumpMainRowState.RearmMode = RearmModeValues.None
+    elseif armDisarmConfig.AutoRearmOnMove == true and armDisarmConfig.AutoRearmWithDelay == true then
+        CAUIGumpMainRowState.RearmMode = RearmModeValues.MoveAndTime
+    elseif armDisarmConfig.AutoRearmOnMove == true then
+        CAUIGumpMainRowState.RearmMode = RearmModeValues.Move
+    elseif armDisarmConfig.AutoRearmWithDelay == true then
+        CAUIGumpMainRowState.RearmMode = RearmModeValues.Time
+    else
+        CAUIGumpMainRowState.RearmMode = RearmModeValues.None
+    end
+end
 
+function CAUIGumpMainRow_setGatheringUIValuesFromCAConfig(CAConfig)
+    CALog_debug('Setting Gathering mode UI values from CAConfig...')
+    CAUIGumpMainRowState.SkinningHuesToKeep = CAConfig.gathering.SkinningHuesToKeep
+    CAUIGumpMainRowState.LumberjackingHuesToKeep = CAConfig.gathering.LumberjackingHuesToKeep
+    CAUIGumpMainRowState.MiningHuesToKeep = CAConfig.gathering.MiningHuesToKeep
+end
+
+function CAUIGumpMainRow_setUIValuesFromCAConfig(CAConfig)
+    CALog_debug('Setting Main Row UI values from CAConfig...')
+    CAUIGumpMainRow_setRearmUIValuesFromCAConfig(CAConfig)
+    CAUIGumpMainRow_setGatheringUIValuesFromCAConfig(CAConfig)
+end
+
+function CAUIGumpMainRow_updateCAConfigArmDisarm(CAConfig)
     local armDisarmConfig = CAConfig.modules.ArmDisarm
     local armDisarmEnabled = CAUIGumpMainRowState.RearmMode ~= RearmModeValues.None
     local rearmOnMove = CAUIGumpMainRowState.RearmMode == RearmModeValues.Move or CAUIGumpMainRowState.RearmMode == RearmModeValues.MoveAndTime
@@ -4211,29 +4265,40 @@ function CAUIGumpMainRow_updateCAConfigToCurrentUIConfig(CAConfig)
     armDisarmConfig.Enable = armDisarmEnabled
     armDisarmConfig.AutoRearmOnMove = armDisarmEnabled and rearmOnMove
     armDisarmConfig.AutoRearmWithDelay = armDisarmEnabled and rearmOnDelay
-
-    local skinningConfig = CAConfig.modules.Skinning
-    local skinningEnabled = CAUIGumpMainRowState.SkinningGatheringMode ~= GatheringModeValues.None
-    skinningConfig.Enable = skinningEnabled
-    skinningConfig.LeatherHuesToKeep = HuesToKeepTables[CAUIGumpMainRowState.SkinningGatheringMode]
-
-    CAGatheringLumberjacking_setLogHuesToKeep(HuesToKeepTables[CAUIGumpMainRowState.LumberjackingGatheringMode])
-    CAGatheringMining_setOreHuesToKeep(HuesToKeepTables[CAUIGumpMainRowState.MiningGatheringMode])
 end
 
-function CAUIGumpMainRow_initUI(mainWindow)
+function CAUIGumpMainRow_updateCAConfigGathering(CAConfig)
+    local gatheringConfig = CAConfig.gathering
+    gatheringConfig.SkinningEnabled = CAUIGumpMainRowState.SkinningHuesToKeep ~= CAGatheringConstants_getHuesToKeepValues().None
+    gatheringConfig.SkinningHuesToKeep = CAUIGumpMainRowState.SkinningHuesToKeep
+    gatheringConfig.LumberjackingHuesToKeep = CAUIGumpMainRowState.LumberjackingHuesToKeep
+    gatheringConfig.MiningHuesToKeep = CAUIGumpMainRowState.MiningHuesToKeep
+end
+
+function CAUIGumpMainRow_updateCAConfigToCurrentUIConfig(CAConfig)
+    CAUIGumpMainRow_updateCAConfigArmDisarm(CAConfig)
+    CAUIGumpMainRow_updateCAConfigGathering(CAConfig)
+end
+
+function CAUIGumpMainRow_createUIElements(mainWindow)
     CALog_debug('Creating Main Row UI...')
     CAUIGMR.titleLabel = mainWindow:AddLabel(CAUIGumpMainRowLayout.TitleLabelPosX, CAUIGumpMainRowLayout.TitleLabelPosY, titleLabelString)
     CAUIGMR.titleLabel:SetColor(0.2, 0.8, 1, 1)
     CAUIGMR.configButton = mainWindow:AddButton(CAUIGumpMainRowLayout.ConfigButtonPosX, CAUIGumpMainRowLayout.ConfigButtonPosY, ConfigButtonClosedString, CAUIGumpMainRowLayout.ConfigButtonSizeX, CAUIGumpMainRowLayout.ConfigButtonSizeY)
     CAUIGMR.Config.window = CAUIGumpLayoutBase_createModuleConfigWindow('MainConfigWindow', 'Main Config', 5, 1)
     CAUIGumpLogicBase_registerSharedVisibilityConfigWindowsCloseFunction(closeMainConfigWindow_)
-        CAUIGMR.Config.configWindowTimeoutModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 1, ConfigWindowTimeoutModeStrings[CAUIGumpMainRowState.ConfigWindowTimeoutMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-        CAUIGMR.Config.rearmButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 2, RearmModeStrings[CAUIGumpMainRowState.RearmMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-        CAUIGMR.Config.skinningGatheringModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 3, SkinningGatheringModeStrings[CAUIGumpMainRowState.SkinningGatheringMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-        CAUIGMR.Config.lumberjackingGatheringModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 4, LumberjackingGatheringModeStrings[CAUIGumpMainRowState.LumberjackingGatheringMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-        CAUIGMR.Config.miningGatheringModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 5, MiningGatheringModeStrings[CAUIGumpMainRowState.MiningGatheringMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
-    end
+    CAUIGumpLogicBase_setWindowAutoCloseTime(ConfigWindowTimeoutValues[CAUIGumpMainRowState.ConfigWindowTimeoutMode])
+    CAUIGMR.Config.configWindowTimeoutModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 1, ConfigWindowTimeoutModeStrings[CAUIGumpMainRowState.ConfigWindowTimeoutMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGMR.Config.rearmButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 2, RearmModeStrings[CAUIGumpMainRowState.RearmMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGMR.Config.skinningGatheringModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 3, SkinningGatheringModeStrings[CAUIGumpMainRowState.SkinningHuesToKeep], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGMR.Config.lumberjackingGatheringModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 4, LumberjackingGatheringModeStrings[CAUIGumpMainRowState.LumberjackingHuesToKeep], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGMR.Config.miningGatheringModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGMR.Config.window, 5, MiningGatheringModeStrings[CAUIGumpMainRowState.MiningHuesToKeep], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+end
+
+function CAUIGumpMainRow_initUI(mainWindow, CAConfig)
+    CAUIGumpMainRow_setUIValuesFromCAConfig(CAConfig)
+    CAUIGumpMainRow_createUIElements(mainWindow)
+end
 
 CAUIGumpStatsDisplay_IUWeapons_limit_durability = 0
 CAUIGumpStatsDisplay_IUWeapons_disarm_wait_time = 1000
@@ -4409,6 +4474,8 @@ CAUIGumpStatsDisplayStaticConfig = {
 CAUIGumpStatsDisplayState = {
     LastRefreshTime = 0     --- Refresh right away at startup
 }
+
+noItemString = '---'
 
 function CAUIGumpStatsDisplay_setPosYStart(val)
     CAUIGumpStatsDisplayConfig.PosYStart = val
@@ -4739,7 +4806,7 @@ end
 function CAUIGumpStatsDisplay_updateWeaponDurabilityLabel()
     local weaponDurabilityPercentage = IUWeapons_getEquipedWeaponDurabilityPercentage()
     if not weaponDurabilityPercentage then
-        CAUIGSD.Row6.WeaponDurabilityLabel:SetText('WP:  nil')
+        CAUIGSD.Row6.WeaponDurabilityLabel:SetText('WP:  '..noItemString)
         CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row6.WeaponDurabilityLabel, CAUIGumpLogicBase_getColorOptions().LightRed)
     else
         local displayPercentage = math.floor(weaponDurabilityPercentage)
@@ -4751,7 +4818,7 @@ end
 function CAUIGumpStatsDisplay_updateShieldDurabilityLabel()
     local shieldDurabilityPercentage = IUWeapons_getEquipedShieldDurabilityPercentage()
     if not shieldDurabilityPercentage then
-        CAUIGSD.Row6.ShieldDurabilityLabel:SetText('SH: nil')
+        CAUIGSD.Row6.ShieldDurabilityLabel:SetText('SH: '..noItemString)
         CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row6.ShieldDurabilityLabel, CAUIGumpLogicBase_getColorOptions().LightRed)
     else
         local displayPercentage = math.floor(shieldDurabilityPercentage)
@@ -4781,7 +4848,7 @@ end
 function CAUIGumpStatsDisplay_updateArmourAverageDurabilityLabel()
     local armourAverageDurabilityPercentage = IUArmour_getEquipedArmourAverageDurabilityPercentage()
     if not armourAverageDurabilityPercentage then
-        CAUIGSD.Row7.ArmourAverageDurabilityLabel:SetText('All: nil')
+        CAUIGSD.Row7.ArmourAverageDurabilityLabel:SetText('All: '..noItemString)
         CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row7.ArmourAverageDurabilityLabel, CAUIGumpLogicBase_getColorOptions().LightRed)
     else
         CAUIGSD.Row7.ArmourAverageDurabilityLabel:SetText('All: '..armourAverageDurabilityPercentage..'%%')
@@ -4792,7 +4859,7 @@ end
 function CAUIGumpStatsDisplay_updateArmourWorstPieceDurabilityLabel()
     local worstArmourDurabilityPercentage = IUArmour_getEquipedArmourWorstDurabilityPercentageItem()
     if not worstArmourDurabilityPercentage then
-        CAUIGSD.Row7.ArmourWorstPieceDurabilityLabel:SetText('Worst: nil')
+        CAUIGSD.Row7.ArmourWorstPieceDurabilityLabel:SetText('Worst: '..noItemString)
         CAUIGumpLogicBase_setLabelColor(CAUIGSD.Row7.ArmourWorstPieceDurabilityLabel, CAUIGumpLogicBase_getColorOptions().LightRed)
     else
         CAUIGSD.Row7.ArmourWorstPieceDurabilityLabel:SetText('Worst: '..worstArmourDurabilityPercentage..'%%')
@@ -4833,7 +4900,7 @@ function CAUIGumpStatsDisplay_updateCAConfigToCurrentUIConfig(CAConfig)
     --- nothing to do
 end
 
-function CAUIGumpStatsDisplay_initUI(mainWindow)
+function CAUIGumpStatsDisplay_initUI(mainWindow, CAConfig)
 
     CALog_debug('Creating Stats Display UI...')
     CAUIGumpStatsDisplay_initRow1UI(mainWindow)
@@ -4876,11 +4943,11 @@ function CAUIGumpRun_processUIInteractions()
     CAUIGumpRun_processRunButtonInteractions()
 end
 
-function CAUIGumpRun_initUI(mainWindow, row)
+function CAUIGumpRun_initUI(mainWindow, CAConfig, row)
     CALog_debug('Creating Run Button UI...')
     CAUIGumpRun_CAUIGR.enableButton = CAUIGumpLayoutBase_createModuleEnableButtonAtRow(mainWindow, row, 'Run', CAUIGumpRun_CAUIGumpRunLayout.RunButtonSizeX, CAUIGumpRun_CAUIGumpRunLayout.RunButtonSizeY)
-    CAUIGumpRun_CAUIGR.enableLabel = CAUIGumpLayoutBase_createModuleEnableLabelAtRow(mainWindow, row, 'Stopped')
-    CAUIGumpLogicBase_setLabelColor(CAUIGumpRun_CAUIGR.enableLabel, CAUIGumpLogicBase_getColorOptions().Red)
+    CAUIGumpRun_CAUIGR.enableLabel = CAUIGumpLayoutBase_createModuleEnableLabelAtRow(mainWindow, row, { 'Stopped', CAUIGumpLogicBase_getColorValues()[CAUIGumpLogicBase_getColorOptions().Red] })
+    ---CAUIGumpLogicBase_setLabelColor(CAUIGumpRun_CAUIGR.enableLabel, CAUIGumpLogicBase_getColorOptions().Red)
 end
 
 function CAUIGumpRun_startIteration()
@@ -5005,6 +5072,25 @@ function CAUIGumpHeal_processUIInteractions()
     CAUIGumpHeal_processCurePotionsButtonInteractions()
 end
 
+function CAUIGumpHeal_numberToAttackRangeValue(num)
+    for _, v in pairs(CAUIGumpHeal_HealPotsModeValues) do
+        if num <= CAUIGumpHeal_HealPotsPercentageThreshoulds[v] and num+20 > CAUIGumpHeal_HealPotsPercentageThreshoulds[v] then
+            return v
+        end
+    end
+    return CAUIGumpHeal_HealPotsModeValues.None
+end
+
+function CAUIGumpHeal_setUIValuesFromCAConfig(CAConfig)
+    CALog_debug('Setting Heal UI values from CAConfig...')
+    CAUIGumpHealConfig.BandageSelf = CAConfig.modules.Bandages.Enable
+    CAUIGumpHealConfig.BandageOther = CAConfig.modules.Bandages.BandageAllies
+    CAUIGumpHealConfig.HealPotsMode = (CAConfig.modules.HealingPotions.Enable and CAUIGumpHeal_numberToAttackRangeValue(CAConfig.modules.HealingPotions.HPDrinkThreshould)) or CAUIGumpHeal_HealPotsModeValues.None
+    CAUIGumpHealConfig.HealPotsAfterStrPot = CAConfig.modules.Buffs.Strength.DrinkHeal
+    CAUIGumpHealConfig.CurePots = CAConfig.modules.CurePotions.Enable
+    CAUIGumpHealConfig.HealEnabled = CAUIGumpHealConfig.BandageSelf or CAUIGumpHealConfig.BandageOther or (CAUIGumpHealConfig.HealPotsMode ~= CAUIGumpHeal_HealPotsModeValues.None) or CAUIGumpHealConfig.CurePots
+end
+
 function CAUIGumpHeal_updateCAConfigToCurrentUIConfig(CAConfig)
     local bandagesConfig = CAConfig.modules.Bandages
     local healingPotionsConfig = CAConfig.modules.HealingPotions
@@ -5027,10 +5113,10 @@ function CAUIGumpHeal_updateCAConfigToCurrentUIConfig(CAConfig)
     end
 end
 
-function CAUIGumpHeal_initUI(mainWindow, row)
+function CAUIGumpHeal_createUIElements(mainWindow, CAConfig, row)
     CALog_debug('Creating Healing UI...')
     CAUIGumpHeal_CAUIGH.enableButton = CAUIGumpLayoutBase_createModuleEnableButtonAtRow(mainWindow, row, 'Heal')
-    CAUIGumpHeal_CAUIGH.enableLabel = CAUIGumpLayoutBase_createModuleEnableLabelAtRow(mainWindow, row, 'Enabled')
+    CAUIGumpHeal_CAUIGH.enableLabel = CAUIGumpLayoutBase_createModuleEnableLabelAtRow(mainWindow, row, CAUIGumpLogicBase_getEnabledDisabledLabelValues(CAUIGumpHealConfig.HealEnabled))
     CAUIGumpHeal_CAUIGH.configButton = CAUIGumpLayoutBase_createModuleConfigButtonAtRow(mainWindow, row)
     CAUIGumpHeal_CAUIGH.Config.window = CAUIGumpLayoutBase_createModuleConfigWindow('healConfigWindow', 'Heal Config', 5, row)
     CAUIGumpLogicBase_registerSharedVisibilityConfigWindowsCloseFunction(CAUIGumpHeal_closeHealConfigWindow)
@@ -5039,6 +5125,11 @@ function CAUIGumpHeal_initUI(mainWindow, row)
     CAUIGumpHeal_CAUIGH.Config.healPotionsModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpHeal_CAUIGH.Config.window, 3, CAUIGumpHeal_HealPotsModeStrings[CAUIGumpHealConfig.HealPotsMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
     CAUIGumpHeal_CAUIGH.Config.healPotionAfterStrengthPotionButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpHeal_CAUIGH.Config.window, 4, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpHealConfig.HealPotsAfterStrPot, 'Heal On Str'), 140, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
     CAUIGumpHeal_CAUIGH.Config.curePotionsButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpHeal_CAUIGH.Config.window, 5, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpHealConfig.CurePots, 'Use Cure'), 140, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+end
+
+function CAUIGumpHeal_initUI(mainWindow, CAConfig, row)
+    CAUIGumpHeal_setUIValuesFromCAConfig(CAConfig)
+    CAUIGumpHeal_createUIElements(mainWindow, CAConfig, row)
 end
 
 CAUIGumpBuffs_CAUIGB = {
@@ -5085,7 +5176,7 @@ CAUIGumpBuffsState = {
     EnableNightsight = true,
     EnableStrength = true,
     EnableAgility = true,
-    HealPotsAfterStrPot = true,
+    StamPotsAfterAgiPot = true,
     StaminaPotsMode = CAUIGumpBuffs_StaminaPotsModeValues.SixtyPercent
 }
 
@@ -5117,6 +5208,15 @@ function CAUIGumpBuffs_processNightsightButtonInteractions(forced)
     end
 end
 
+function CAUIGumpBuffs_getEnableNightsight()
+    return CAUIGumpBuffsState.EnableNightsight
+end
+
+function CAUIGumpBuffs_setEnableNightsight(isChecked)
+    CAUIGumpBuffsState.EnableNightsight = not isChecked
+    CAUIGumpBuffs_processNightsightButtonInteractions(true)
+end
+
 function CAUIGumpBuffs_processStrengthButtonInteractions()
     if CAUIGumpBuffs_CAUIGB.Config.enableStrength:WasClicked() then
         CAUIGumpBuffsState.EnableStrength = CAUIGumpLogicBase_onBooleanButtonPressed(CAUIGumpBuffsState.EnableStrength, CAUIGumpBuffs_CAUIGB.Config.enableStrength, 'Strength')
@@ -5131,7 +5231,7 @@ end
 
 function CAUIGumpBuffs_processRefreshOnAgilityButtonInteractions()
     if CAUIGumpBuffs_CAUIGB.Config.refreshAfterAgility:WasClicked() then
-        CAUIGumpBuffsState.HealPotsAfterStrPot = CAUIGumpLogicBase_onBooleanButtonPressed(CAUIGumpBuffsState.HealPotsAfterStrPot, CAUIGumpBuffs_CAUIGB.Config.refreshAfterAgility, 'Refresh On Agi')
+        CAUIGumpBuffsState.StamPotsAfterAgiPot = CAUIGumpLogicBase_onBooleanButtonPressed(CAUIGumpBuffsState.StamPotsAfterAgiPot, CAUIGumpBuffs_CAUIGB.Config.refreshAfterAgility, 'Refresh On Agi')
     end
 end
 
@@ -5151,38 +5251,54 @@ function CAUIGumpBuffs_processUIInteractions()
     CAUIGumpBuffs_processStaminaPotionsModeButtonInteractions()
 end
 
+function CAUIGumpBuffs_numberToStaminaPotsModeValue(num)
+    for _, v in pairs(CAUIGumpBuffs_StaminaPotsModeValues) do
+        if CAUIGumpBuffs_StaminaPotsModeThreshoulds[v] ~=0 and num <= CAUIGumpBuffs_StaminaPotsModeThreshoulds[v] and num+20 > CAUIGumpBuffs_StaminaPotsModeThreshoulds[v] then
+            return v
+        end
+    end
+    return CAUIGumpBuffs_StaminaPotsModeValues.None
+end
+
+function CAUIGumpBuffs_setUIValuesFromCAConfig(CAConfig)
+    CALog_debug('Setting Buffs UI values from CAConfig...')
+    local buffsConfig = CAConfig.modules.Buffs
+    CAUIGumpBuffsState.BuffsEnabled = buffsConfig.Enable
+    CAUIGumpBuffsState.EnableNightsight = buffsConfig.Nightsight.Enable
+    CAUIGumpBuffsState.EnableStrength = buffsConfig.Strength.Enable
+    CAUIGumpBuffsState.EnableAgility = buffsConfig.Agility.Enable
+    CAUIGumpBuffsState.StamPotsAfterAgiPot = buffsConfig.Agility.DrinkRefresh
+    CAUIGumpBuffsState.StaminaPotsMode = (buffsConfig.Stamina.Enable and CAUIGumpBuffs_numberToStaminaPotsModeValue(buffsConfig.Stamina.DrinkThreshould)) or CAUIGumpBuffs_StaminaPotsModeValues.None
+end
+
 function CAUIGumpBuffs_updateCAConfigToCurrentUIConfig(CAConfig)
     local buffsConfig = CAConfig.modules.Buffs
     buffsConfig.Enable = CAUIGumpBuffsState.BuffsEnabled
     buffsConfig.Nightsight.Enable = CAUIGumpBuffsState.EnableNightsight
     buffsConfig.Strength.Enable = CAUIGumpBuffsState.EnableStrength
     buffsConfig.Agility.Enable = CAUIGumpBuffsState.EnableAgility
+    buffsConfig.Agility.DrinkRefresh = CAUIGumpBuffsState.StamPotsAfterAgiPot
     buffsConfig.Stamina.Enable = CAUIGumpBuffsState.StaminaPotsMode ~= CAUIGumpBuffs_StaminaPotsModeValues.None
     buffsConfig.Stamina.DrinkThreshould = CAUIGumpBuffs_StaminaPotsModeThreshoulds[CAUIGumpBuffsState.StaminaPotsMode]
 end
 
-function CAUIGumpBuffs_initUI(mainWindow, row)
+function CAUIGumpBuffs_createUIElements(mainWindow, CAConfig, row)
     CALog_debug('Creating Buffs UI...')
     CAUIGumpBuffs_CAUIGB.enableButton = CAUIGumpLayoutBase_createModuleEnableButtonAtRow(mainWindow, row, 'Buffs')
-    CAUIGumpBuffs_CAUIGB.enableLabel = CAUIGumpLayoutBase_createModuleEnableLabelAtRow(mainWindow, row, 'Disabled')
-    CAUIGumpBuffs_CAUIGB.enableLabel:SetColor(1, 0, 0, 1)
+    CAUIGumpBuffs_CAUIGB.enableLabel = CAUIGumpLayoutBase_createModuleEnableLabelAtRow(mainWindow, row, CAUIGumpLogicBase_getEnabledDisabledLabelValues(CAUIGumpBuffsState.BuffsEnabled))
     CAUIGumpBuffs_CAUIGB.configButton = CAUIGumpLayoutBase_createModuleConfigButtonAtRow(mainWindow, row)
     CAUIGumpBuffs_CAUIGB.Config.window = CAUIGumpLayoutBase_createModuleConfigWindow('buffsConfigWindow', 'Buffs Config', 5, row)
     CAUIGumpLogicBase_registerSharedVisibilityConfigWindowsCloseFunction(CAUIGumpBuffs_closeBuffsConfigWindow)
     CAUIGumpBuffs_CAUIGB.Config.enableNightsight = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpBuffs_CAUIGB.Config.window, 1, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpBuffsState.EnableNightsight, 'Nightsight'))
     CAUIGumpBuffs_CAUIGB.Config.enableStrength = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpBuffs_CAUIGB.Config.window, 2, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpBuffsState.EnableStrength, 'Strength'))
     CAUIGumpBuffs_CAUIGB.Config.enableAgility = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpBuffs_CAUIGB.Config.window, 3, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpBuffsState.EnableAgility, 'Agility'))
-    CAUIGumpBuffs_CAUIGB.Config.refreshAfterAgility = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpBuffs_CAUIGB.Config.window, 4, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpBuffsState.HealPotsAfterStrPot, 'Refresh On Agi'), 140, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGumpBuffs_CAUIGB.Config.refreshAfterAgility = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpBuffs_CAUIGB.Config.window, 4, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpBuffsState.StamPotsAfterAgiPot, 'Refresh On Agi'), 140, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
     CAUIGumpBuffs_CAUIGB.Config.staminaPotionsModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpBuffs_CAUIGB.Config.window, 5, CAUIGumpBuffs_StaminaPotsModeStrings[CAUIGumpBuffsState.StaminaPotsMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
 end
 
-function CAUIGumpBuffs_getEnableNightsight()
-    return CAUIGumpBuffsState.EnableNightsight
-end
-
-function CAUIGumpBuffs_setEnableNightsight(isChecked)
-    CAUIGumpBuffsState.EnableNightsight = not isChecked
-    CAUIGumpBuffs_processNightsightButtonInteractions(true)
+function CAUIGumpBuffs_initUI(mainWindow, CAConfig, row)
+    CAUIGumpBuffs_setUIValuesFromCAConfig(CAConfig)
+    CAUIGumpBuffs_createUIElements(mainWindow, CAConfig, row)
 end
 
 CAUIGumpCommands_CAUIGC = {
@@ -5204,15 +5320,26 @@ function CAUIGumpCommands_processUIInteractions()
     CAUIGumpCommands_processCommandsButtonInteractions()
 end
 
+function CAUIGumpCommands_setUIValuesFromCAConfig(CAConfig)
+    CALog_debug('Setting Commands UI values from CAConfig...')
+    local commandsConfig = CAConfig.userCommands
+    CAUIGumpCommandsConfig.CommandsEnabled = commandsConfig.Enable
+end
+
 function CAUIGumpCommands_updateCAConfigToCurrentUIConfig(CAConfig)
     local commandsConfig = CAConfig.userCommands
     commandsConfig.Enable = CAUIGumpCommandsConfig.CommandsEnabled
 end
 
-function CAUIGumpCommands_initUI(mainWindow, row)
+function CAUIGumpCommands_createUIElements(mainWindow, CAConfig, row)
     CALog_debug('Creating Commands UI...')
     CAUIGumpCommands_CAUIGC.enableButton = CAUIGumpLayoutBase_createModuleEnableButtonAtRow(mainWindow, row, 'Commands')
-    CAUIGumpCommands_CAUIGC.enableLabel = CAUIGumpLayoutBase_createModuleEnableLabelAtRow(mainWindow, row, 'Enabled')
+    CAUIGumpCommands_CAUIGC.enableLabel = CAUIGumpLayoutBase_createModuleEnableLabelAtRow(mainWindow, row, CAUIGumpLogicBase_getEnabledDisabledLabelValues(CAUIGumpCommandsConfig.CommandsEnabled))
+end
+
+function CAUIGumpCommands_initUI(mainWindow, CAConfig, row)
+    CAUIGumpCommands_setUIValuesFromCAConfig(CAConfig)
+    CAUIGumpCommands_createUIElements(mainWindow, CAConfig, row)
 end
 
 CAUIGumpAttack_CAUIGA = {
@@ -5311,6 +5438,27 @@ function CAUIGumpAttack_processUIInteractions()
     CAUIGumpAttack_processAttackExceptionsModeButtonInteractions()
 end
 
+function CAUIGumpAttack_numberToAttackRangeValue(num)
+    for _, v in pairs(CAUIGumpAttack_AttackRangeValues) do
+        if num == CAUIGumpAttack_AttackRangeConfigValues[v] or num+1 == CAUIGumpAttack_AttackRangeConfigValues[v] then
+            return v
+        end
+    end
+    return CAUIGumpAttack_AttackRangeValues.Five
+end
+
+function CAUIGumpAttack_setUIValuesFromCAConfig(CAConfig)
+    CALog_debug('Setting Attack UI values from CAConfig...')
+    local attackConfig = CAConfig.modules.Attack
+    CAUIGumpAttackConfig.AttackEnabled = attackConfig.Enable
+    CAUIGumpAttackConfig.AttackRangeMax = CAUIGumpAttack_numberToAttackRangeValue(attackConfig.Rangemax)
+    if attackConfig.AllowMobilesExceptionsGraphicIDs or attackConfig.AllowMobilesExceptionsNames then --- TODO: expand with more options?
+        CAUIGumpAttackConfig.AttackExceptionsMode = CAUIGumpAttack_AttackExceptionModeValues.IDAndNames
+    else
+        CAUIGumpAttackConfig.AttackExceptionsMode = CAUIGumpAttack_AttackExceptionModeValues.None
+    end
+end
+
 function CAUIGumpAttack_updateCAConfigToCurrentUIConfig(CAConfig)
     local attackConfig = CAConfig.modules.Attack
     attackConfig.Enable = CAUIGumpAttackConfig.AttackEnabled
@@ -5319,16 +5467,21 @@ function CAUIGumpAttack_updateCAConfigToCurrentUIConfig(CAConfig)
     attackConfig.AllowMobilesExceptionsNames = CAUIGumpAttackConfig.AttackExceptionsMode == CAUIGumpAttack_AttackExceptionModeValues.IDAndNames
 end
 
-function CAUIGumpAttack_initUI(mainWindow, row)
+function CAUIGumpAttack_createUIElements(mainWindow, CAConfig, row)
     CALog_debug('Creating Attack UI...')
     CAUIGumpAttack_CAUIGA.enableButton = CAUIGumpLayoutBase_createModuleEnableButtonAtRow(mainWindow, row, 'Attack')
-    CAUIGumpAttack_CAUIGA.enableLabel = CAUIGumpLayoutBase_createModuleEnableLabelAtRow(mainWindow, row, 'Disabled')
-    CAUIGumpAttack_CAUIGA.enableLabel:SetColor(1, 0, 0, 1)
+    CAUIGumpAttack_CAUIGA.enableLabel = CAUIGumpLayoutBase_createModuleEnableLabelAtRow(mainWindow, row, CAUIGumpLogicBase_getEnabledDisabledLabelValues(CAUIGumpAttackConfig.AttackEnabled))
+    ---CAUIGumpAttack_CAUIGA.enableLabel:SetColor(1, 0, 0, 1)
     CAUIGumpAttack_CAUIGA.configButton = CAUIGumpLayoutBase_createModuleConfigButtonAtRow(mainWindow, row)
     CAUIGumpAttack_CAUIGA.Config.window = CAUIGumpLayoutBase_createModuleConfigWindow('attackConfigWindow', 'Attack Config', 2, row)
     CAUIGumpLogicBase_registerSharedVisibilityConfigWindowsCloseFunction(CAUIGumpAttack_closeAttackConfigWindow)
     CAUIGumpAttack_CAUIGA.Config.rangeMaxButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpAttack_CAUIGA.Config.window, 1, CAUIGumpAttack_AttackRangeStrings[CAUIGumpAttackConfig.AttackRangeMax])
-    CAUIGumpAttack_CAUIGA.Config.exceptionModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpAttack_CAUIGA.Config.window, 2, 'Exceptions (ID + Names)', 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+    CAUIGumpAttack_CAUIGA.Config.exceptionModeButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpAttack_CAUIGA.Config.window, 2, CAUIGumpAttack_AttackExceptionModeStrings[CAUIGumpAttackConfig.AttackExceptionsMode], 180, CAUIGumpLayoutBase_getLayoutConstants().ModuleConfigWindowFeatureEnableButtonSizeY)
+end
+
+function CAUIGumpAttack_initUI(mainWindow, CAConfig, row)
+    CAUIGumpAttack_setUIValuesFromCAConfig(CAConfig)
+    CAUIGumpAttack_createUIElements(mainWindow, CAConfig, row)
 end
 
 CAUIGumpScavenge_CAUIGS = {
@@ -5367,7 +5520,7 @@ function CAUIGumpScavenge_updateScavengerConfigWindow(targetValue, closeOtherCWs
     CAUIGumpScavengeConfig.ConfigWindowOpen = CAUIGumpLogicBase_onConfigMenuButtonPressed(not targetValue, CAUIGumpScavenge_CAUIGS.configButton, CAUIGumpScavenge_CAUIGS.Config.window, 'Scavenger Config', closeOtherCWs, CAUIGumpScavenge_closeScavengerConfigWindow)
 end
 
-CAUIGumpScavenge_closeScavengerConfigWindow =function ()
+CAUIGumpScavenge_closeScavengerConfigWindow = function ()
     CAUIGumpScavenge_updateScavengerConfigWindow(true, false)
 end
 
@@ -5417,6 +5570,17 @@ function CAUIGumpScavenge_processUIInteractions()
     CAUIGumpScavenge_processScavengeRibsButtonInteractions()
 end
 
+function CAUIGumpScavenge_setUIValuesFromCAConfig(CAConfig)
+    CALog_debug('Setting Scavenge UI values from CAConfig...')
+    local scavengeConfig = CAConfig.modules.Scavenging
+    CAUIGumpScavengeConfig.ScavengerEnabled = scavengeConfig.Enable
+    CAUIGumpScavengeConfig.ScavengeGold = not scavengeConfig.DisallowGold
+    CAUIGumpScavengeConfig.ScavengeCleanBandages = not scavengeConfig.DisallowCleanBandages
+    CAUIGumpScavengeConfig.ScavengeBones = not scavengeConfig.DisallowBones
+    CAUIGumpScavengeConfig.ScavengeGrimoires = not scavengeConfig.DisallowGrimoire
+    CAUIGumpScavengeConfig.ScavengeRibs = not scavengeConfig.DisallowRibs
+end
+
 function CAUIGumpScavenge_updateCAConfigToCurrentUIConfig(CAConfig)
     local scavengeConfig = CAConfig.modules.Scavenging
     scavengeConfig.Enable = CAUIGumpScavengeConfig.ScavengerEnabled
@@ -5427,11 +5591,10 @@ function CAUIGumpScavenge_updateCAConfigToCurrentUIConfig(CAConfig)
     scavengeConfig.DisallowRibs = not CAUIGumpScavengeConfig.ScavengeRibs
 end
 
-function CAUIGumpScavenge_initUI(mainWindow, row)
+function CAUIGumpScavenge_createUIElements(mainWindow, CAConfig, row)
     CALog_debug('Creating Scavenge UI...')
     CAUIGumpScavenge_CAUIGS.enableButton = CAUIGumpLayoutBase_createModuleEnableButtonAtRow(mainWindow, row, 'Scavenge')
-    CAUIGumpScavenge_CAUIGS.enableLabel = CAUIGumpLayoutBase_createModuleEnableLabelAtRow(mainWindow, row, 'Disabled')
-    CAUIGumpScavenge_CAUIGS.enableLabel:SetColor(1, 0, 0, 1)
+    CAUIGumpScavenge_CAUIGS.enableLabel = CAUIGumpLayoutBase_createModuleEnableLabelAtRow(mainWindow, row, CAUIGumpLogicBase_getEnabledDisabledLabelValues(CAUIGumpScavengeConfig.ScavengerEnabled))
     CAUIGumpScavenge_CAUIGS.configButton = CAUIGumpLayoutBase_createModuleConfigButtonAtRow(mainWindow, row)
     CAUIGumpScavenge_CAUIGS.Config.window = CAUIGumpLayoutBase_createModuleConfigWindow('scavengerConfigWindow', 'Scavenge Config', 5, row)
     CAUIGumpLogicBase_registerSharedVisibilityConfigWindowsCloseFunction(CAUIGumpScavenge_closeScavengerConfigWindow)
@@ -5440,6 +5603,11 @@ function CAUIGumpScavenge_initUI(mainWindow, row)
     CAUIGumpScavenge_CAUIGS.Config.activateBonesButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpScavenge_CAUIGS.Config.window, 3, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpScavengeConfig.ScavengeBones, 'Bones'))
     CAUIGumpScavenge_CAUIGS.Config.activateGrimoiresButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpScavenge_CAUIGS.Config.window, 4, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpScavengeConfig.ScavengeGrimoires, 'Grimoires'))
     CAUIGumpScavenge_CAUIGS.Config.activateRibsButton = CAUIGumpLayoutBase_createModuleConfigWindowButtonAtRow(CAUIGumpScavenge_CAUIGS.Config.window, 5, CAUIGumpLogicBase_getBoonleanButtonStateDisplayStr(CAUIGumpScavengeConfig.ScavengeRibs, 'Ribs'))
+end
+
+function CAUIGumpScavenge_initUI(mainWindow, CAConfig, row)
+    CAUIGumpScavenge_setUIValuesFromCAConfig(CAConfig)
+    CAUIGumpScavenge_createUIElements(mainWindow, CAConfig, row)
 end
 
 CAUI = {
@@ -5528,27 +5696,32 @@ function CAUIGump_initMainWindow()
     CALog_debug("Window created and ready!")
 end
 
-function CAUIGump_initModules()
-    CAUIGumpMainRow_initUI(CAUI.mainWindow)        --- Main Row
-    CAUIGumpStatsDisplay_initUI(CAUI.mainWindow)          --- Stats
-    CAUIGumpRun_initUI(CAUI.mainWindow, 1)         --- Run
-    CAUIGumpCommands_initUI(CAUI.mainWindow, 2)    --- Commands
-    CAUIGumpAttack_initUI(CAUI.mainWindow, 3)      --- Attack
-    CAUIGumpHeal_initUI(CAUI.mainWindow, 4)        --- Heal
-    CAUIGumpBuffs_initUI(CAUI.mainWindow, 5)       --- Buffs
-    CAUIGumpScavenge_initUI(CAUI.mainWindow, 6)    --- Scavenge
+function CAUIGump_initModules(CAConfig)
+    CAUIGumpMainRow_initUI(CAUI.mainWindow, CAConfig)        --- Main Row
+    CAUIGumpStatsDisplay_initUI(CAUI.mainWindow, CAConfig)          --- Stats
+    CAUIGumpRun_initUI(CAUI.mainWindow, CAConfig, 1)         --- Run
+    CAUIGumpCommands_initUI(CAUI.mainWindow, CAConfig, 2)    --- Commands
+    CAUIGumpAttack_initUI(CAUI.mainWindow, CAConfig, 3)      --- Attack
+    CAUIGumpHeal_initUI(CAUI.mainWindow, CAConfig, 4)        --- Heal
+    CAUIGumpBuffs_initUI(CAUI.mainWindow, CAConfig, 5)       --- Buffs
+    CAUIGumpScavenge_initUI(CAUI.mainWindow, CAConfig, 6)    --- Scavenge
 end
 
-function CAUIGump_initMainGump()
+function CAUIGump_setUIConfigs(UIConfig)
+    CAUIGumpMainRow_setConfigWindowTimeoutMode(UIConfig.ConfigWindowTimeoutMode)
+end
+
+function CAUIGump_initMainGump(CAConfig, UIConfig)
     CAUIGump_initMainWindow()
-    CAUIGump_initModules()
+    CAUIGump_setUIConfigs(UIConfig)
+    CAUIGump_initModules(CAConfig)
 end
 
-function CAUIGump_runGump(CAConfig)
+function CAUIGump_runGump(CAConfig, UIConfig)
 
-    CALog_debug('Starting Combat Assistant Iteration!')
+    CALog_debug('Starting Combat Assistant Gump!')
     UI.DestroyAllWindows()                                  --- Cleanup
-    CAUIGump_initMainGump()                                         --- Init main gump (create UI, set up event handlers, etc...)
+    CAUIGump_initMainGump(CAConfig, UIConfig)                       --- Init main gump (create UI, set up event handlers, etc...)
     CAMainLoop_mainLoopInit(CAConfig)                             --- Initialize main loop (configure modules, etc...)
     while true do
 
@@ -5654,6 +5827,20 @@ DexxerMainLoopConfig = {
         DebugTick = 500,                --- slower exececution tick frequency
         EnableOverheadMessages = false  --- Enables overhead messages, if false then messages will be printed in journal
     },
+    gathering = {
+        NoisyMode = false,                                          --- Notify when dropping or keeping a resource (false -> Overhead Message, true -> Saying to everyone)
+        SkinningEnabled = false,                                     --- Enable Skinning gathering mode (starting value not available for Lumberjacking or Mining)
+        SkinningHuesToKeep = CAGatheringConstants_getHuesToKeepValues().None,       --- Hues to keep when gathering, see CAGatheringConstants.lua for values
+        LumberjackingHuesToKeep = CAGatheringConstants_getHuesToKeepValues().None,  --- Hues to keep when gathering, see CAGatheringConstants.lua for values,
+        MiningHuesToKeep = CAGatheringConstants_getHuesToKeepValues().None,         --- Hues to keep when gathering, see CAGatheringConstants.lua for values
+    },
+    userCommands = {
+        Enable = true,                                  --- Parse and process user commands (via journal)
+        LumberjackSwapMainWeaponGraphicID = 0x0F4B,     --- Double Axe
+        ---MinerSwapMainWeaponGraphicID = 0x1439,       --- War Hammer
+        MinerSwapMainWeaponGraphicID = 0x13B0,          --- War Axe
+        CommandStringPrefix = "(DEXXER)"
+    },
     modules = {
         ArmDisarm = {
             Enable = true,              --- Re-arms once moved char when disarmed, disarms if weapon durability too low
@@ -5692,18 +5879,18 @@ DexxerMainLoopConfig = {
                 Enable = true   --- Drink nightsight potion if not buffed already
             },
             Stamina = {
-                Enable = true,          --- Drink stamina potion when bellow a threshould
+                Enable = false,          --- Drink stamina potion when bellow a threshould
                 DrinkThreshould = 60    --- in percentage, when to drink stamina potion
             },
             Strength = {
                 Enable = true,          --- Drink strength potion if not buffed already
                 BaseStrength = 100,
-                DrinkHeal = true
+                DrinkHeal = false
             },
             Agility = {
                 Enable = true,          --- Drink potion potion if not buffed already
                 BaseAgility = 81,       --- Because of full plate (without gorget: using luck gear)
-                DrinkRefresh = true
+                DrinkRefresh = false
             },
             EatFood = {
                 Enable = false   --- BUGGED: Buff foods don't prevent eating if already under the effect
@@ -5718,11 +5905,6 @@ DexxerMainLoopConfig = {
         DetectPlayers = {
             Enable = false  --- Alerts you when a player from the hunt list is visible
         },
-        Skinning = {
-            Enable = false,
-            NoisyMode = true,       --- To Log XOR Say when dropping or keeping a resource
-            LeatherHuesToKeep = {}
-        },
         Scavenging = {
             Enable = false,                             --- Scavenges items from the ground, only arrows, add more if needed
             Frequency = 0,                              --- milliseconds, zero means immediate
@@ -5730,13 +5912,13 @@ DexxerMainLoopConfig = {
             LootItemsNames = {},                        --- Use if serial not available
             DisallowGold = false,                       --- Toggle scavenging gold
             DisallowCleanBandage = false,               --- Toggle scavenging clean bandages
-            DisallowBones = false,                      --- Toggle scavenging bones
+            DisallowBones = true,                      --- Toggle scavenging bones
             DisallowGrimoire = false,                   --- Toggle scavenging grimoires
-            DisallowRibs = false                        --- Toggle scavenging ribs
+            DisallowRibs = true                        --- Toggle scavenging ribs
         },
         Attack = {
             Enable = false,                                             --- Attacks nearby enemies automatically
-            Rangemax = 10,                                              --- Attack search range
+            Rangemax = 5,                                               --- Attack search range
             AllowMobilesExceptionsSerials = true,                       --- Allow Mobiles Serials to ignore
             MobilesExceptionsSerials = FriendsSerialList,               --- Mobiles Serials to ignore (add friends so to not attack should they become grey)
             AllowMobilesExceptionsGraphicIDs = true,                    --- Allow Mobiles Mobiles GraphicIDs to ignore
@@ -5745,14 +5927,11 @@ DexxerMainLoopConfig = {
             MobilesExceptionsNames = MobilesExceptionsNames,            --- Mobiles Names to ignore (use if don't have serial or graphic available)
             CheckFrequency = 500                                        --- in milliseconds, how often to check for new targets, adjust if needed
         }
-    },
-    userCommands = {
-        Enable = true,                                  --- Parse and process user commands (via journal)
-        LumberjackSwapMainWeaponGraphicID = 0x0F4B,     --- Double Axe
-        ---MinerSwapMainWeaponGraphicID = 0x1439,       --- War Hammer
-        MinerSwapMainWeaponGraphicID = 0x13B0,          --- War Axe
-        CommandStringPrefix = "(DEXXER)"
     }
+}
+
+DexxerUIConfig = {
+    ConfigWindowTimeoutMode = 4     --- seconds to auto-close config windows (0 will never close)
 }
 
 function CAConfigDexxer_run()
@@ -5760,7 +5939,7 @@ function CAConfigDexxer_run()
 end
 
 function CAConfigDexxer_runUiGump()
-    CAUIGump_runGump(DexxerMainLoopConfig)
+    CAUIGump_runGump(DexxerMainLoopConfig, DexxerUIConfig)
 end
 
 function CAConfigDexxer_runWithCommandsDisabled()

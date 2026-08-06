@@ -7,10 +7,9 @@
 --- Description: mining functions
 ----------------------------------------------------------------------
 
-local bl = Import('BaseLib')
 local cal = Import('CALog')
 local cat = Import('CATime')
-local ipmp = Import('IPMaterialPredicates')
+local cagc = Import('CAGatheringConstants')
 local iums = Import('IUMinerSwap')
 local cagfsm = Import('CAGatheringFSM')
 
@@ -24,30 +23,17 @@ local GatheringMiningStaticConfig = {
 }
 
 GatheringMiningConfig = {
-    PickaxeMaterialType = nil,
-    OreHuesToKeep = {
-        --- 0x0000,         --- Regular
-        --- 0x0973,         --- Dull Copper
-        0x0966,         --- Shadow Iron
-        0x096D,         --- Copper
-        0x0972,             --- Bronze
-        0x08A5,             --- Gold
-        0x0979,             --- Agapite
-        0x089F,             --- Verite
-        0x08AB              --- Valorite
-    }
+    NoisyMode = false,
+    OreHuesToKeep = nil
 }
 
 -----------------
 --- Accessors ---
 -----------------
 
-local function setPickaxeMaterialType_(materialType)
-    GatheringMiningConfig.PickaxeMaterialType = materialType
-end
-
-local function setOreHuesToKeep_(hues)
-    GatheringMiningConfig.OreHuesToKeep = hues
+local function setConfig_(config)
+    GatheringMiningConfig.NoisyMode = config.NoisyMode
+    GatheringMiningConfig.OreHuesToKeep = config.MiningHuesToKeep
 end
 
 -----------------
@@ -61,7 +47,7 @@ end
 local function equipPickaxe_()
     local pickaxe = Items.FindByLayer(1)
     if pickaxe == nil or pickaxe.Graphic ~= GatheringMiningStaticConfig.PickaxeGraphicID then
-        iums.minerSwap(GatheringMiningConfig.PickaxeMaterialType)
+        iums.minerSwap()
         pickaxe = Items.FindByLayer(1)
         Pause(cat.getActionWaitTime())
     end
@@ -123,7 +109,8 @@ local function transitionMiningFSM_()
         checkJournal = checkJournal_,
         postTransitionWork = nil,
         materialGraphicID = GatheringMiningStaticConfig.OresGraphicID,
-        materialHuesToKeep = GatheringMiningConfig.OreHuesToKeep
+        noisyMode = GatheringMiningConfig.NoisyMode,
+        materialHuesToKeep = cagc.getHuesToKeepLootTable(GatheringMiningConfig.OreHuesToKeep)
     }
     cagfsm.transitionGatheringFSM(FSMConfigMining)
 end
@@ -133,8 +120,7 @@ end
 --------------
 
 local Obj = {
-    setPickaxeMaterialType = setPickaxeMaterialType_,
-    setOreHuesToKeep = setOreHuesToKeep_,
+    setConfig = setConfig_,
     resetMiningFSM = resetMiningFSM_,
     transitionMiningFSM = transitionMiningFSM_
 }

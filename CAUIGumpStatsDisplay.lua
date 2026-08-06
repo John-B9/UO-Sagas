@@ -46,6 +46,8 @@ CAUIGumpStatsDisplayState = {
     LastRefreshTime = 0     --- Refresh right away at startup
 }
 
+local noItemString = '---'
+
 -----------------
 --- Accessors ---
 -----------------
@@ -411,7 +413,7 @@ end
 local function updateWeaponDurabilityLabel_()
     local weaponDurabilityPercentage = iuw.getEquipedWeaponDurabilityPercentage()
     if not weaponDurabilityPercentage then
-        CAUIGSD.Row6.WeaponDurabilityLabel:SetText('WP:  nil')
+        CAUIGSD.Row6.WeaponDurabilityLabel:SetText('WP:  '..noItemString)
         cauiglogicb.setLabelColor(CAUIGSD.Row6.WeaponDurabilityLabel, cauiglogicb.getColorOptions().LightRed)
     else
         local displayPercentage = math.floor(weaponDurabilityPercentage)
@@ -423,7 +425,7 @@ end
 local function updateShieldDurabilityLabel_()
     local shieldDurabilityPercentage = iuw.getEquipedShieldDurabilityPercentage()
     if not shieldDurabilityPercentage then
-        CAUIGSD.Row6.ShieldDurabilityLabel:SetText('SH: nil')
+        CAUIGSD.Row6.ShieldDurabilityLabel:SetText('SH: '..noItemString)
         cauiglogicb.setLabelColor(CAUIGSD.Row6.ShieldDurabilityLabel, cauiglogicb.getColorOptions().LightRed)
     else
         local displayPercentage = math.floor(shieldDurabilityPercentage)
@@ -457,7 +459,7 @@ end
 local function updateArmourAverageDurabilityLabel_()
     local armourAverageDurabilityPercentage = iua.getEquipedArmourAverageDurabilityPercentage()
     if not armourAverageDurabilityPercentage then
-        CAUIGSD.Row7.ArmourAverageDurabilityLabel:SetText('All: nil')
+        CAUIGSD.Row7.ArmourAverageDurabilityLabel:SetText('All: '..noItemString)
         cauiglogicb.setLabelColor(CAUIGSD.Row7.ArmourAverageDurabilityLabel, cauiglogicb.getColorOptions().LightRed)
     else
         CAUIGSD.Row7.ArmourAverageDurabilityLabel:SetText('All: '..armourAverageDurabilityPercentage..'%%')
@@ -468,7 +470,7 @@ end
 local function updateArmourWorstPieceDurabilityLabel_()
     local worstArmourDurabilityPercentage = iua.getEquipedArmourWorstDurabilityPercentageItem()
     if not worstArmourDurabilityPercentage then
-        CAUIGSD.Row7.ArmourWorstPieceDurabilityLabel:SetText('Worst: nil')
+        CAUIGSD.Row7.ArmourWorstPieceDurabilityLabel:SetText('Worst: '..noItemString)
         cauiglogicb.setLabelColor(CAUIGSD.Row7.ArmourWorstPieceDurabilityLabel, cauiglogicb.getColorOptions().LightRed)
     else
         CAUIGSD.Row7.ArmourWorstPieceDurabilityLabel:SetText('Worst: '..worstArmourDurabilityPercentage..'%%')
@@ -513,7 +515,7 @@ local function updateCAConfigToCurrentUIConfig_(CAConfig)
     --- nothing to do
 end
 
-local function initUI_(mainWindow)
+local function initUI_(mainWindow, CAConfig)
 
     cal.debug('Creating Stats Display UI...')
     initRow1UI_(mainWindow)

@@ -43,9 +43,9 @@ CAUIGumpScavengeConfig = {
     ScavengeRibs = true
 }
 
------------------
---- Functions ---
------------------
+----------------------
+--- UI Interaction ---
+----------------------
 
 local function processScavengerButtonInteractions_()
     if CAUIGS.enableButton:WasClicked() then
@@ -59,7 +59,7 @@ local function updateScavengerConfigWindow_(targetValue, closeOtherCWs)
     CAUIGumpScavengeConfig.ConfigWindowOpen = cauiglogicb.onConfigMenuButtonPressed(not targetValue, CAUIGS.configButton, CAUIGS.Config.window, 'Scavenger Config', closeOtherCWs, closeScavengerConfigWindow_)
 end
 
-closeScavengerConfigWindow_ =function ()
+closeScavengerConfigWindow_ = function ()
     updateScavengerConfigWindow_(true, false)
 end
 
@@ -109,6 +109,25 @@ local function processUIInteractions_()
     processScavengeRibsButtonInteractions_()
 end
 
+-------------------------------------
+--- CA Config values to UI values ---
+-------------------------------------
+
+local function setUIValuesFromCAConfig_(CAConfig)
+    cal.debug('Setting Scavenge UI values from CAConfig...')
+    local scavengeConfig = CAConfig.modules.Scavenging
+    CAUIGumpScavengeConfig.ScavengerEnabled = scavengeConfig.Enable
+    CAUIGumpScavengeConfig.ScavengeGold = not scavengeConfig.DisallowGold
+    CAUIGumpScavengeConfig.ScavengeCleanBandages = not scavengeConfig.DisallowCleanBandages
+    CAUIGumpScavengeConfig.ScavengeBones = not scavengeConfig.DisallowBones
+    CAUIGumpScavengeConfig.ScavengeGrimoires = not scavengeConfig.DisallowGrimoire
+    CAUIGumpScavengeConfig.ScavengeRibs = not scavengeConfig.DisallowRibs
+end
+
+-------------------------------------
+--- UI values to CA Config values ---
+-------------------------------------
+
 local function updateCAConfigToCurrentUIConfig_(CAConfig)
     local scavengeConfig = CAConfig.modules.Scavenging
     scavengeConfig.Enable = CAUIGumpScavengeConfig.ScavengerEnabled
@@ -119,11 +138,14 @@ local function updateCAConfigToCurrentUIConfig_(CAConfig)
     scavengeConfig.DisallowRibs = not CAUIGumpScavengeConfig.ScavengeRibs
 end
 
-local function initUI_(mainWindow, row)
+---------------
+--- UI Init ---
+---------------
+
+local function createUIElements_(mainWindow, CAConfig, row)
     cal.debug('Creating Scavenge UI...')
     CAUIGS.enableButton = cauiglayoutb.createModuleEnableButtonAtRow(mainWindow, row, 'Scavenge')
-    CAUIGS.enableLabel = cauiglayoutb.createModuleEnableLabelAtRow(mainWindow, row, 'Disabled')
-    CAUIGS.enableLabel:SetColor(1, 0, 0, 1)
+    CAUIGS.enableLabel = cauiglayoutb.createModuleEnableLabelAtRow(mainWindow, row, cauiglogicb.getEnabledDisabledLabelValues(CAUIGumpScavengeConfig.ScavengerEnabled))
     CAUIGS.configButton = cauiglayoutb.createModuleConfigButtonAtRow(mainWindow, row)
     CAUIGS.Config.window = cauiglayoutb.createModuleConfigWindow('scavengerConfigWindow', 'Scavenge Config', 5, row)
     cauiglogicb.registerSharedVisibilityConfigWindowsCloseFunction(closeScavengerConfigWindow_)
@@ -132,6 +154,11 @@ local function initUI_(mainWindow, row)
     CAUIGS.Config.activateBonesButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGS.Config.window, 3, cauiglogicb.getBoonleanButtonStateDisplayStr(CAUIGumpScavengeConfig.ScavengeBones, 'Bones'))
     CAUIGS.Config.activateGrimoiresButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGS.Config.window, 4, cauiglogicb.getBoonleanButtonStateDisplayStr(CAUIGumpScavengeConfig.ScavengeGrimoires, 'Grimoires'))
     CAUIGS.Config.activateRibsButton = cauiglayoutb.createModuleConfigWindowButtonAtRow(CAUIGS.Config.window, 5, cauiglogicb.getBoonleanButtonStateDisplayStr(CAUIGumpScavengeConfig.ScavengeRibs, 'Ribs'))
+end
+
+local function initUI_(mainWindow, CAConfig, row)
+    setUIValuesFromCAConfig_(CAConfig)
+    createUIElements_(mainWindow, CAConfig, row)
 end
 
 --------------

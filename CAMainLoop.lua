@@ -38,6 +38,14 @@ local MainLoopState = {
 --- Configure Functions ---
 ---------------------------
 
+local function configureTime_(config)
+    cat.setActionWaitTime(config.time.ActionWaitTime)
+end
+
+local function configureDebug_(config)
+    cal.setConfig(config.debug)
+end
+
 local function configureModules_(config)
     caad.setConfig(config.modules.ArmDisarm)
     cae.setConfig(config.modules.Escape)
@@ -47,16 +55,25 @@ local function configureModules_(config)
     cabuf.setConfig(config.modules.Buffs)
     cadbuf.setConfig(config.modules.Debuffs)
     cadp.setConfig(config.modules.DetectPlayers)
-    caski.setConfig(config.modules.Skinning)
     casca.setConfig(config.modules.Scavenging)
     caa.setConfig(config.modules.Attack)
 end
 
-local function configure_(config)
-    cat.setActionWaitTime(config.time.ActionWaitTime)
-    cal.setConfig(config.debug)
-    configureModules_(config)
+local function configureCommands_(config)
     cautc.setConfig(config.userCommands)
+end
+
+local function configureGathering_(config)
+    caski.setConfig(config.gathering)
+    cag.setConfig(config.gathering)
+end
+
+local function configure_(config)
+    configureTime_(config)
+    configureDebug_(config)
+    configureGathering_(config)
+    configureCommands_(config)
+    configureModules_(config)
 end
 
 -----------------

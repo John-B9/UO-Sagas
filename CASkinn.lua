@@ -14,6 +14,7 @@ local cal = Import('CALog')
 local cat = Import('CATime')
 local iusci = Import('IUScissors')
 local iuski = Import('IUSkinn')
+local cagc = Import('CAGatheringConstants')
 
 -----------------
 --- Variables ---
@@ -21,18 +22,8 @@ local iuski = Import('IUSkinn')
 
 SkinnConfig = {
     Enable = false,
-    NoisyMode = true,       --- To Log XOR Say when dropping or keeping a resource
-    LeatherHuesToKeep = {
-        --- 0x0000,         --- Regular
-        --- 0x0973,         --- Dull Copper
-        --- 0x0966,         --- Shadow Iron
-        --- 0x096D,         --- Copper
-        0x0972,             --- Bronze
-        0x08A5,             --- Gold
-        0x0979,             --- Agapite
-        0x089F,             --- Verite
-        0x08AB              --- Valorite
-    }
+    NoisyMode = true,           --- To Log XOR Say when dropping or keeping a resource
+    LeatherHuesToKeep = nil     --- Table with hues to keep
 }
 
 local SkinnStaticConfig = {
@@ -66,9 +57,9 @@ local function setNoisyMode_(val)
 end
 
 local function setConfig_(config)
-    setEnable_(config.Enable)
+    setEnable_(config.SkinningEnabled)
     setNoisyMode_(config.NoisyMode)
-    SkinnConfig.LeatherHuesToKeep = config.LeatherHuesToKeep
+    SkinnConfig.LeatherHuesToKeep = cagc.getHuesToKeepLootTable(config.SkinningHuesToKeep)
 end
 
 -----------------
