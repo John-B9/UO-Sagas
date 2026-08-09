@@ -48,7 +48,7 @@ local ConfigButtonOpenString = 'CONFIG (-)'
 
 local titleLabelString =
 '  _                 _\n'..
-' /( Dexxer Gatherer )\\ \n'..
+' /( DEXXER GATHERER )\\ \n'..
 ' ¯¯                 ¯¯ '
 
 -----------------

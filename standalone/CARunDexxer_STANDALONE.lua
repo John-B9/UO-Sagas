@@ -4091,7 +4091,7 @@ ConfigButtonOpenString = 'CONFIG (-)'
 
 titleLabelString =
 '  _                 _\n'..
-' /( Dexxer Gatherer )\\ \n'..
+' /( DEXXER GATHERER )\\ \n'..
 ' ¯¯                 ¯¯ '
 
 ConfigWindowTimeoutModeValues = {
@@ -5941,126 +5941,130 @@ ScavengerLootTable = {  --- ScavengerLootTable: add here the graphic IDs of item
     --- (lowest priority)
 }
 
-DexxerMainLoopConfig = {
-    time = {
-        ActionWaitTime = 1000,  --- in milliseconds, how long to wait for actions like using items, targeting etc.
-                                --- Adjust ActionWaitTime if you experience issues, set it longer, ex. 1500 on high ping
-        MainLoopTick = 60,      --- in milliseconds
-        JournalTick = 0,        --- milliseconds, zero means immediate
-    },
-    debug = {
-        EnableDebugLog = true,          --- enable console log
-        DebugLogTick = 60,              --- in milliseconds
-        EnableDebugTick = false,        --- <<== (TURN ON TO FOR DEBUGGING): forces a slower exececution
-        DebugTick = 500,                --- slower exececution tick frequency
-        EnableOverheadMessages = false  --- Enables overhead messages, if false then messages will be printed in journal
-    },
-    gathering = {
-        NoisyMode = false,                                          --- Notify when dropping or keeping a resource (false -> Overhead Message, true -> Saying to everyone)
-        SkinningEnabled = false,                                     --- Enable Skinning gathering mode (starting value not available for Lumberjacking or Mining)
-        SkinningHuesToKeep = CAGatheringConstants_getHuesToKeepValues().None,       --- Hues to keep when gathering, see CAGatheringConstants.lua for values
-        LumberjackingHuesToKeep = CAGatheringConstants_getHuesToKeepValues().None,  --- Hues to keep when gathering, see CAGatheringConstants.lua for values,
-        MiningHuesToKeep = CAGatheringConstants_getHuesToKeepValues().None,         --- Hues to keep when gathering, see CAGatheringConstants.lua for values
-    },
-    userCommands = {
-        Enable = true,                                  --- Parse and process user commands (via journal)
-        LumberjackSwapMainWeaponGraphicID = 0x0F4B,     --- Double Axe
-        ---MinerSwapMainWeaponGraphicID = 0x1439,       --- War Hammer
-        MinerSwapMainWeaponGraphicID = 0x13B0,          --- War Axe
-        CommandStringPrefix = "(DEXXER)"
-    },
-    modules = {
-        ArmDisarm = {
-            Enable = true,              --- Re-arms once moved char when disarmed, disarms if weapon durability too low
-            AlwaysRearm = false,        --- rearm without moving, warning will spam messages if you drag from hands
-            AutoRearmOnMove = true,     --- Auto-rearm atempt everytime you move
-            AutoRearmWithDelay = false  --- Auto-rearm atempt with a delay
+if DexxerMainLoopConfig == nil then
+    DexxerMainLoopConfig = {
+        time = {
+            ActionWaitTime = 1000,  --- in milliseconds, how long to wait for actions like using items, targeting etc.
+                                    --- Adjust ActionWaitTime if you experience issues, set it longer, ex. 1500 on high ping
+            MainLoopTick = 60,      --- in milliseconds
+            JournalTick = 0,        --- milliseconds, zero means immediate
         },
-        Escape = {
-            EnablePopPouch = true,  --- Pops pouch if you are paralyzed in PvP mode
-            EnableComand = false,   --- Saying escape and the escape command in the escape config will port you
-            EnableMoongate = true   --- Opens moongate if you are near one
+        debug = {
+            EnableDebugLog = true,          --- enable console log
+            DebugLogTick = 60,              --- in milliseconds
+            EnableDebugTick = false,        --- <<== (TURN ON TO FOR DEBUGGING): forces a slower exececution
+            DebugTick = 500,                --- slower exececution tick frequency
+            EnableOverheadMessages = false  --- Enables overhead messages, if false then messages will be printed in journal
         },
-        CurePotions = {
-            Enable = false,          --- Cures poison with potions first (can be a waste of potions)
-            ColldownTime = 1000     --- in milliseconds
+        gathering = {
+            NoisyMode = false,                                          --- Notify when dropping or keeping a resource (false -> Overhead Message, true -> Saying to everyone)
+            SkinningEnabled = false,                                     --- Enable Skinning gathering mode (starting value not available for Lumberjacking or Mining)
+            SkinningHuesToKeep = CAGatheringConstants_getHuesToKeepValues().None,       --- Hues to keep when gathering, see CAGatheringConstants.lua for values
+            LumberjackingHuesToKeep = CAGatheringConstants_getHuesToKeepValues().None,  --- Hues to keep when gathering, see CAGatheringConstants.lua for values,
+            MiningHuesToKeep = CAGatheringConstants_getHuesToKeepValues().None,         --- Hues to keep when gathering, see CAGatheringConstants.lua for values
         },
-        HealingPotions = {
-            Enable = true,          --- Drink a healling potion if health too low
-            HPDrinkThreshould = 20  --- in percentage, when to use heal potion
+        userCommands = {
+            Enable = true,                                  --- Parse and process user commands (via journal)
+            LumberjackSwapMainWeaponGraphicID = 0x0F4B,     --- Double Axe
+            ---MinerSwapMainWeaponGraphicID = 0x1439,       --- War Hammer
+            MinerSwapMainWeaponGraphicID = 0x13B0,          --- War Axe
+            CommandStringPrefix = "(DEXXER)"
         },
-        Bandages = {
-            Enable = true,                      --- Bandages player if HP is below BandageSelfHPThreshould or if poisoned and no cure potions
-            BandageSelfHPThreshould = 99,       --- in percentage, when to use bandage
-            BandageAllies = true,               --- Whether to attempt to bandage allies when player is not in need of bandaging
-            BandageAlliesHPThreshould = 90,     --- in percentage, when to use bandage
-            AlliesSerials = FriendsSerialList   --- List of allies serials to bandage, if BandageAllies is true
-        },
-        Buffs = {
-            Enable = true,              --- Enables automatic buffs, see bellow (disable if you prefer to use manually)
-            SongOfHealing = {
-                Enable = false,
-                FailWait = 30 * 1000,   --- in ms, how long to retry if already under effects by manual cast
-                Instruments = {"Drum", "Lute", "Tambourine", "Lap Harp" }
+        modules = {
+            ArmDisarm = {
+                Enable = true,              --- Re-arms once moved char when disarmed, disarms if weapon durability too low
+                AlwaysRearm = false,        --- rearm without moving, warning will spam messages if you drag from hands
+                AutoRearmOnMove = true,     --- Auto-rearm atempt everytime you move
+                AutoRearmWithDelay = false  --- Auto-rearm atempt with a delay
             },
-            Nightsight = {
-                Enable = true   --- Drink nightsight potion if not buffed already
+            Escape = {
+                EnablePopPouch = true,  --- Pops pouch if you are paralyzed in PvP mode
+                EnableComand = false,   --- Saying escape and the escape command in the escape config will port you
+                EnableMoongate = true   --- Opens moongate if you are near one
             },
-            Stamina = {
-                Enable = false,          --- Drink stamina potion when bellow a threshould
-                DrinkThreshould = 60    --- in percentage, when to drink stamina potion
+            CurePotions = {
+                Enable = false,         --- Cures poison with potions first (can be a waste of potions)
+                ColldownTime = 1000     --- in milliseconds
             },
-            Strength = {
-                Enable = true,          --- Drink strength potion if not buffed already
-                BaseStrength = 100,     --- Value is needed to determine when buff is applied
-                DrinkHeal = false       --- Drink heal potion after strength potion
+            HealingPotions = {
+                Enable = true,          --- Drink a healling potion if health too low
+                HPDrinkThreshould = 20  --- in percentage, when to use heal potion
             },
-            Agility = {
-                Enable = true,          --- Drink agility potion if not buffed already
-                BaseAgility = 87,       --- Value including armor penalty is needed to determine when buff is applied (81 is for full plate without gorget: using luck gear)
-                DrinkRefresh = false    --- Drink refresh potion after agility potion
+            Bandages = {
+                Enable = true,                      --- Bandages player if HP is below BandageSelfHPThreshould or if poisoned and no cure potions
+                BandageSelfHPThreshould = 99,       --- in percentage, when to use bandage
+                BandageAllies = true,               --- Whether to attempt to bandage allies when player is not in need of bandaging
+                BandageAlliesHPThreshould = 90,     --- in percentage, when to use bandage
+                AlliesSerials = FriendsSerialList   --- List of allies serials to bandage, if BandageAllies is true
             },
-            EatFood = {
-                Enable = false   --- BUGGED: Buff foods don't prevent eating if already under the effect
+            Buffs = {
+                Enable = true,              --- Enables automatic buffs, see bellow (disable if you prefer to use manually)
+                SongOfHealing = {
+                    Enable = false,
+                    FailWait = 30 * 1000,   --- in ms, how long to retry if already under effects by manual cast
+                    Instruments = {"Drum", "Lute", "Tambourine", "Lap Harp" }
+                },
+                Nightsight = {
+                    Enable = true   --- Drink nightsight potion if not buffed already
+                },
+                Stamina = {
+                    Enable = false,         --- Drink stamina potion when bellow a threshould
+                    DrinkThreshould = 60    --- in percentage, when to drink stamina potion
+                },
+                Strength = {
+                    Enable = true,          --- Drink strength potion if not buffed already
+                    BaseStrength = 100,     --- Value is needed to determine when buff is applied
+                    DrinkHeal = false       --- Drink heal potion after strength potion
+                },
+                Agility = {
+                    Enable = true,          --- Drink agility potion if not buffed already
+                    BaseAgility = 87,       --- Value including armor penalty is needed to determine when buff is applied (81 is for full plate without gorget: using luck gear)
+                    DrinkRefresh = false    --- Drink refresh potion after agility potion
+                },
+                EatFood = {
+                    Enable = false   --- BUGGED: Buff foods don't prevent eating if already under the effect
+                }
+            },
+            Debuffs = {
+                Enable = false,     --- Enables automatic debuffs, see bellow (disable if you prefer to use manually)
+                Peacemaking = {
+                    Enable = false
+                }
+            },
+            DetectPlayers = {
+                Enable = false  --- Alerts you when a player from the hunt list is visible
+            },
+            Scavenging = {
+                Enable = false,                             --- Scavenges items from the ground, only arrows, add more if needed
+                Frequency = 0,                              --- milliseconds, zero means immediate
+                LootItemsSerials = ScavengerLootTable,      --- List of items to scavenge,
+                LootItemsNames = {},                        --- Use if serial not available
+                DisallowGold = false,                       --- Toggle scavenging gold
+                DisallowCleanBandage = false,               --- Toggle scavenging clean bandages
+                DisallowBones = true,                       --- Toggle scavenging bones
+                DisallowGrimoire = false,                   --- Toggle scavenging grimoires
+                DisallowRibs = true                         --- Toggle scavenging ribs
+            },
+            Attack = {
+                Enable = false,                                             --- Attacks nearby enemies automatically
+                Rangemax = 5,                                               --- Attack search range
+                AllowMobilesExceptionsSerials = true,                       --- Allow Mobiles Serials to ignore
+                MobilesExceptionsSerials = FriendsSerialList,               --- Mobiles Serials to ignore (add friends so to not attack should they become grey)
+                AllowMobilesExceptionsGraphicIDs = true,                    --- Allow Mobiles Mobiles GraphicIDs to ignore
+                MobilesExceptionsGraphicIDs = MobilesExceptionsGraphicIDs,  --- Mobiles GraphicIDs to ignore (don't kill: cows, dogs...)
+                AllowMobilesExceptionsNames = true,                         --- Allow Mobiles Mobiles Names to ignore
+                MobilesExceptionsNames = MobilesExceptionsNames,            --- Mobiles Names to ignore (use if don't have serial or graphic available)
+                CheckFrequency = 500                                        --- in milliseconds, how often to check for new targets, adjust if needed
             }
-        },
-        Debuffs = {
-            Enable = false,     --- Enables automatic debuffs, see bellow (disable if you prefer to use manually)
-            Peacemaking = {
-                Enable = false
-            }
-        },
-        DetectPlayers = {
-            Enable = false  --- Alerts you when a player from the hunt list is visible
-        },
-        Scavenging = {
-            Enable = false,                             --- Scavenges items from the ground, only arrows, add more if needed
-            Frequency = 0,                              --- milliseconds, zero means immediate
-            LootItemsSerials = ScavengerLootTable,      --- List of items to scavenge,
-            LootItemsNames = {},                        --- Use if serial not available
-            DisallowGold = false,                       --- Toggle scavenging gold
-            DisallowCleanBandage = false,               --- Toggle scavenging clean bandages
-            DisallowBones = true,                      --- Toggle scavenging bones
-            DisallowGrimoire = false,                   --- Toggle scavenging grimoires
-            DisallowRibs = true                        --- Toggle scavenging ribs
-        },
-        Attack = {
-            Enable = false,                                             --- Attacks nearby enemies automatically
-            Rangemax = 5,                                               --- Attack search range
-            AllowMobilesExceptionsSerials = true,                       --- Allow Mobiles Serials to ignore
-            MobilesExceptionsSerials = FriendsSerialList,               --- Mobiles Serials to ignore (add friends so to not attack should they become grey)
-            AllowMobilesExceptionsGraphicIDs = true,                    --- Allow Mobiles Mobiles GraphicIDs to ignore
-            MobilesExceptionsGraphicIDs = MobilesExceptionsGraphicIDs,  --- Mobiles GraphicIDs to ignore (don't kill: cows, dogs...)
-            AllowMobilesExceptionsNames = true,                         --- Allow Mobiles Mobiles Names to ignore
-            MobilesExceptionsNames = MobilesExceptionsNames,            --- Mobiles Names to ignore (use if don't have serial or graphic available)
-            CheckFrequency = 500                                        --- in milliseconds, how often to check for new targets, adjust if needed
         }
     }
-}
+end
 
-DexxerUIConfig = {
-    ConfigWindowTimeoutMode = 4     --- seconds to auto-close config windows (0 will never close)
-}
+if DexxerUIConfig == nil then
+    DexxerUIConfig = {
+        ConfigWindowTimeoutMode = 4     --- seconds to auto-close config windows (0 will never close)
+    }
+end
 
 function CAConfigDexxer_run()
     CAMainLoop_mainLoop(DexxerMainLoopConfig)
