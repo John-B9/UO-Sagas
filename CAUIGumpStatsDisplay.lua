@@ -24,7 +24,7 @@ CAUIGumpStatsDisplayConfig = {
 }
 
 local CAUIGumpStatsDisplayStaticConfig = {
-    TotalSizeY = 150,
+    TotalSizeY = 155,
     RowIncrementSizeY = 20,
     RefreshRate = 1000,
     ItemsGraphicIDs = {

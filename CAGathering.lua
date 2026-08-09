@@ -17,7 +17,8 @@ local cagm = Import('CAGatheringMining')
 
 GatheringConfig = {
     MiningModeActive = false,
-    LumberjackingModeActive = false
+    LumberjackingModeActive = false,
+    ConfigChangedListenersCallbacks = {}
 }
 
 ---------------
@@ -32,6 +33,16 @@ end
 -----------------
 --- Functions ---
 -----------------
+
+local function registerConfigChangedListenersCallback_(callback)
+    table.insert(GatheringConfig.ConfigChangedListenersCallbacks, callback)
+end
+
+local function runConfigChangedListenersCallbacks_()
+    for _, callback in ipairs(GatheringConfig.ConfigChangedListenersCallbacks) do
+        callback(GatheringConfig.LumberjackingModeActive, GatheringConfig.MiningModeActive)
+    end
+end
 
 local function resetGatheringFSM_()
     cal.debug("Clearing gathering FSM state")
@@ -51,6 +62,7 @@ local function toggleMiningMode_()
     disableGatheringModes_()
     cal.mainInfo("Toggling Mining Mode to: " .. tostring(newState))
     GatheringConfig.MiningModeActive = newState
+    runConfigChangedListenersCallbacks_()
 end
 
 local function toggleLumberjackingMode_()
@@ -58,6 +70,7 @@ local function toggleLumberjackingMode_()
     disableGatheringModes_()
     cal.mainInfo("Toggling Lumberjacking Mode to: " .. tostring(newState))
     GatheringConfig.LumberjackingModeActive = newState
+    runConfigChangedListenersCallbacks_()
 end
 
 local function gather_()
@@ -79,6 +92,7 @@ end
 
 local Obj = {
     setConfig = setConfig_,
+    registerConfigChangedListenersCallback = registerConfigChangedListenersCallback_,
     toggleMiningMode = toggleMiningMode_,
     toggleLumberjackingMode = toggleLumberjackingMode_,
     gather = gather_

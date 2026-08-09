@@ -13,6 +13,7 @@ local caml = Import('CAMainLoop')
 local cauiglayoutb = Import('CAUIGumpLayoutBase')
 local cauigmainrow = Import('CAUIGumpMainRow')
 local cauigstats = Import('CAUIGumpStatsDisplay')
+local cauiggatheringrow = Import('CAUIGumpGatheringRow')
 local cauigrun = Import('CAUIGumpRun')
 local cauigheal = Import('CAUIGumpHeal')
 local cauigbuffs = Import('CAUIGumpBuffs')
@@ -54,6 +55,7 @@ local function processUIGumpInteractions_()
 
     cauigmainrow.processUIInteractions()        --- Main Row
     cauigstats.processUIInteractions()          --- Stats
+    cauiggatheringrow.processUIInteractions()   --- Gathering Row
     cauigrun.processUIInteractions()            --- Run
     cauigcommands.processUIInteractions()       --- Commands
     cauigattack.processUIInteractions()         --- Attack
@@ -69,6 +71,7 @@ local function updateCombatAssistantConfig_(CAConfig)
     --- Override UI values to CA Config
     cauigmainrow.updateCAConfigToCurrentUIConfig(CAConfig)      --- Main Row
     cauigstats.updateCAConfigToCurrentUIConfig(CAConfig)        --- Stats
+    cauiggatheringrow.updateCAConfigToCurrentUIConfig(CAConfig) --- Gathering Row
     cauigcommands.updateCAConfigToCurrentUIConfig(CAConfig)     --- Commands
     cauigattack.updateCAConfigToCurrentUIConfig(CAConfig)       --- Attack
     cauigheal.updateCAConfigToCurrentUIConfig(CAConfig)         --- Heal
@@ -103,9 +106,12 @@ local function initMainWindow_()
     end
 
     cal.debug('Initializing Main Window...')
-    cauigstats.setPosYStart(cauigmainrow.getTotalSizeY())                                --- Adjust the starting Y position of the Stats Display to account for the Main Row height
-    local modulesRowPosYStart = cauigmainrow.getTotalSizeY() + cauigstats.getTotalSizeY()
-    cauiglayoutb.setModulesRowPosYStart(modulesRowPosYStart)                                --- Adjust the starting Y position of the modules to account for the Stats Display height
+    local statsRowPosYStart = cauigmainrow.getTotalSizeY()
+    cauigstats.setPosYStart(statsRowPosYStart)                                              --- Adjust the starting Y position of the Stats Display to account for the Main Row height
+    local gatheringRowPosYStart = statsRowPosYStart + cauigstats.getTotalSizeY()
+    cauiggatheringrow.setPosYStart(gatheringRowPosYStart)                                   --- Adjust the starting Y position of the Gathering Row to account for the Stats Display height
+    local modulesRowPosYStart = gatheringRowPosYStart + cauiggatheringrow.getTotalSizeY()
+    cauiglayoutb.setModulesRowPosYStart(modulesRowPosYStart)                                --- Adjust the starting Y position of the modules to account for the Stats Gathering Row height
 
     cal.debug('Initializing Main Window...')
     local furthestElementX = cauiglayoutb.getLayoutConstants().ModuleConfigButtonPosX + cauiglayoutb.getLayoutConstants().ModuleConfigButtonSizeX
@@ -120,6 +126,7 @@ end
 local function initModules_(CAConfig)
     cauigmainrow.initUI(CAUI.mainWindow, CAConfig)        --- Main Row
     cauigstats.initUI(CAUI.mainWindow, CAConfig)          --- Stats
+    cauiggatheringrow.initUI(CAUI.mainWindow, CAConfig)   --- Gathering Row
     cauigrun.initUI(CAUI.mainWindow, CAConfig, 1)         --- Run
     cauigcommands.initUI(CAUI.mainWindow, CAConfig, 2)    --- Commands
     cauigattack.initUI(CAUI.mainWindow, CAConfig, 3)      --- Attack

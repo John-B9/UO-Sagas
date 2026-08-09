@@ -172,13 +172,13 @@ local DexxerMainLoopConfig = {
             },
             Strength = {
                 Enable = true,          --- Drink strength potion if not buffed already
-                BaseStrength = 100,
-                DrinkHeal = false
+                BaseStrength = 100,     --- Value is needed to determine when buff is applied
+                DrinkHeal = false       --- Drink heal potion after strength potion
             },
             Agility = {
-                Enable = true,          --- Drink potion potion if not buffed already
-                BaseAgility = 81,       --- Because of full plate (without gorget: using luck gear)
-                DrinkRefresh = false
+                Enable = true,          --- Drink agility potion if not buffed already
+                BaseAgility = 87,       --- Value including armor penalty is needed to determine when buff is applied (81 is for full plate without gorget: using luck gear)
+                DrinkRefresh = false    --- Drink refresh potion after agility potion
             },
             EatFood = {
                 Enable = false   --- BUGGED: Buff foods don't prevent eating if already under the effect

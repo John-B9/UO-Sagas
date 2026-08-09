@@ -64,7 +64,7 @@ local function shouldAtemptDrink_(forced)
     --end
     cal.debug("Checking if dexterity is debuffed or dropped")
     if Player.Dex > AgilityPotionsConfig.BaseAgility then
-        cal.debug("Player dexterity is above base value, skipping agility buff.")
+        cal.debug("Player dexterity ("..Player.Dex..") is above base value ("..AgilityPotionsConfig.BaseAgility.."), skipping agility buff.")
         return false
     end
     return true

@@ -18,12 +18,12 @@ local cagc = Import('CAGatheringConstants')
 
 local CAUIGumpMainRowLayout = {
     TitleLabelPosX = 10,
-    TitleLabelPosY = 30,
+    TitleLabelPosY = 28,
     ConfigButtonPosX = 175,
     ConfigButtonPosY = 35,
     ConfigButtonSizeX = 85,
     ConfigButtonSizeY = 25,
-    ConfigButtonYOffset = 10
+    ConfigButtonYOffset = 15
 }
 
 local function getTotalSizeY_()
@@ -45,13 +45,11 @@ local CAUIGMR = {
 
 local ConfigButtonClosedString = 'CONFIG (+)'
 local ConfigButtonOpenString = 'CONFIG (-)'
----local titleLabelString =
----'  ___________________\n'..
----'_/( Dexxer Gatherer )\\_\n'..
----'¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯'
+
 local titleLabelString =
-'  ___________________\n'..
-'_/( Dexxer Gatherer )\\_\n'
+'  _                 _\n'..
+' /( Dexxer Gatherer )\\ \n'..
+' ¯¯                 ¯¯ '
 
 -----------------
 --- Constants ---
@@ -262,7 +260,6 @@ end
 
 local function updateCAConfigGathering_(CAConfig)
     local gatheringConfig = CAConfig.gathering
-    gatheringConfig.SkinningEnabled = CAUIGumpMainRowState.SkinningHuesToKeep ~= cagc.getHuesToKeepValues().None
     gatheringConfig.SkinningHuesToKeep = CAUIGumpMainRowState.SkinningHuesToKeep
     gatheringConfig.LumberjackingHuesToKeep = CAUIGumpMainRowState.LumberjackingHuesToKeep
     gatheringConfig.MiningHuesToKeep = CAUIGumpMainRowState.MiningHuesToKeep

@@ -22,7 +22,7 @@ local CAUIGumpLayoutConstants = {
     ModuleEnableButtonSizeX = 100,
     ModuleEnableButtonSizeY = 30,
     ModuleEnableLabelPosX = 140,
-    ModuleRowPosYIncrement = 50,
+    ModuleRowPosYIncrement = 35,
     ModuleRowPosYLabelAlignIncrement = 8,
     ModuleConfigButtonPosX = 220,
     ModuleConfigButtonSizeX = 30,
@@ -30,9 +30,10 @@ local CAUIGumpLayoutConstants = {
     ModuleConfigWindowStartPosX = 500,
     ModuleConfigWindowStartBasePosY = 200,
     ModuleConfigWindowSizeX = 90,
+    ModuleConfigWindowOffsetY = 50,
     ModuleConfigWindowFeatureEnableButtonPosX = 10,
     ModuleConfigWindowFeatureEnableButtonPosYStart = 40,
-    ModuleConfigWindowFeatureEnableButtonPosYIncrement = 50,
+    ModuleConfigWindowFeatureEnableButtonPosYIncrement = 35,
     ModuleConfigWindowFeatureEnableButtonSizeX = 110,
     ModuleConfigWindowFeatureEnableButtonSizeY = 30
 }
@@ -97,7 +98,7 @@ local function createModuleConfigWindow_(windowIDString, windowHeader, numRows, 
     local posX = CAUIGumpLayoutConstants.ModuleConfigWindowStartPosX
     local posY = CAUIGumpLayoutConstants.ModuleConfigWindowStartBasePosY + ((numRows - 1) * CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYIncrement)
     moduleConfigWindow:SetPosition(posX, posY)
-    local moduleConfigWindowSizeY = CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYStart + ((numRows - 1) * CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYIncrement) + 50
+    local moduleConfigWindowSizeY = CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYStart + ((numRows - 1) * CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYIncrement) + CAUIGumpLayoutConstants.ModuleConfigWindowOffsetY
     moduleConfigWindow:SetSize(CAUIGumpLayoutConstants.ModuleConfigWindowSizeX, moduleConfigWindowSizeY)
     moduleConfigWindow:Hide()
     return moduleConfigWindow

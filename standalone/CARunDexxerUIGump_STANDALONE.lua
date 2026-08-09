@@ -1897,7 +1897,7 @@ function CAPotionsStrength_shouldAtemptDrink(forced)
     --end
     CALog_debug("Checking if strength is debuffed or dropped")
     if Player.Str > StrengthPotionsConfig.BaseStrength then
-        CALog_debug("Player strength is above base strength, skipping strength buff.")
+        CALog_debug("Player strength ("..Player.Str..") is above base strength ("..StrengthPotionsConfig.BaseStrength.."), skipping strength buff.")
         return false
     end
     return true
@@ -1962,7 +1962,7 @@ function CAPotionsAgility_shouldAtemptDrink(forced)
     --end
     CALog_debug("Checking if dexterity is debuffed or dropped")
     if Player.Dex > AgilityPotionsConfig.BaseAgility then
-        CALog_debug("Player dexterity is above base value, skipping agility buff.")
+        CALog_debug("Player dexterity ("..Player.Dex..") is above base value ("..AgilityPotionsConfig.BaseAgility.."), skipping agility buff.")
         return false
     end
     return true
@@ -3350,12 +3350,23 @@ end
 
 GatheringConfig = {
     MiningModeActive = false,
-    LumberjackingModeActive = false
+    LumberjackingModeActive = false,
+    ConfigChangedListenersCallbacks = {}
 }
 
 function CAGathering_setConfig(config)
     CAGatheringLumberjacking_setConfig(config)
     CAGatheringMining_setConfig(config)
+end
+
+function CAGathering_registerConfigChangedListenersCallback(callback)
+    table.insert(GatheringConfig.ConfigChangedListenersCallbacks, callback)
+end
+
+function CAGathering_runConfigChangedListenersCallbacks()
+    for _, callback in ipairs(GatheringConfig.ConfigChangedListenersCallbacks) do
+        callback(GatheringConfig.LumberjackingModeActive, GatheringConfig.MiningModeActive)
+    end
 end
 
 function CAGathering_resetGatheringFSM()
@@ -3376,6 +3387,7 @@ function CAGathering_toggleMiningMode()
     CAGathering_disableGatheringModes()
     CALog_mainInfo("Toggling Mining Mode to: " .. tostring(newState))
     GatheringConfig.MiningModeActive = newState
+    CAGathering_runConfigChangedListenersCallbacks()
 end
 
 function CAGathering_toggleLumberjackingMode()
@@ -3383,6 +3395,7 @@ function CAGathering_toggleLumberjackingMode()
     CAGathering_disableGatheringModes()
     CALog_mainInfo("Toggling Lumberjacking Mode to: " .. tostring(newState))
     GatheringConfig.LumberjackingModeActive = newState
+    CAGathering_runConfigChangedListenersCallbacks()
 end
 
 function CAGathering_gather()
@@ -3778,7 +3791,7 @@ CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants = {
     ModuleEnableButtonSizeX = 100,
     ModuleEnableButtonSizeY = 30,
     ModuleEnableLabelPosX = 140,
-    ModuleRowPosYIncrement = 50,
+    ModuleRowPosYIncrement = 35,
     ModuleRowPosYLabelAlignIncrement = 8,
     ModuleConfigButtonPosX = 220,
     ModuleConfigButtonSizeX = 30,
@@ -3786,9 +3799,10 @@ CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants = {
     ModuleConfigWindowStartPosX = 500,
     ModuleConfigWindowStartBasePosY = 200,
     ModuleConfigWindowSizeX = 90,
+    ModuleConfigWindowOffsetY = 50,
     ModuleConfigWindowFeatureEnableButtonPosX = 10,
     ModuleConfigWindowFeatureEnableButtonPosYStart = 40,
-    ModuleConfigWindowFeatureEnableButtonPosYIncrement = 50,
+    ModuleConfigWindowFeatureEnableButtonPosYIncrement = 35,
     ModuleConfigWindowFeatureEnableButtonSizeX = 110,
     ModuleConfigWindowFeatureEnableButtonSizeY = 30
 }
@@ -3845,7 +3859,7 @@ function CAUIGumpLayoutBase_createModuleConfigWindow(windowIDString, windowHeade
     posX = CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleConfigWindowStartPosX
     posY = CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleConfigWindowStartBasePosY + ((numRows - 1) * CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYIncrement)
     moduleConfigWindow:SetPosition(posX, posY)
-    moduleConfigWindowSizeY = CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYStart + ((numRows - 1) * CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYIncrement) + 50
+    moduleConfigWindowSizeY = CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYStart + ((numRows - 1) * CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleConfigWindowFeatureEnableButtonPosYIncrement) + CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleConfigWindowOffsetY
     moduleConfigWindow:SetSize(CAUIGump_CAUIGumpLayoutBase_CAUIGumpLayoutConstants.ModuleConfigWindowSizeX, moduleConfigWindowSizeY)
     moduleConfigWindow:Hide()
     return moduleConfigWindow
@@ -4048,12 +4062,12 @@ end
 
 CAUIGumpMainRowLayout = {
     TitleLabelPosX = 10,
-    TitleLabelPosY = 30,
+    TitleLabelPosY = 28,
     ConfigButtonPosX = 175,
     ConfigButtonPosY = 35,
     ConfigButtonSizeX = 85,
     ConfigButtonSizeY = 25,
-    ConfigButtonYOffset = 10
+    ConfigButtonYOffset = 15
 }
 
 function CAUIGumpMainRow_getTotalSizeY()
@@ -4077,8 +4091,9 @@ ConfigButtonClosedString = 'CONFIG (+)'
 ConfigButtonOpenString = 'CONFIG (-)'
 
 titleLabelString =
-'  ___________________\n'..
-'_/( Dexxer Gatherer )\\_\n'
+'  _                 _\n'..
+' /( Dexxer Gatherer )\\ \n'..
+' ¯¯                 ¯¯ '
 
 ConfigWindowTimeoutModeValues = {
     NoTimeout = 1,
@@ -4269,7 +4284,6 @@ end
 
 function CAUIGumpMainRow_updateCAConfigGathering(CAConfig)
     local gatheringConfig = CAConfig.gathering
-    gatheringConfig.SkinningEnabled = CAUIGumpMainRowState.SkinningHuesToKeep ~= CAGatheringConstants_getHuesToKeepValues().None
     gatheringConfig.SkinningHuesToKeep = CAUIGumpMainRowState.SkinningHuesToKeep
     gatheringConfig.LumberjackingHuesToKeep = CAUIGumpMainRowState.LumberjackingHuesToKeep
     gatheringConfig.MiningHuesToKeep = CAUIGumpMainRowState.MiningHuesToKeep
@@ -4453,7 +4467,7 @@ CAUIGumpStatsDisplayConfig = {
 }
 
 CAUIGumpStatsDisplayStaticConfig = {
-    TotalSizeY = 150,
+    TotalSizeY = 155,
     RowIncrementSizeY = 20,
     RefreshRate = 1000,
     ItemsGraphicIDs = {
@@ -4913,6 +4927,115 @@ function CAUIGumpStatsDisplay_initUI(mainWindow, CAConfig)
 
     CALog_debug('Doing initialUpdate for Stats Display UI...')
     CAUIGumpStatsDisplay_updateUI()
+end
+
+CAUIGatheringRowLayoutConfig = {
+    PosYStart = nil
+}
+
+CAUIGumpGatheringRow_CAUIGumpMainRowLayout = {
+    FirstButtonPosX = 25,
+    ButtonsSizeX = 60,
+    ButtonsSpacingX = 20,
+    ButtonsSizeY = 25,
+    ButtonsOffsetY = 20
+}
+
+CAUIGumpGatheringRow_CAUIGGR = {
+    LumberjackingButton = nil,
+    MiningButton = nil,
+    SkinningButton = nil
+}
+
+function CAUIGumpGatheringRow_setPosYStart(val)
+    CAUIGatheringRowLayoutConfig.PosYStart = val
+end
+
+function CAUIGumpGatheringRow_getTotalSizeY()
+    return CAUIGumpGatheringRow_CAUIGumpMainRowLayout.ButtonsSizeY + CAUIGumpGatheringRow_CAUIGumpMainRowLayout.ButtonsOffsetY
+end
+
+CAUIGumpGatheringRow_LumberjackingModeStrings = {
+    [true] = "LJ (Y)",
+    [false] = "LJ (N)"
+}
+
+CAUIGumpGatheringRow_MiningModeStrings = {
+    [true] = "MN (Y)",
+    [false] = "MN (N)"
+}
+
+CAUIGumpGatheringRow_SkinningModeStrings = {
+    [true] = "SK (Y)",
+    [false] = "SK (N)"
+}
+
+CAUIGumpGatheringRowState = {
+    LumberjackingModeEnabled = false,
+    MiningModeEnabled = false,
+    SkinningEnabled = nil
+}
+
+function CAUIGumpGatheringRow_updateLumberjackingButton(newState)
+    CAUIGumpGatheringRowState.LumberjackingModeEnabled = newState
+    CAUIGumpGatheringRow_CAUIGGR.LumberjackingButton:SetText(CAUIGumpGatheringRowState.LumberjackingModeEnabled and CAUIGumpGatheringRow_LumberjackingModeStrings[true] or CAUIGumpGatheringRow_LumberjackingModeStrings[false])
+end
+
+function CAUIGumpGatheringRow_updateMiningButton(newState)
+    CAUIGumpGatheringRowState.MiningModeEnabled = newState
+    CAUIGumpGatheringRow_CAUIGGR.MiningButton:SetText(CAUIGumpGatheringRowState.MiningModeEnabled and CAUIGumpGatheringRow_MiningModeStrings[true] or CAUIGumpGatheringRow_MiningModeStrings[false])
+end
+
+function CAUIGumpGatheringRow_onGatheringModesChanged(lumberjackingModeActive, miningModeActive)
+    CAUIGumpGatheringRow_updateLumberjackingButton(lumberjackingModeActive)
+    CAUIGumpGatheringRow_updateMiningButton(miningModeActive)
+end
+
+function CAUIGumpGatheringRow_processLumberjackingButtonInteractions()
+    if CAUIGumpGatheringRow_CAUIGGR.LumberjackingButton and CAUIGumpGatheringRow_CAUIGGR.LumberjackingButton:WasClicked() then
+        CAGathering_toggleLumberjackingMode()
+    end
+end
+
+function CAUIGumpGatheringRow_processMiningButtonInteractions()
+    if CAUIGumpGatheringRow_CAUIGGR.MiningButton and CAUIGumpGatheringRow_CAUIGGR.MiningButton:WasClicked() then
+        CAGathering_toggleMiningMode()
+    end
+end
+
+function CAUIGumpGatheringRow_processSkinningButtonInteractions()
+    if CAUIGumpGatheringRow_CAUIGGR.SkinningButton and CAUIGumpGatheringRow_CAUIGGR.SkinningButton:WasClicked() then
+        CAUIGumpGatheringRowState.SkinningEnabled = CAUIGumpLogicBase_onBooleanButtonPressed(CAUIGumpGatheringRowState.SkinningEnabled, CAUIGumpGatheringRow_CAUIGGR.SkinningButton, 'SK')
+    end
+end
+
+function CAUIGumpGatheringRow_processUIInteractions()
+    CAUIGumpGatheringRow_processLumberjackingButtonInteractions()
+    CAUIGumpGatheringRow_processMiningButtonInteractions()
+    CAUIGumpGatheringRow_processSkinningButtonInteractions()
+end
+
+function CAUIGumpGatheringRow_setUIValuesFromCAConfig(CAConfig)
+    CALog_debug('Setting Gathering Row UI values from CAConfig...')
+    CAUIGumpGatheringRowState.SkinningEnabled = CAConfig.gathering.SkinningEnabled
+end
+
+function CAUIGumpGatheringRow_updateCAConfigToCurrentUIConfig(CAConfig)
+    CALog_debug('Setting Gathering Row UI values into CAConfig...')
+    CAConfig.gathering.SkinningEnabled = CAUIGumpGatheringRowState.SkinningEnabled
+end
+
+function CAUIGumpGatheringRow_createUIElements(mainWindow)
+    CALog_debug('Creating Gathering Row UI...')
+    CAUIGumpGatheringRow_CAUIGGR.LumberjackingButton = mainWindow:AddButton(CAUIGumpGatheringRow_CAUIGumpMainRowLayout.FirstButtonPosX, CAUIGatheringRowLayoutConfig.PosYStart, CAUIGumpGatheringRow_LumberjackingModeStrings[CAUIGumpGatheringRowState.LumberjackingModeEnabled], CAUIGumpGatheringRow_CAUIGumpMainRowLayout.ButtonsSizeX, CAUIGumpGatheringRow_CAUIGumpMainRowLayout.ButtonsSizeY)
+    CAUIGumpGatheringRow_CAUIGGR.MiningButton = mainWindow:AddButton(CAUIGumpGatheringRow_CAUIGumpMainRowLayout.FirstButtonPosX + CAUIGumpGatheringRow_CAUIGumpMainRowLayout.ButtonsSizeX + CAUIGumpGatheringRow_CAUIGumpMainRowLayout.ButtonsSpacingX, CAUIGatheringRowLayoutConfig.PosYStart, CAUIGumpGatheringRow_MiningModeStrings[CAUIGumpGatheringRowState.MiningModeEnabled], CAUIGumpGatheringRow_CAUIGumpMainRowLayout.ButtonsSizeX, CAUIGumpGatheringRow_CAUIGumpMainRowLayout.ButtonsSizeY)
+    CAUIGumpGatheringRow_CAUIGGR.SkinningButton = mainWindow:AddButton(CAUIGumpGatheringRow_CAUIGumpMainRowLayout.FirstButtonPosX + 2 * (CAUIGumpGatheringRow_CAUIGumpMainRowLayout.ButtonsSizeX + CAUIGumpGatheringRow_CAUIGumpMainRowLayout.ButtonsSpacingX), CAUIGatheringRowLayoutConfig.PosYStart, CAUIGumpGatheringRow_SkinningModeStrings[CAUIGumpGatheringRowState.SkinningEnabled], CAUIGumpGatheringRow_CAUIGumpMainRowLayout.ButtonsSizeX, CAUIGumpGatheringRow_CAUIGumpMainRowLayout.ButtonsSizeY)
+end
+
+function CAUIGumpGatheringRow_initUI(mainWindow, CAConfig)
+    CAUIGumpGatheringRow_setUIValuesFromCAConfig(CAConfig)
+    CAUIGumpGatheringRow_createUIElements(mainWindow)
+    CAGathering_registerConfigChangedListenersCallback(CAUIGumpGatheringRow_onGatheringModesChanged)
 end
 
 CAUIGumpRun_CAUIGumpRunLayout = {
@@ -5634,6 +5757,7 @@ function CAUIGump_processUIGumpInteractions()
 
     CAUIGumpMainRow_processUIInteractions()        --- Main Row
     CAUIGumpStatsDisplay_processUIInteractions()          --- Stats
+    CAUIGumpGatheringRow_processUIInteractions()   --- Gathering Row
     CAUIGumpRun_processUIInteractions()            --- Run
     CAUIGumpCommands_processUIInteractions()       --- Commands
     CAUIGumpAttack_processUIInteractions()         --- Attack
@@ -5649,6 +5773,7 @@ function CAUIGump_updateCombatAssistantConfig(CAConfig)
     --- Override UI values to CA Config
     CAUIGumpMainRow_updateCAConfigToCurrentUIConfig(CAConfig)      --- Main Row
     CAUIGumpStatsDisplay_updateCAConfigToCurrentUIConfig(CAConfig)        --- Stats
+    CAUIGumpGatheringRow_updateCAConfigToCurrentUIConfig(CAConfig) --- Gathering Row
     CAUIGumpCommands_updateCAConfigToCurrentUIConfig(CAConfig)     --- Commands
     CAUIGumpAttack_updateCAConfigToCurrentUIConfig(CAConfig)       --- Attack
     CAUIGumpHeal_updateCAConfigToCurrentUIConfig(CAConfig)         --- Heal
@@ -5682,8 +5807,11 @@ function CAUIGump_initMainWindow()
     end
 
     CALog_debug('Initializing Main Window...')
-    CAUIGumpStatsDisplay_setPosYStart(CAUIGumpMainRow_getTotalSizeY())
-    modulesRowPosYStart = CAUIGumpMainRow_getTotalSizeY() + CAUIGumpStatsDisplay_getTotalSizeY()
+    statsRowPosYStart = CAUIGumpMainRow_getTotalSizeY()
+    CAUIGumpStatsDisplay_setPosYStart(statsRowPosYStart)
+    gatheringRowPosYStart = statsRowPosYStart + CAUIGumpStatsDisplay_getTotalSizeY()
+    CAUIGumpGatheringRow_setPosYStart(gatheringRowPosYStart)
+    modulesRowPosYStart = gatheringRowPosYStart + CAUIGumpGatheringRow_getTotalSizeY()
     CAUIGumpLayoutBase_setModulesRowPosYStart(modulesRowPosYStart)
 
     CALog_debug('Initializing Main Window...')
@@ -5699,6 +5827,7 @@ end
 function CAUIGump_initModules(CAConfig)
     CAUIGumpMainRow_initUI(CAUI.mainWindow, CAConfig)        --- Main Row
     CAUIGumpStatsDisplay_initUI(CAUI.mainWindow, CAConfig)          --- Stats
+    CAUIGumpGatheringRow_initUI(CAUI.mainWindow, CAConfig)   --- Gathering Row
     CAUIGumpRun_initUI(CAUI.mainWindow, CAConfig, 1)         --- Run
     CAUIGumpCommands_initUI(CAUI.mainWindow, CAConfig, 2)    --- Commands
     CAUIGumpAttack_initUI(CAUI.mainWindow, CAConfig, 3)      --- Attack
@@ -5884,13 +6013,13 @@ DexxerMainLoopConfig = {
             },
             Strength = {
                 Enable = true,          --- Drink strength potion if not buffed already
-                BaseStrength = 100,
-                DrinkHeal = false
+                BaseStrength = 100,     --- Value is needed to determine when buff is applied
+                DrinkHeal = false       --- Drink heal potion after strength potion
             },
             Agility = {
-                Enable = true,          --- Drink potion potion if not buffed already
-                BaseAgility = 81,       --- Because of full plate (without gorget: using luck gear)
-                DrinkRefresh = false
+                Enable = true,          --- Drink agility potion if not buffed already
+                BaseAgility = 87,       --- Value including armor penalty is needed to determine when buff is applied (81 is for full plate without gorget: using luck gear)
+                DrinkRefresh = false    --- Drink refresh potion after agility potion
             },
             EatFood = {
                 Enable = false   --- BUGGED: Buff foods don't prevent eating if already under the effect

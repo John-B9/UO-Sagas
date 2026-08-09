@@ -64,7 +64,7 @@ local function shouldAtemptDrink_(forced)
     --end
     cal.debug("Checking if strength is debuffed or dropped")
     if Player.Str > StrengthPotionsConfig.BaseStrength then
-        cal.debug("Player strength is above base strength, skipping strength buff.")
+        cal.debug("Player strength ("..Player.Str..") is above base strength ("..StrengthPotionsConfig.BaseStrength.."), skipping strength buff.")
         return false
     end
     return true
